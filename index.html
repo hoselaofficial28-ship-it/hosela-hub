@@ -464,7 +464,7 @@ var AVT_TXT = ['#1d4ed8','#065f46','#92400e','#5b21b6','#9d174d','#991b1b'];
 
 function gasCall(action, args, success, failure) {
   var url = GAS_URL + '?action=' + encodeURIComponent(action) + '&args=' + encodeURIComponent(JSON.stringify(args || []));
-  fetch(url, { method: 'GET', redirect: 'follow' })
+  fetch(url, { method: 'GET', redirect: 'follow', mode: 'cors', credentials: 'omit' })
     .then(function(r) { return r.json(); })
     .then(success || function(){})
     .catch(failure || function(e){ console.error('GAS Error:', e); });
