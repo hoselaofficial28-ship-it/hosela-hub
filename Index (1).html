@@ -455,11 +455,22 @@ body.phone-mode .preview-btn{position:static;margin-top:14px;border-radius:20px;
 </div>
 
 <script>
+var GAS_URL = 'https://script.google.com/macros/s/AKfycbwl2c5R81uZn1YojVPa_qzncIpGHsclIetLuatt0i51Er1uFwWtqSliyMk9l5Pajc3NgQ/exec';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
 var AVT_BG = ['#dbeafe','#d1fae5','#fef3c7','#ede9fe','#fce7f3','#fee2e2'];
 var AVT_TXT = ['#1d4ed8','#065f46','#92400e','#5b21b6','#9d174d','#991b1b'];
+
+function gasCall(action, args, success, failure) {
+  fetch(GAS_URL, {
+    method: 'POST',
+    body: JSON.stringify({ action: action, args: args || [] })
+  })
+  .then(function(r) { return r.json(); })
+  .then(success || function(){})
+  .catch(failure || function(e){ console.error('GAS Error:', e); });
+}
 
 function goTo(id) {
   document.querySelectorAll('.screen').forEach(function(s){ s.classList.remove('active'); });
@@ -490,8 +501,7 @@ function updateDots() {
     document.getElementById('d'+i).classList.toggle('filled', i < pinBuffer.length);
 }
 function doLogin() {
-  google.script.run
-    .withSuccessHandler(function(r) {
+  gasCall('validatePIN', [pinBuffer], function(r) {
       if (r.success) {
         currentUser = r.user; pinBuffer = ''; updateDots();
         loadHome(); goTo('s-home');
@@ -499,12 +509,10 @@ function doLogin() {
         document.getElementById('pin-error').textContent = 'PIN salah. Coba lagi.';
         pinBuffer = ''; updateDots();
       }
-    })
-    .withFailureHandler(function() {
+    }, function() {
       document.getElementById('pin-error').textContent = 'Koneksi gagal. Coba lagi.';
       pinBuffer = ''; updateDots();
-    })
-    .validatePIN(pinBuffer);
+    });
 }
 
 function loadHome() {
@@ -531,8 +539,7 @@ function loadHome() {
     return '<div class="menu-card" onclick="goTo(\''+m.id+'\')"><div class="menu-icon" style="background:'+m.bg+'">'+m.icon+'</div><h3>'+m.label+'</h3><p>'+m.sub+'</p></div>';
   }).join('');
 
-  google.script.run
-    .withSuccessHandler(function(d) {
+  gasCall('getHomeData', [u.id, u.bagian], function(d) {
       if (d.pengumuman && d.pengumuman.length > 0) {
         document.getElementById('home-ann-text').textContent = '📢 ' + d.pengumuman[0].judul;
         document.getElementById('home-ann-banner').style.display = 'flex';
@@ -552,8 +559,7 @@ function loadHome() {
         document.getElementById('home-kpi-content').innerHTML = d.kpi.slice(0,3).map(kpiRow).join('');
       }
     })
-    .withFailureHandler(function(){})
-    .getHomeData(u.id, u.bagian);
+  }, function(){});
 }
 
 function kpiRow(k) {
@@ -566,8 +572,7 @@ function kpiRow(k) {
 function loadJobdeskList() {
   var list = document.getElementById('jobdesk-list');
   list.innerHTML = '<div class="empty-state"><div class="empty-icon">📋</div>Memuat...</div>';
-  google.script.run
-    .withSuccessHandler(function(data) {
+  gasCall('getJobdeskList', [], function(data) {
       if (!data || !data.length) { list.innerHTML = '<div class="empty-state">Tidak ada data bagian</div>'; return; }
       var icons = {Live:'🎥', Packing:'📦', Ecommerce:'🛒', Finance:'💰'};
       var colors = {Live:'#dbeafe', Packing:'#fce7f3', Ecommerce:'#d1fae5', Finance:'#fef3c7'};
@@ -578,8 +583,7 @@ function loadJobdeskList() {
           '<div class="list-arr">›</div></div>';
       }).join('');
     })
-    .withFailureHandler(function(){ list.innerHTML = '<div class="empty-state">Gagal memuat</div>'; })
-    .getJobdeskList();
+  }, function(){ list.innerHTML = '<div class="empty-state">Gagal memuat</div>'; });
 }
 
 function openBagian(bagian) {
@@ -588,8 +592,7 @@ function openBagian(bagian) {
   var list = document.getElementById('staff-list');
   list.innerHTML = '<div class="empty-state"><div class="empty-icon">👤</div>Memuat...</div>';
   goTo('s-staff');
-  google.script.run
-    .withSuccessHandler(function(staff) {
+  gasCall('getStaffByBagian', [bagian], function(staff) {
       if (!staff || !staff.length) { list.innerHTML = '<div class="empty-state">Tidak ada anggota aktif</div>'; return; }
       list.innerHTML = '<div class="section-label">Anggota Tim</div>' + staff.map(function(s,i) {
         var ci = i % AVT_BG.length;
@@ -599,8 +602,7 @@ function openBagian(bagian) {
           '<div class="list-arr">›</div></div>';
       }).join('');
     })
-    .withFailureHandler(function(){ list.innerHTML = '<div class="empty-state">Gagal memuat</div>'; })
-    .getStaffByBagian(bagian);
+  }, function(){ list.innerHTML = '<div class="empty-state">Gagal memuat</div>'; });
 }
 
 function openDetail(userId, nama, jabatan, bagian) {
@@ -613,12 +615,12 @@ function openDetail(userId, nama, jabatan, bagian) {
   document.getElementById('detail-doc-link').style.display = 'none';
   goTo('s-detail');
 
-  google.script.run.withSuccessHandler(function(r) {
+  gasCall('getUserKPI', [userId], function(r) {
     var el = document.getElementById('detail-kpi-content');
     el.innerHTML = r.kpi && r.kpi.length ? r.kpi.map(kpiRow).join('') : '<div style="font-size:12px;color:var(--text-muted);text-align:center;padding:8px">Belum ada KPI bulan ini</div>';
-  }).withFailureHandler(function(){}).getUserKPI(userId);
+  });
 
-  google.script.run.withSuccessHandler(function(jd) {
+  gasCall('getJobdeskByBagian', [bagian], function(jd) {
     var el = document.getElementById('detail-jobdesk-content');
     if (jd && jd.link) {
       el.innerHTML = '<div style="font-size:12px;color:var(--text-muted);text-align:center;padding:8px">Klik tombol di bawah untuk buka jobdesk lengkap</div>';
@@ -627,9 +629,9 @@ function openDetail(userId, nama, jabatan, bagian) {
     } else {
       el.innerHTML = '<div class="empty-state" style="padding:10px"><div style="font-size:12px">Jobdesk belum ditambahkan.</div></div>';
     }
-  }).withFailureHandler(function(){}).getJobdeskByBagian(bagian);
+  });
 
-  google.script.run.withSuccessHandler(function(rekap) {
+  gasCall('getAbsensiRekap', [userId], function(rekap) {
     var el = document.getElementById('detail-absensi-content');
     if (!rekap || !rekap.length) { el.innerHTML = '<div style="font-size:12px;color:var(--text-muted);text-align:center;padding:8px">Belum ada data kehadiran</div>'; return; }
     var stCls = {BAIK:'kpi-ok', KUNING:'kpi-warn', ORANGE:'kpi-warn', MERAH:'kpi-bad'};
@@ -638,14 +640,13 @@ function openDetail(userId, nama, jabatan, bagian) {
       return '<div class="kpi-row"><div class="kpi-label">'+r.minggu+'</div>'+
         '<div class="kpi-val '+(stCls[r.status]||'')+'">Hadir '+r.hadir+'h · Telat '+r.telat+'x · Absen '+r.absen+'x'+lembur+'</div></div>';
     }).join('');
-  }).withFailureHandler(function(){}).getAbsensiRekap(userId);
+  });
 }
 
 function loadPengumuman() {
   var list = document.getElementById('pengumuman-list');
   list.innerHTML = '<div class="empty-state"><div class="empty-icon">📢</div>Memuat...</div>';
-  google.script.run
-    .withSuccessHandler(function(data) {
+  gasCall('getPengumuman', [currentUser ? currentUser.bagian : 'ALL'], function(data) {
       if (!data || !data.length) { list.innerHTML = '<div class="empty-state"><div class="empty-icon">📢</div>Belum ada pengumuman</div>'; return; }
       var bdg = {PENTING:'badge-red', INFO:'badge-blue', UMUM:'badge-green'};
       list.innerHTML = '<div class="section-label">Terbaru</div>' + data.map(function(p) {
@@ -653,8 +654,7 @@ function loadPengumuman() {
           '<div class="peng-title">'+p.judul+'</div><div class="peng-isi">'+p.isi+'</div></div>';
       }).join('');
     })
-    .withFailureHandler(function(){ list.innerHTML = '<div class="empty-state">Gagal memuat</div>'; })
-    .getPengumuman(currentUser ? currentUser.bagian : 'ALL');
+  }, function(){ list.innerHTML = '<div class="empty-state">Gagal memuat</div>'; });
 }
 
 function submitPengumuman() {
@@ -663,21 +663,17 @@ function submitPengumuman() {
   var kategori = document.getElementById('peng-kategori').value;
   var target = document.getElementById('peng-target').value;
   if (!judul || !isi) { showToast('Judul dan isi wajib diisi'); return; }
-  google.script.run
-    .withSuccessHandler(function() {
-      document.getElementById('peng-judul').value = '';
-      document.getElementById('peng-isi').value = '';
-      showToast('Pengumuman berhasil dikirim!');
-      goTo('s-pengumuman');
-    })
-    .withFailureHandler(function(){ showToast('Gagal. Coba lagi.'); })
-    .addPengumuman(judul, isi, kategori, target, currentUser.nama);
+  gasCall('addPengumuman', [judul, isi, kategori, target, currentUser.nama], function() {
+    document.getElementById('peng-judul').value = '';
+    document.getElementById('peng-isi').value = '';
+    showToast('Pengumuman berhasil dikirim!');
+    goTo('s-pengumuman');
+  }, function(){ showToast('Gagal. Coba lagi.'); });
 }
 
 function loadIde() {
   var list = document.getElementById('ide-list');
-  google.script.run
-    .withSuccessHandler(function(data) {
+  gasCall('getIde', [], function(data) {
       if (!data || !data.length) { list.innerHTML = '<div class="empty-state"><div class="empty-icon">💡</div>Belum ada ide masuk</div>'; return; }
       var stMap = {BARU:['badge-blue','Baru'], DITINJAU:['badge-gold','Ditinjau'], DITERIMA:['badge-green','Diterima'], DITOLAK:['badge-red','Ditolak']};
       list.innerHTML = data.map(function(ide) {
@@ -691,29 +687,24 @@ function loadIde() {
           '</div>';
       }).join('');
     })
-    .withFailureHandler(function(){})
-    .getIde();
+  }, function(){});
 }
 
 function submitIde() {
   var judul = document.getElementById('ide-judul').value.trim();
   var desk = document.getElementById('ide-deskripsi').value.trim();
   if (!judul || !desk) { showToast('Judul dan deskripsi wajib diisi'); return; }
-  google.script.run
-    .withSuccessHandler(function() {
-      document.getElementById('ide-judul').value = '';
-      document.getElementById('ide-deskripsi').value = '';
-      showToast('Ide berhasil dikirim!');
-      loadIde();
-    })
-    .withFailureHandler(function(){ showToast('Gagal. Coba lagi.'); })
-    .addIde(currentUser.id, currentUser.nama, judul, desk);
+  gasCall('addIde', [currentUser.id, currentUser.nama, judul, desk], function() {
+    document.getElementById('ide-judul').value = '';
+    document.getElementById('ide-deskripsi').value = '';
+    showToast('Ide berhasil dikirim!');
+    loadIde();
+  }, function(){ showToast('Gagal. Coba lagi.'); });
 }
 
 function loadKalender() {
   var list = document.getElementById('kalender-list');
-  google.script.run
-    .withSuccessHandler(function(data) {
+  gasCall('getKalenderLibur', [], function(data) {
       if (!data || !data.length) { list.innerHTML = '<div class="empty-state"><div class="empty-icon">🗓️</div>Belum ada hari libur</div>'; return; }
       list.innerHTML = data.map(function(l) {
         return '<div class="list-item" style="cursor:default">'+
@@ -722,30 +713,25 @@ function loadKalender() {
           '<span class="badge badge-red">Difasilitasi</span></div>';
       }).join('');
     })
-    .withFailureHandler(function(){})
-    .getKalenderLibur();
+  }, function(){});
 }
 
 function submitLibur() {
   var tgl = document.getElementById('libur-tgl').value;
   var nama = document.getElementById('libur-nama').value.trim();
   if (!tgl || !nama) { showToast('Tanggal dan nama wajib diisi'); return; }
-  google.script.run
-    .withSuccessHandler(function() {
-      document.getElementById('libur-tgl').value = '';
-      document.getElementById('libur-nama').value = '';
-      showToast('Hari libur berhasil ditambahkan!');
-      loadKalender();
-    })
-    .withFailureHandler(function(){ showToast('Gagal. Coba lagi.'); })
-    .addLibur(tgl, nama, currentUser.nama);
+  gasCall('addLibur', [tgl, nama, currentUser.nama], function() {
+    document.getElementById('libur-tgl').value = '';
+    document.getElementById('libur-nama').value = '';
+    showToast('Hari libur berhasil ditambahkan!');
+    loadKalender();
+  }, function(){ showToast('Gagal. Coba lagi.'); });
 }
 
 function loadUsers() {
   var list = document.getElementById('users-list');
   list.innerHTML = '<div class="empty-state"><div class="empty-icon">👥</div>Memuat...</div>';
-  google.script.run
-    .withSuccessHandler(function(data) {
+  gasCall('getAllUsers', [], function(data) {
       if (!data || !data.length) { list.innerHTML = '<div class="empty-state">Tidak ada data</div>'; return; }
       var aktif = data.filter(function(u){ return u.status === 'AKTIF'; });
       var nonaktif = data.filter(function(u){ return u.status !== 'AKTIF'; });
@@ -753,8 +739,7 @@ function loadUsers() {
         (aktif.length ? '<div class="section-label">Aktif</div>' + aktif.map(userCard).join('') : '') +
         (nonaktif.length ? '<div class="section-label" style="margin-top:12px">Nonaktif</div>' + nonaktif.map(userCard).join('') : '');
     })
-    .withFailureHandler(function(){ list.innerHTML = '<div class="empty-state">Gagal memuat</div>'; })
-    .getAllUsers();
+  }, function(){ list.innerHTML = '<div class="empty-state">Gagal memuat</div>'; });
 }
 
 function userCard(u, i) {
@@ -770,10 +755,8 @@ function userCard(u, i) {
 
 function tendang(userId, nama) {
   if (!confirm('Nonaktifkan akses '+nama+'?\nMereka tidak bisa login lagi.')) return;
-  google.script.run
-    .withSuccessHandler(function(){ showToast(nama+' berhasil dinonaktifkan'); loadUsers(); })
-    .withFailureHandler(function(){ showToast('Gagal. Coba lagi.'); })
-    .nonaktifkanUser(userId);
+  gasCall('nonaktifkanUser', [userId], function(){ showToast(nama+' berhasil dinonaktifkan'); loadUsers(); },
+    function(){ showToast('Gagal. Coba lagi.'); });
 }
 
 function prosesAbsensi() {
@@ -784,8 +767,7 @@ function prosesAbsensi() {
   btn.textContent = 'Memproses... Harap tunggu';
   btn.disabled = true;
   resultEl.style.display = 'none';
-  google.script.run
-    .withSuccessHandler(function(r) {
+  gasCall('processAbsensiUpload', [], function(r) {
       btn.textContent = 'Proses Data Absensi';
       btn.disabled = false;
       resultEl.style.display = 'block';
@@ -800,21 +782,19 @@ function prosesAbsensi() {
         msgEl.style.color = '#92400e'; msgEl.textContent = r.msg;
       }
     })
-    .withFailureHandler(function() {
+  }, function() {
       btn.textContent = 'Proses Data Absensi';
       btn.disabled = false;
       resultEl.style.cssText = 'display:block;background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:12px;margin-bottom:10px';
       document.getElementById('upload-result-title').textContent = '❌ Error';
       document.getElementById('upload-result-msg').textContent = 'Koneksi gagal. Coba lagi.';
-    })
-    .processAbsensiUpload();
+  });
 }
 
 function loadLaporanAbsensi() {
   var list = document.getElementById('laporan-list');
   list.innerHTML = '<div class="empty-state"><div class="empty-icon">📊</div>Memuat...</div>';
-  google.script.run
-    .withSuccessHandler(function(result) {
+  gasCall('getAllAbsensiRekap', [], function(result) {
       if (!result.data || !result.data.length) {
         list.innerHTML = '<div class="empty-state"><div class="empty-icon">📊</div>Belum ada data absensi</div>'; return;
       }
@@ -836,8 +816,7 @@ function loadLaporanAbsensi() {
       });
       list.innerHTML = html;
     })
-    .withFailureHandler(function(){ list.innerHTML = '<div class="empty-state">Gagal memuat laporan</div>'; })
-    .getAllAbsensiRekap();
+  }, function(){ list.innerHTML = '<div class="empty-state">Gagal memuat laporan</div>'; });
 }
 
 function initials(nama) { return (nama||'').split(' ').map(function(w){return w[0];}).join('').substring(0,2).toUpperCase(); }
