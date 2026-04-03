@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Hosela Hub</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f0f4f8;min-height:100vh}
+:root{
+  --blue:#0e4fa3;--blue-dark:#0a3d82;--blue-light:#dbeafe;
+  --gold:#c9971f;--gold-light:#fef3c7;
+  --gray-bg:#f7f9fc;--gray-border:#e2e8f0;
+  --text-dark:#1e3a5f;--text-muted:#6b7280;
+  --green:#059669;--red:#dc2626;--orange:#d97706
+}
+.screen{display:none;min-height:100vh;flex-direction:column}
+.screen.active{display:flex}
+.statusbar{background:var(--blue-dark);height:6px;flex-shrink:0}
+.header{background:var(--blue);padding:14px 16px 16px;flex-shrink:0}
+.header-row{display:flex;align-items:center;gap:10px}
+.header h1{font-size:16px;font-weight:700;color:#fff}
+.header p{font-size:11px;color:rgba(255,255,255,0.65);margin-top:1px}
+.gold-line{height:3px;background:var(--gold);border-radius:2px;margin-top:10px;width:32px}
+.back-btn{width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,0.15);border:none;color:#fff;font-size:20px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0}
+.content{flex:1;overflow-y:auto;padding:14px;background:var(--gray-bg)}
+.navbar{background:#fff;border-top:1px solid var(--gray-border);padding:6px 0 10px;display:flex;justify-content:space-around;flex-shrink:0}
+.nav-item{display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;padding:4px 10px}
+.nav-icon{font-size:20px}
+.nav-label{font-size:10px;color:var(--text-muted)}
+.nav-item.active .nav-label{color:var(--blue);font-weight:600}
+.card{background:#fff;border-radius:12px;border:1px solid var(--gray-border);padding:14px;margin-bottom:10px}
+.card-title{font-size:12px;font-weight:600;color:var(--blue);margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.card-dot{width:6px;height:6px;border-radius:50%;background:var(--gold);flex-shrink:0}
+.list-item{background:#fff;border-radius:12px;border:1px solid var(--gray-border);padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;cursor:pointer}
+.list-item:active{background:var(--blue-light)}
+.list-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.list-info{flex:1}
+.list-info h4{font-size:13px;font-weight:600;color:var(--text-dark)}
+.list-info p{font-size:11px;color:var(--text-muted);margin-top:2px}
+.list-arr{font-size:18px;color:#cbd5e1}
+.badge{display:inline-flex;align-items:center;font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px}
+.badge-blue{background:var(--blue-light);color:#1d4ed8}
+.badge-gold{background:var(--gold-light);color:#92400e}
+.badge-green{background:#d1fae5;color:#065f46}
+.badge-red{background:#fee2e2;color:#991b1b}
+.badge-gray{background:#f3f4f6;color:#374151}
+.badge-orange{background:#fff7ed;color:#c2410c}
+.avatar{width:40px;height:40px;border-radius:50%;background:var(--blue-light);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:var(--blue);flex-shrink:0}
+.section-label{font-size:11px;font-weight:600;color:var(--text-muted);letter-spacing:.05em;text-transform:uppercase;margin-bottom:8px;padding-left:2px}
+#loading{position:fixed;top:0;left:0;right:0;bottom:0;background:var(--blue);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999}
+.loading-logo{width:72px;height:72px;border-radius:20px;background:#fff;display:flex;align-items:center;justify-content:center;margin-bottom:14px}
+.loading-title{font-size:22px;font-weight:700;color:#fff}
+.loading-sub{font-size:13px;color:rgba(255,255,255,0.6);margin-top:4px}
+.loading-bar{width:120px;height:3px;background:rgba(255,255,255,0.2);border-radius:2px;margin-top:24px;overflow:hidden}
+.loading-progress{height:100%;background:var(--gold);border-radius:2px;animation:ldg 1.5s ease-in-out infinite}
+@keyframes ldg{0%{width:0%;margin-left:0}60%{width:100%;margin-left:0}100%{width:0%;margin-left:100%}}
+.login-top{background:var(--blue);padding:40px 24px 32px;text-align:center;flex-shrink:0}
+.login-logo{width:72px;height:72px;border-radius:20px;background:#fff;margin:0 auto 14px;display:flex;align-items:center;justify-content:center}
+.login-title{font-size:24px;font-weight:700;color:#fff}
+.login-sub{font-size:13px;color:rgba(255,255,255,0.65);margin-top:4px}
+.gold-bar-center{height:3px;background:var(--gold);width:40px;margin:12px auto 0;border-radius:2px}
+.login-body{flex:1;padding:28px 24px;background:var(--gray-bg)}
+.pin-label{font-size:13px;color:var(--text-muted);font-weight:500;margin-bottom:14px;text-align:center}
+.pin-dots{display:flex;justify-content:center;gap:14px;margin-bottom:24px}
+.dot{width:14px;height:14px;border-radius:50%;background:#e2e8f0;border:2px solid #cbd5e1;transition:all .15s}
+.dot.filled{background:var(--blue);border-color:var(--blue);transform:scale(1.1)}
+.keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.key{height:52px;border-radius:12px;background:#fff;border:1px solid var(--gray-border);font-size:20px;font-weight:600;color:var(--text-dark);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .1s}
+.key:active{background:var(--blue-light)}
+.key-del{font-size:14px;color:var(--text-muted);background:#f1f5f9}
+.key-clear{background:var(--gold);color:#fff;border-color:var(--gold);font-size:13px;font-weight:600}
+.pin-error{text-align:center;font-size:12px;color:var(--red);margin-top:12px;min-height:18px}
+.home-hero{background:var(--blue);padding:14px 16px 18px;flex-shrink:0}
+.home-greeting{font-size:12px;color:rgba(255,255,255,0.7)}
+.home-name{font-size:20px;font-weight:700;color:#fff;margin-top:2px}
+.gold-accent{color:var(--gold)}
+.ann-banner{background:rgba(201,151,31,.2);border:1px solid rgba(201,151,31,.4);border-radius:10px;margin-top:12px;padding:10px 12px;display:flex;align-items:center;gap:8px;cursor:pointer}
+.ann-dot{width:8px;height:8px;border-radius:50%;background:var(--gold);flex-shrink:0}
+.ann-text{font-size:11px;color:rgba(255,255,255,.9);flex:1;line-height:1.4}
+.menu-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.menu-card{background:#fff;border-radius:14px;border:1px solid var(--gray-border);padding:14px 12px;cursor:pointer}
+.menu-card:active{background:var(--blue-light)}
+.menu-icon{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;margin-bottom:8px;font-size:18px}
+.menu-card h3{font-size:13px;font-weight:600;color:var(--text-dark)}
+.menu-card p{font-size:10px;color:var(--text-muted);margin-top:2px}
+.reward-card{background:var(--blue);border-radius:14px;padding:16px;margin-bottom:10px;border:1px solid rgba(201,151,31,.4)}
+.reward-label{font-size:11px;font-weight:600;color:var(--gold);letter-spacing:.08em;text-transform:uppercase;margin-bottom:10px}
+.reward-avatar-big{width:52px;height:52px;border-radius:50%;background:rgba(255,255,255,.2);border:2px solid var(--gold);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;color:#fff;margin-bottom:8px}
+.reward-name{font-size:16px;font-weight:700;color:#fff}
+.reward-sub{font-size:11px;color:rgba(255,255,255,.65);margin-top:2px}
+.reward-alasan{font-size:11px;color:rgba(255,255,255,.85);margin-top:8px;line-height:1.5;font-style:italic}
+.reward-pesan{font-size:12px;color:var(--gold);margin-top:10px;font-weight:600}
+.kpi-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #f1f5f9}
+.kpi-row:last-child{border-bottom:none}
+.kpi-label{font-size:12px;color:var(--text-muted)}
+.kpi-val{font-size:12px;font-weight:600}
+.kpi-ok{color:var(--green)}.kpi-warn{color:var(--orange)}.kpi-bad{color:var(--red)}
+.form-group{margin-bottom:12px}
+.form-label{font-size:12px;color:var(--text-muted);font-weight:500;margin-bottom:6px;display:block}
+.form-input{width:100%;padding:10px 12px;border:1px solid var(--gray-border);border-radius:8px;font-size:13px;color:var(--text-dark);background:#fff;font-family:inherit}
+.form-input:focus{outline:none;border-color:var(--blue)}
+textarea.form-input{height:80px;resize:none}
+select.form-input{-webkit-appearance:none}
+.btn{width:100%;padding:12px;border-radius:10px;border:none;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit}
+.btn-primary{background:var(--blue);color:#fff}
+.btn-primary:active{background:var(--blue-dark)}
+.btn-primary:disabled{background:#93c5fd;cursor:not-allowed}
+.btn-gold{background:var(--gold);color:#fff}
+.btn-danger{background:var(--red);color:#fff}
+.btn-sm{padding:7px 14px;width:auto;font-size:12px;border-radius:8px}
+.notif-banner{background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:12px;margin-bottom:10px}
+.notif-title{font-size:13px;font-weight:600;color:#c2410c;margin-bottom:4px}
+.notif-text{font-size:11px;color:#92400e;line-height:1.5}
+.peng-card{background:#fff;border-radius:12px;border:1px solid var(--gray-border);padding:14px;margin-bottom:10px}
+.peng-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px}
+.peng-title{font-size:13px;font-weight:600;color:var(--text-dark);margin-bottom:4px}
+.peng-tgl{font-size:10px;color:var(--text-muted);white-space:nowrap;margin-left:8px}
+.peng-isi{font-size:12px;color:var(--text-muted);line-height:1.6}
+.ide-card{background:#fff;border-radius:12px;border:1px solid var(--gray-border);padding:12px;margin-bottom:8px}
+.ide-title{font-size:13px;font-weight:600;color:var(--text-dark);margin-bottom:4px}
+.ide-meta{font-size:11px;color:var(--text-muted)}
+.peraturan-item{background:#fff;border-radius:10px;border-left:3px solid var(--blue);padding:12px 14px;margin-bottom:8px}
+.peraturan-num{font-size:11px;color:var(--blue);font-weight:600;margin-bottom:3px}
+.peraturan-text{font-size:12px;color:var(--text-dark);line-height:1.5}
+.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#1e3a5f;color:#fff;padding:10px 20px;border-radius:20px;font-size:13px;z-index:9998;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1}
+.empty-state{text-align:center;padding:32px 20px;color:var(--text-muted);font-size:13px}
+.empty-icon{font-size:30px;margin-bottom:8px}
+.step-num{width:22px;height:22px;border-radius:50%;color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+/* PHONE PREVIEW */
+.preview-btn{position:fixed;bottom:20px;right:16px;background:var(--blue);color:#fff;border:none;border-radius:20px;padding:8px 16px;font-size:12px;font-weight:600;cursor:pointer;z-index:8888;display:none;align-items:center;gap:6px}
+@media(min-width:600px){.preview-btn{display:flex}}
+.phone-wrap{display:none;position:fixed;inset:0;background:rgba(10,20,40,0.88);z-index:9000;align-items:center;justify-content:center;flex-direction:column}
+.phone-wrap.show{display:flex}
+.phone-frame{width:375px;height:780px;background:#fff;border-radius:44px;border:8px solid #1e293b;overflow:hidden;position:relative;box-shadow:0 0 0 2px #334155,0 24px 60px rgba(0,0,0,0.6)}
+.phone-notch{position:absolute;top:0;left:50%;transform:translateX(-50%);width:120px;height:26px;background:#1e293b;border-radius:0 0 16px 16px;z-index:10;pointer-events:none}
+.phone-frame iframe{width:100%;height:100%;border:none}
+.phone-frame .phone-inner{width:100%;height:100%;overflow-y:auto;overflow-x:hidden;background:#fff}
+.phone-close{margin-top:16px;background:rgba(255,255,255,0.12);border:none;color:#fff;border-radius:20px;padding:8px 20px;font-size:13px;cursor:pointer}
+.phone-hint{color:rgba(255,255,255,0.4);font-size:11px;margin-top:8px}
+/* PHONE MODE */
+body.phone-mode{background:#0f172a;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px 0}
+body.phone-mode #app-wrap{width:375px;height:780px;border-radius:40px;overflow:hidden;box-shadow:0 0 0 8px #1e293b,0 0 0 10px #334155,0 30px 80px rgba(0,0,0,0.6);position:relative;flex-shrink:0}
+body.phone-mode #app-wrap::before{content:'';display:block;height:6px;background:#1e293b;flex-shrink:0}
+body.phone-mode #app-wrap .screen.active{max-height:774px;overflow-y:auto}
+body.phone-mode .preview-btn{position:static;margin-top:14px;border-radius:20px;background:rgba(255,255,255,0.12)}
+</style>
+</head>
+<body>
+<div id="app-wrap">
+<div id="loading">
+  <div class="loading-logo"><span style="font-size:38px;font-weight:700;color:var(--blue)">H</span></div>
+  <div class="loading-title">Hosela Hub</div>
+  <div class="loading-sub">Portal Internal Tim</div>
+  <div class="loading-bar"><div class="loading-progress"></div></div>
+</div>
+<div class="toast" id="toast"></div>
+
+<!-- LOGIN -->
+<div class="screen" id="s-login">
+  <div class="statusbar"></div>
+  <div class="login-top">
+    <div class="login-logo"><span style="font-size:38px;font-weight:700;color:var(--blue)">H</span></div>
+    <div class="login-title">Hosela Hub</div>
+    <div class="login-sub">Portal Internal Tim</div>
+    <div class="gold-bar-center"></div>
+  </div>
+  <div class="login-body">
+    <div class="pin-label">Masukkan PIN kamu</div>
+    <div class="pin-dots">
+      <div class="dot" id="d0"></div><div class="dot" id="d1"></div>
+      <div class="dot" id="d2"></div><div class="dot" id="d3"></div>
+    </div>
+    <div class="keypad">
+      <div class="key" onclick="pinPress('1')">1</div><div class="key" onclick="pinPress('2')">2</div><div class="key" onclick="pinPress('3')">3</div>
+      <div class="key" onclick="pinPress('4')">4</div><div class="key" onclick="pinPress('5')">5</div><div class="key" onclick="pinPress('6')">6</div>
+      <div class="key" onclick="pinPress('7')">7</div><div class="key" onclick="pinPress('8')">8</div><div class="key" onclick="pinPress('9')">9</div>
+      <div class="key key-clear" onclick="clearPin()">Hapus</div>
+      <div class="key" onclick="pinPress('0')">0</div>
+      <div class="key key-del" onclick="delPin()">⌫</div>
+    </div>
+    <div class="pin-error" id="pin-error"></div>
+  </div>
+</div>
+
+<!-- HOME -->
+<div class="screen" id="s-home">
+  <div class="statusbar"></div>
+  <div class="home-hero">
+    <div class="home-greeting">Selamat datang,</div>
+    <div class="home-name" id="home-name">—</div>
+    <div class="ann-banner" onclick="goTo('s-pengumuman')" id="home-ann-banner" style="display:none">
+      <div class="ann-dot"></div>
+      <div class="ann-text" id="home-ann-text"></div>
+      <span style="color:rgba(255,255,255,.6);font-size:16px">›</span>
+    </div>
+  </div>
+  <div class="content">
+    <div class="notif-banner" id="finance-notif" style="display:none">
+      <div class="notif-title">⚠️ Update Data Absensi</div>
+      <div class="notif-text">Data absensi minggu lalu belum diperbarui. Upload file fingerprint sekarang.</div>
+      <button class="btn btn-gold" style="margin-top:10px;padding:8px;font-size:12px" onclick="goTo('s-absensi-upload')">Upload Sekarang</button>
+    </div>
+    <div id="reward-section"></div>
+    <div class="menu-grid" id="home-menu"></div>
+    <div class="card" id="home-kpi" style="display:none">
+      <div class="card-title"><div class="card-dot"></div>KPI Bulan Ini</div>
+      <div id="home-kpi-content"></div>
+    </div>
+  </div>
+  <div class="navbar">
+    <div class="nav-item active" onclick="goTo('s-home')"><div class="nav-icon">🏠</div><div class="nav-label">Beranda</div></div>
+    <div class="nav-item" onclick="goTo('s-jobdesk')"><div class="nav-icon">📋</div><div class="nav-label">Jobdesk</div></div>
+    <div class="nav-item" onclick="goTo('s-pengumuman')"><div class="nav-icon">📢</div><div class="nav-label">Pengumuman</div></div>
+    <div class="nav-item" onclick="goTo('s-ide')"><div class="nav-icon">💡</div><div class="nav-label">Ide Tim</div></div>
+  </div>
+</div>
+
+<!-- JOBDESK LIST -->
+<div class="screen" id="s-jobdesk">
+  <div class="statusbar"></div>
+  <div class="header">
+    <div class="header-row"><button class="back-btn" onclick="goTo('s-home')">‹</button><div><h1>Jobdesk</h1><p>Pilih bagian</p></div></div>
+    <div class="gold-line"></div>
+  </div>
+  <div class="content" id="jobdesk-list"></div>
+  <div class="navbar">
+    <div class="nav-item" onclick="goTo('s-home')"><div class="nav-icon">🏠</div><div class="nav-label">Beranda</div></div>
+    <div class="nav-item active"><div class="nav-icon">📋</div><div class="nav-label" style="color:var(--blue)">Jobdesk</div></div>
+    <div class="nav-item" onclick="goTo('s-pengumuman')"><div class="nav-icon">📢</div><div class="nav-label">Pengumuman</div></div>
+    <div class="nav-item" onclick="goTo('s-ide')"><div class="nav-icon">💡</div><div class="nav-label">Ide Tim</div></div>
+  </div>
+</div>
+
+<!-- STAFF LIST -->
+<div class="screen" id="s-staff">
+  <div class="statusbar"></div>
+  <div class="header">
+    <div class="header-row"><button class="back-btn" onclick="goTo('s-jobdesk')">‹</button><div><h1 id="staff-bagian-title">—</h1><p>Pilih nama kamu</p></div></div>
+    <div class="gold-line"></div>
+  </div>
+  <div class="content" id="staff-list"></div>
+  <div class="navbar">
+    <div class="nav-item" onclick="goTo('s-home')"><div class="nav-icon">🏠</div><div class="nav-label">Beranda</div></div>
+    <div class="nav-item active"><div class="nav-icon">📋</div><div class="nav-label" style="color:var(--blue)">Jobdesk</div></div>
+    <div class="nav-item" onclick="goTo('s-pengumuman')"><div class="nav-icon">📢</div><div class="nav-label">Pengumuman</div></div>
+    <div class="nav-item" onclick="goTo('s-ide')"><div class="nav-icon">💡</div><div class="nav-label">Ide Tim</div></div>
+  </div>
+</div>
+
+<!-- JOBDESK DETAIL -->
+<div class="screen" id="s-detail">
+  <div class="statusbar"></div>
+  <div class="header">
+    <div class="header-row"><button class="back-btn" onclick="goTo('s-staff')">‹</button><div><h1 id="detail-nama">—</h1><p id="detail-jabatan">—</p></div></div>
+    <div style="display:flex;gap:6px;margin-top:8px" id="detail-badges"></div>
+  </div>
+  <div class="content">
+    <div class="card">
+      <div class="card-title"><div class="card-dot"></div>Jobdesk & Tanggung Jawab</div>
+      <div id="detail-jobdesk-content"><div class="empty-state" style="padding:10px"><div style="font-size:12px">Jobdesk belum tersedia.</div></div></div>
+      <a id="detail-doc-link" href="#" target="_blank" style="display:none;margin-top:10px;text-align:center;font-size:12px;color:var(--blue);font-weight:600;padding:8px;border:1px solid var(--blue);border-radius:8px;text-decoration:none">📄 Buka Dokumen Lengkap</a>
+    </div>
+    <div class="card">
+      <div class="card-title"><div class="card-dot"></div>KPI Bulan Ini</div>
+      <div id="detail-kpi-content"><div style="font-size:12px;color:var(--text-muted);text-align:center;padding:8px">Belum ada KPI bulan ini</div></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><div class="card-dot"></div>Rekap Kehadiran (4 Minggu Terakhir)</div>
+      <div id="detail-absensi-content"><div style="font-size:12px;color:var(--text-muted);text-align:center;padding:8px">Belum ada data kehadiran</div></div>
+    </div>
+  </div>
+  <div class="navbar">
+    <div class="nav-item" onclick="goTo('s-home')"><div class="nav-icon">🏠</div><div class="nav-label">Beranda</div></div>
+    <div class="nav-item active"><div class="nav-icon">📋</div><div class="nav-label" style="color:var(--blue)">Jobdesk</div></div>
+    <div class="nav-item" onclick="goTo('s-pengumuman')"><div class="nav-icon">📢</div><div class="nav-label">Pengumuman</div></div>
+    <div class="nav-item" onclick="goTo('s-ide')"><div class="nav-icon">💡</div><div class="nav-label">Ide Tim</div></div>
+  </div>
+</div>
+
+<!-- PENGUMUMAN -->
+<div class="screen" id="s-pengumuman">
+  <div class="statusbar"></div>
+  <div class="header">
+    <div class="header-row"><button class="back-btn" onclick="goTo('s-home')">‹</button><div><h1>Pengumuman</h1><p>Info terbaru dari owner</p></div></div>
+    <div class="gold-line"></div>
+  </div>
+  <div class="content" id="pengumuman-list"><div class="empty-state"><div class="empty-icon">📢</div>Memuat...</div></div>
+  <div class="navbar">
+    <div class="nav-item" onclick="goTo('s-home')"><div class="nav-icon">🏠</div><div class="nav-label">Beranda</div></div>
+    <div class="nav-item" onclick="goTo('s-jobdesk')"><div class="nav-icon">📋</div><div class="nav-label">Jobdesk</div></div>
+    <div class="nav-item active"><div class="nav-icon">📢</div><div class="nav-label" style="color:var(--blue)">Pengumuman</div></div>
+    <div class="nav-item" onclick="goTo('s-ide')"><div class="nav-icon">💡</div><div class="nav-label">Ide Tim</div></div>
+  </div>
+</div>
+
+<!-- BUAT PENGUMUMAN -->
+<div class="screen" id="s-tambah-pengumuman">
+  <div class="statusbar"></div>
+  <div class="header">
+    <div class="header-row"><button class="back-btn" onclick="goTo('s-home')">‹</button><div><h1>Buat Pengumuman</h1><p>Tambah info untuk tim</p></div></div>
+    <div class="gold-line"></div>
+  </div>
+  <div class="content">
+    <div class="card">
+      <div class="form-group"><label class="form-label">Judul</label><input type="text" class="form-input" id="peng-judul" placeholder="Judul pengumuman"></div>
+      <div class="form-group"><label class="form-label">Isi</label><textarea class="form-input" id="peng-isi" placeholder="Isi pengumuman..." style="height:100px"></textarea></div>
+      <div class="form-group"><label class="form-label">Kategori</label>
+        <select class="form-input" id="peng-kategori"><option value="PENTING">PENTING</option><option value="INFO">INFO</option><option value="UMUM">UMUM</option></select>
+      </div>
+      <div class="form-group"><label class="form-label">Ditujukan untuk</label>
+        <select class="form-input" id="peng-target"><option value="ALL">Semua Tim</option><option value="Live">Live Streaming</option><option value="Packing">Packing</option><option value="Ecommerce">E-commerce</option><option value="Finance">Finance</option></select>
+      </div>
+      <button class="btn btn-primary" onclick="submitPengumuman()">Kirim Pengumuman</button>
+    </div>
+  </div>
+</div>
+
+<!-- IDE TIM -->
+<div class="screen" id="s-ide">
+  <div class="statusbar"></div>
+  <div class="header">
+    <div class="header-row"><button class="back-btn" onclick="goTo('s-home')">‹</button><div><h1>Ide Tim</h1><p>Sampaikan ide terbaikmu</p></div></div>
+    <div class="gold-line"></div>
+  </div>
+  <div class="content">
+    <div class="card" style="margin-bottom:12px">
+      <div class="card-title"><div class="card-dot"></div>Tulis Ide Baru</div>
+      <div class="form-group"><label class="form-label">Judul Ide</label><input type="text" class="form-input" id="ide-judul" placeholder="Judul singkat ideamu"></div>
+      <div class="form-group"><label class="form-label">Deskripsi</label><textarea class="form-input" id="ide-deskripsi" placeholder="Jelaskan ideamu..."></textarea></div>
+      <button class="btn btn-primary" onclick="submitIde()">Kirim Ide</button>
+    </div>
+    <div class="section-label">Ide Masuk</div>
+    <div id="ide-list"><div class="empty-state"><div class="empty-icon">💡</div>Memuat...</div></div>
+  </div>
+  <div class="navbar">
+    <div class="nav-item" onclick="goTo('s-home')"><div class="nav-icon">🏠</div><div class="nav-label">Beranda</div></div>
+    <div class="nav-item" onclick="goTo('s-jobdesk')"><div class="nav-icon">📋</div><div class="nav-label">Jobdesk</div></div>
+    <div class="nav-item" onclick="goTo('s-pengumuman')"><div class="nav-icon">📢</div><div class="nav-label">Pengumuman</div></div>
+    <div class="nav-item active"><div class="nav-icon">💡</div><div class="nav-label" style="color:var(--blue)">Ide Tim</div></div>
+  </div>
+</div>
+
+<!-- PERATURAN -->
+<div class="screen" id="s-peraturan">
+  <div class="statusbar"></div>
+  <div class="header">
+    <div class="header-row"><button class="back-btn" onclick="goTo('s-home')">‹</button><div><h1>Peraturan</h1><p>Tata tertib kantor Hosela</p></div></div>
+    <div class="gold-line"></div>
+  </div>
+  <div class="content">
+    <div class="section-label">Jam Kerja</div>
+    <div class="peraturan-item"><div class="peraturan-num">01</div><div class="peraturan-text">Jam masuk 08.00 WIB. Tidak ada toleransi keterlambatan.</div></div>
+    <div class="peraturan-item"><div class="peraturan-num">02</div><div class="peraturan-text">Jam pulang 18.00 WIB. Hari kerja Senin – Sabtu.</div></div>
+    <div class="peraturan-item"><div class="peraturan-num">03</div><div class="peraturan-text">Masuk hari Minggu dihitung lembur dan mendapat tambahan gaji harian.</div></div>
+    <div class="peraturan-item"><div class="peraturan-num">04</div><div class="peraturan-text">Tim Live Streaming: jam masuk fleksibel, wajib 10 jam kerja per hari.</div></div>
+    <div class="section-label" style="margin-top:12px">Kehadiran</div>
+    <div class="peraturan-item"><div class="peraturan-num">05</div><div class="peraturan-text">Absensi wajib menggunakan fingerprint. Lupa tap tidak dianggap hadir.</div></div>
+    <div class="peraturan-item"><div class="peraturan-num">06</div><div class="peraturan-text">Izin tidak masuk wajib disampaikan sebelum jam kerja dimulai.</div></div>
+    <div class="peraturan-item"><div class="peraturan-num">07</div><div class="peraturan-text">3x absen tanpa keterangan dalam satu bulan akan mendapat peringatan tertulis.</div></div>
+    <div class="section-label" style="margin-top:12px">Sikap & Perilaku</div>
+    <div class="peraturan-item"><div class="peraturan-num">08</div><div class="peraturan-text">Jaga kebersihan dan kerapian area kerja masing-masing setiap saat.</div></div>
+    <div class="peraturan-item"><div class="peraturan-num">09</div><div class="peraturan-text">Dilarang menggunakan HP untuk keperluan pribadi saat jam kerja.</div></div>
+    <div class="peraturan-item"><div class="peraturan-num">10</div><div class="peraturan-text">Jaga sikap dan tutur kata kepada sesama rekan kerja maupun pelanggan.</div></div>
+    <div class="section-label" style="margin-top:12px">Lain-lain</div>
+    <div class="peraturan-item"><div class="peraturan-num">11</div><div class="peraturan-text">Ide dan masukan disampaikan melalui fitur Ide Tim di aplikasi ini.</div></div>
+    <div class="peraturan-item"><div class="peraturan-num">12</div><div class="peraturan-text">Pelanggaran berulang diproses sesuai kebijakan perusahaan.</div></div>
+  </div>
+</div>
+
+<!-- KALENDER LIBUR -->
+<div class="screen" id="s-kalender">
+  <div class="statusbar"></div>
+  <div class="header">
+    <div class="header-row"><button class="back-btn" onclick="goTo('s-home')">‹</button><div><h1>Kalender Libur</h1><p>Kelola hari libur difasilitasi</p></div></div>
+    <div class="gold-line"></div>
+  </div>
+  <div class="content">
+    <div class="card" style="margin-bottom:12px">
+      <div class="card-title"><div class="card-dot"></div>Tambah Hari Libur</div>
+      <div class="form-group"><label class="form-label">Tanggal</label><input type="date" class="form-input" id="libur-tgl"></div>
+      <div class="form-group"><label class="form-label">Nama Hari Libur</label><input type="text" class="form-input" id="libur-nama" placeholder="Contoh: Idul Fitri H-1"></div>
+      <button class="btn btn-primary" onclick="submitLibur()">Tambah</button>
+    </div>
+    <div class="section-label">Daftar Hari Libur Difasilitasi</div>
+    <div id="kalender-list"><div class="empty-state"><div class="empty-icon">🗓️</div>Memuat...</div></div>
+  </div>
+</div>
+
+<!-- KELOLA KARYAWAN -->
+<div class="screen" id="s-manage-users">
+  <div class="statusbar"></div>
+  <div class="header">
+    <div class="header-row"><button class="back-btn" onclick="goTo('s-home')">‹</button><div><h1>Kelola Karyawan</h1><p>Aktif / Nonaktif akses</p></div></div>
+    <div class="gold-line"></div>
+  </div>
+  <div class="content" id="users-list"><div class="empty-state"><div class="empty-icon">👥</div>Memuat...</div></div>
+</div>
+
+<!-- ABSENSI UPLOAD (Finance) -->
+<div class="screen" id="s-absensi-upload">
+  <div class="statusbar"></div>
+  <div class="header">
+    <div class="header-row"><button class="back-btn" onclick="goTo('s-home')">‹</button><div><h1>Upload Absensi</h1><p>Data fingerprint mingguan</p></div></div>
+    <div class="gold-line"></div>
+  </div>
+  <div class="content">
+    <div class="card" style="margin-bottom:12px">
+      <div class="card-title"><div class="card-dot"></div>Cara Upload Data</div>
+      <div style="display:flex;gap:10px;margin-bottom:10px;align-items:flex-start">
+        <div class="step-num" style="background:var(--blue)">1</div>
+        <div style="font-size:12px;color:var(--text-dark);line-height:1.5">Export file Excel dari mesin fingerprint seperti biasa</div>
+      </div>
+      <div style="display:flex;gap:10px;margin-bottom:10px;align-items:flex-start">
+        <div class="step-num" style="background:var(--blue)">2</div>
+        <div style="font-size:12px;color:var(--text-dark);line-height:1.5">Buka file Excel di komputer</div>
+      </div>
+      <div style="display:flex;gap:10px;margin-bottom:10px;align-items:flex-start">
+        <div class="step-num" style="background:var(--blue)">3</div>
+        <div style="font-size:12px;color:var(--text-dark);line-height:1.5">Pilih semua <b>(Ctrl+A)</b> → Salin <b>(Ctrl+C)</b></div>
+      </div>
+      <div style="display:flex;gap:10px;margin-bottom:10px;align-items:flex-start">
+        <div class="step-num" style="background:var(--blue)">4</div>
+        <div style="font-size:12px;color:var(--text-dark);line-height:1.5">Buka Google Sheets <b>Hosela Hub — Database</b> → tab <b>ABSENSI_UPLOAD</b></div>
+      </div>
+      <div style="display:flex;gap:10px;margin-bottom:10px;align-items:flex-start">
+        <div class="step-num" style="background:var(--blue)">5</div>
+        <div style="font-size:12px;color:var(--text-dark);line-height:1.5">Klik cell <b>A1</b> → Tempel <b>(Ctrl+V)</b></div>
+      </div>
+      <div style="display:flex;gap:10px;align-items:flex-start">
+        <div class="step-num" style="background:var(--gold)">6</div>
+        <div style="font-size:12px;color:var(--text-dark);line-height:1.5">Kembali ke sini dan klik <b>Proses Data</b> di bawah</div>
+      </div>
+    </div>
+    <div id="upload-result" style="display:none;border-radius:10px;padding:12px;margin-bottom:10px;border:1px solid">
+      <div style="font-size:13px;font-weight:600;margin-bottom:4px" id="upload-result-title"></div>
+      <div style="font-size:11px;line-height:1.5" id="upload-result-msg"></div>
+    </div>
+    <button class="btn btn-primary" id="proses-btn" onclick="prosesAbsensi()">Proses Data Absensi</button>
+    <div style="margin-top:10px;padding:10px;background:var(--blue-light);border-radius:8px">
+      <div style="font-size:11px;color:#1d4ed8;line-height:1.6">⚡ Sistem otomatis menghitung kehadiran, keterlambatan, absen, dan lembur. Sheet ABSENSI_UPLOAD akan dikosongkan setelah selesai.</div>
+    </div>
+  </div>
+</div>
+
+<!-- LAPORAN ABSENSI (Owner) -->
+<div class="screen" id="s-laporan-absensi">
+  <div class="statusbar"></div>
+  <div class="header">
+    <div class="header-row"><button class="back-btn" onclick="goTo('s-home')">‹</button><div><h1>Laporan Absensi</h1><p id="laporan-minggu-label">Minggu terbaru</p></div></div>
+    <div class="gold-line"></div>
+  </div>
+  <div class="content" id="laporan-list"><div class="empty-state"><div class="empty-icon">📊</div>Memuat...</div></div>
+</div>
+
+<script>
+var currentUser = null;
+var currentBagian = null;
+var pinBuffer = '';
+var AVT_BG = ['#dbeafe','#d1fae5','#fef3c7','#ede9fe','#fce7f3','#fee2e2'];
+var AVT_TXT = ['#1d4ed8','#065f46','#92400e','#5b21b6','#9d174d','#991b1b'];
+
+function goTo(id) {
+  document.querySelectorAll('.screen').forEach(function(s){ s.classList.remove('active'); });
+  var el = document.getElementById(id);
+  if (!el) return;
+  el.classList.add('active');
+  var c = el.querySelector('.content');
+  if (c) c.scrollTop = 0;
+  if (id === 's-pengumuman') loadPengumuman();
+  if (id === 's-ide') loadIde();
+  if (id === 's-jobdesk') loadJobdeskList();
+  if (id === 's-kalender') loadKalender();
+  if (id === 's-manage-users') loadUsers();
+  if (id === 's-laporan-absensi') loadLaporanAbsensi();
+}
+
+function pinPress(n) {
+  if (pinBuffer.length >= 4) return;
+  pinBuffer += n;
+  updateDots();
+  document.getElementById('pin-error').textContent = '';
+  if (pinBuffer.length === 4) setTimeout(doLogin, 200);
+}
+function delPin() { pinBuffer = pinBuffer.slice(0,-1); updateDots(); }
+function clearPin() { pinBuffer = ''; updateDots(); document.getElementById('pin-error').textContent = ''; }
+function updateDots() {
+  for (var i = 0; i < 4; i++)
+    document.getElementById('d'+i).classList.toggle('filled', i < pinBuffer.length);
+}
+function doLogin() {
+  google.script.run
+    .withSuccessHandler(function(r) {
+      if (r.success) {
+        currentUser = r.user; pinBuffer = ''; updateDots();
+        loadHome(); goTo('s-home');
+      } else {
+        document.getElementById('pin-error').textContent = 'PIN salah. Coba lagi.';
+        pinBuffer = ''; updateDots();
+      }
+    })
+    .withFailureHandler(function() {
+      document.getElementById('pin-error').textContent = 'Koneksi gagal. Coba lagi.';
+      pinBuffer = ''; updateDots();
+    })
+    .validatePIN(pinBuffer);
+}
+
+function loadHome() {
+  var u = currentUser;
+  document.getElementById('home-name').textContent = u.nama + ' 👋';
+  var menus = [
+    {id:'s-jobdesk', icon:'📋', bg:'#dbeafe', label:'Jobdesk', sub:'Tugas & tanggung jawab'},
+    {id:'s-pengumuman', icon:'📢', bg:'#fef3c7', label:'Pengumuman', sub:'Info dari owner'},
+    {id:'s-ide', icon:'💡', bg:'#d1fae5', label:'Ide Tim', sub:'Sampaikan idemu'},
+    {id:'s-peraturan', icon:'📜', bg:'#ede9fe', label:'Peraturan', sub:'Tata tertib kantor'},
+  ];
+  if (u.bagian === 'Owner' || u.bagian === 'Finance')
+    menus.push({id:'s-kalender', icon:'🗓️', bg:'#fee2e2', label:'Kalender Libur', sub:'Atur hari libur'});
+  if (u.bagian === 'Finance')
+    menus.push({id:'s-absensi-upload', icon:'📤', bg:'#e0f2fe', label:'Upload Absensi', sub:'Data fingerprint'});
+  if (u.bagian === 'Owner') {
+    menus.push({id:'s-tambah-pengumuman', icon:'✏️', bg:'#f0fdf4', label:'Buat Pengumuman', sub:'Info baru'});
+    menus.push({id:'s-manage-users', icon:'👥', bg:'#fef3c7', label:'Kelola Tim', sub:'Aktif / Nonaktif'});
+    menus.push({id:'s-laporan-absensi', icon:'📊', bg:'#e0f2fe', label:'Laporan Absensi', sub:'Rekap kehadiran'});
+  }
+  var prevBtn = document.querySelector('.preview-btn');
+  if (prevBtn) prevBtn.style.display = (u.bagian === 'Owner' || u.bagian === 'Finance') ? 'flex' : 'none';
+  document.getElementById('home-menu').innerHTML = menus.map(function(m) {
+    return '<div class="menu-card" onclick="goTo(\''+m.id+'\')"><div class="menu-icon" style="background:'+m.bg+'">'+m.icon+'</div><h3>'+m.label+'</h3><p>'+m.sub+'</p></div>';
+  }).join('');
+
+  google.script.run
+    .withSuccessHandler(function(d) {
+      if (d.pengumuman && d.pengumuman.length > 0) {
+        document.getElementById('home-ann-text').textContent = '📢 ' + d.pengumuman[0].judul;
+        document.getElementById('home-ann-banner').style.display = 'flex';
+      }
+      if (d.reward) {
+        var r = d.reward;
+        var ini = initials(r.nama);
+        document.getElementById('reward-section').innerHTML =
+          '<div class="reward-card"><div class="reward-label">⭐ Bintang Bulan Ini · '+r.bulan+'</div>'+
+          '<div class="reward-avatar-big">'+ini+'</div>'+
+          '<div class="reward-name">'+r.nama+'</div><div class="reward-sub">'+r.bagian+'</div>'+
+          '<div class="reward-alasan">"'+r.alasan+'"</div><div class="reward-pesan">💪 '+r.pesan+'</div></div>';
+      }
+      if (d.needsAbsensiUpdate) document.getElementById('finance-notif').style.display = 'block';
+      if (d.kpi && d.kpi.length > 0) {
+        document.getElementById('home-kpi').style.display = 'block';
+        document.getElementById('home-kpi-content').innerHTML = d.kpi.slice(0,3).map(kpiRow).join('');
+      }
+    })
+    .withFailureHandler(function(){})
+    .getHomeData(u.id, u.bagian);
+}
+
+function kpiRow(k) {
+  var cls = k.status==='TERCAPAI'?'kpi-ok':k.status==='PERLU PERHATIAN'?'kpi-warn':'kpi-bad';
+  var icon = k.status==='TERCAPAI'?'✔':k.status==='PERLU PERHATIAN'?'⚠':'✖';
+  var lbl = k.status==='TERCAPAI'?'Tercapai':k.status==='PERLU PERHATIAN'?'Perlu Perhatian':'Tidak Tercapai';
+  return '<div class="kpi-row"><div class="kpi-label">'+k.indikator+'</div><div class="kpi-val '+cls+'">'+icon+' '+lbl+'</div></div>';
+}
+
+function loadJobdeskList() {
+  var list = document.getElementById('jobdesk-list');
+  list.innerHTML = '<div class="empty-state"><div class="empty-icon">📋</div>Memuat...</div>';
+  google.script.run
+    .withSuccessHandler(function(data) {
+      if (!data || !data.length) { list.innerHTML = '<div class="empty-state">Tidak ada data bagian</div>'; return; }
+      var icons = {Live:'🎥', Packing:'📦', Ecommerce:'🛒', Finance:'💰'};
+      var colors = {Live:'#dbeafe', Packing:'#fce7f3', Ecommerce:'#d1fae5', Finance:'#fef3c7'};
+      list.innerHTML = '<div class="section-label">Pilih Bagian</div>' + data.map(function(b) {
+        return '<div class="list-item" onclick="openBagian(\''+b.bagian+'\')">'+
+          '<div class="list-icon" style="background:'+(colors[b.bagian]||'#f3f4f6')+'">'+(icons[b.bagian]||'🏢')+'</div>'+
+          '<div class="list-info"><h4>'+b.bagian+'</h4><p>'+b.count+' anggota aktif</p></div>'+
+          '<div class="list-arr">›</div></div>';
+      }).join('');
+    })
+    .withFailureHandler(function(){ list.innerHTML = '<div class="empty-state">Gagal memuat</div>'; })
+    .getJobdeskList();
+}
+
+function openBagian(bagian) {
+  currentBagian = bagian;
+  document.getElementById('staff-bagian-title').textContent = bagian;
+  var list = document.getElementById('staff-list');
+  list.innerHTML = '<div class="empty-state"><div class="empty-icon">👤</div>Memuat...</div>';
+  goTo('s-staff');
+  google.script.run
+    .withSuccessHandler(function(staff) {
+      if (!staff || !staff.length) { list.innerHTML = '<div class="empty-state">Tidak ada anggota aktif</div>'; return; }
+      list.innerHTML = '<div class="section-label">Anggota Tim</div>' + staff.map(function(s,i) {
+        var ci = i % AVT_BG.length;
+        return '<div class="list-item" onclick="openDetail(\''+s.id+'\',\''+esc(s.nama)+'\',\''+esc(s.jabatan)+'\',\''+bagian+'\')">'+
+          '<div class="avatar" style="background:'+AVT_BG[ci]+';color:'+AVT_TXT[ci]+'">'+initials(s.nama)+'</div>'+
+          '<div class="list-info"><h4>'+s.nama+'</h4><p>'+s.jabatan+' · Aktif</p></div>'+
+          '<div class="list-arr">›</div></div>';
+      }).join('');
+    })
+    .withFailureHandler(function(){ list.innerHTML = '<div class="empty-state">Gagal memuat</div>'; })
+    .getStaffByBagian(bagian);
+}
+
+function openDetail(userId, nama, jabatan, bagian) {
+  document.getElementById('detail-nama').textContent = nama;
+  document.getElementById('detail-jabatan').textContent = jabatan;
+  document.getElementById('detail-badges').innerHTML = '<span class="badge badge-blue">Aktif</span> <span class="badge badge-gold">'+bagian+'</span>';
+  document.getElementById('detail-kpi-content').innerHTML = '<div style="font-size:12px;color:var(--text-muted);text-align:center;padding:8px">Memuat...</div>';
+  document.getElementById('detail-absensi-content').innerHTML = '<div style="font-size:12px;color:var(--text-muted);text-align:center;padding:8px">Memuat...</div>';
+  document.getElementById('detail-jobdesk-content').innerHTML = '<div style="font-size:12px;color:var(--text-muted);text-align:center;padding:8px">Memuat...</div>';
+  document.getElementById('detail-doc-link').style.display = 'none';
+  goTo('s-detail');
+
+  google.script.run.withSuccessHandler(function(r) {
+    var el = document.getElementById('detail-kpi-content');
+    el.innerHTML = r.kpi && r.kpi.length ? r.kpi.map(kpiRow).join('') : '<div style="font-size:12px;color:var(--text-muted);text-align:center;padding:8px">Belum ada KPI bulan ini</div>';
+  }).withFailureHandler(function(){}).getUserKPI(userId);
+
+  google.script.run.withSuccessHandler(function(jd) {
+    var el = document.getElementById('detail-jobdesk-content');
+    if (jd && jd.link) {
+      el.innerHTML = '<div style="font-size:12px;color:var(--text-muted);text-align:center;padding:8px">Klik tombol di bawah untuk buka jobdesk lengkap</div>';
+      var link = document.getElementById('detail-doc-link');
+      link.href = jd.link; link.style.display = 'block';
+    } else {
+      el.innerHTML = '<div class="empty-state" style="padding:10px"><div style="font-size:12px">Jobdesk belum ditambahkan.</div></div>';
+    }
+  }).withFailureHandler(function(){}).getJobdeskByBagian(bagian);
+
+  google.script.run.withSuccessHandler(function(rekap) {
+    var el = document.getElementById('detail-absensi-content');
+    if (!rekap || !rekap.length) { el.innerHTML = '<div style="font-size:12px;color:var(--text-muted);text-align:center;padding:8px">Belum ada data kehadiran</div>'; return; }
+    var stCls = {BAIK:'kpi-ok', KUNING:'kpi-warn', ORANGE:'kpi-warn', MERAH:'kpi-bad'};
+    el.innerHTML = rekap.map(function(r) {
+      var lembur = (r.lemburMinggu > 0 ? ' · Lembur Minggu '+r.lemburMinggu+'x' : '') + (r.lemburLibur > 0 ? ' · Lembur Libur '+r.lemburLibur+'x' : '');
+      return '<div class="kpi-row"><div class="kpi-label">'+r.minggu+'</div>'+
+        '<div class="kpi-val '+(stCls[r.status]||'')+'">Hadir '+r.hadir+'h · Telat '+r.telat+'x · Absen '+r.absen+'x'+lembur+'</div></div>';
+    }).join('');
+  }).withFailureHandler(function(){}).getAbsensiRekap(userId);
+}
+
+function loadPengumuman() {
+  var list = document.getElementById('pengumuman-list');
+  list.innerHTML = '<div class="empty-state"><div class="empty-icon">📢</div>Memuat...</div>';
+  google.script.run
+    .withSuccessHandler(function(data) {
+      if (!data || !data.length) { list.innerHTML = '<div class="empty-state"><div class="empty-icon">📢</div>Belum ada pengumuman</div>'; return; }
+      var bdg = {PENTING:'badge-red', INFO:'badge-blue', UMUM:'badge-green'};
+      list.innerHTML = '<div class="section-label">Terbaru</div>' + data.map(function(p) {
+        return '<div class="peng-card"><div class="peng-header"><span class="badge '+(bdg[p.kategori]||'badge-gray')+'">'+p.kategori+'</span><span class="peng-tgl">'+p.tgl+'</span></div>'+
+          '<div class="peng-title">'+p.judul+'</div><div class="peng-isi">'+p.isi+'</div></div>';
+      }).join('');
+    })
+    .withFailureHandler(function(){ list.innerHTML = '<div class="empty-state">Gagal memuat</div>'; })
+    .getPengumuman(currentUser ? currentUser.bagian : 'ALL');
+}
+
+function submitPengumuman() {
+  var judul = document.getElementById('peng-judul').value.trim();
+  var isi = document.getElementById('peng-isi').value.trim();
+  var kategori = document.getElementById('peng-kategori').value;
+  var target = document.getElementById('peng-target').value;
+  if (!judul || !isi) { showToast('Judul dan isi wajib diisi'); return; }
+  google.script.run
+    .withSuccessHandler(function() {
+      document.getElementById('peng-judul').value = '';
+      document.getElementById('peng-isi').value = '';
+      showToast('Pengumuman berhasil dikirim!');
+      goTo('s-pengumuman');
+    })
+    .withFailureHandler(function(){ showToast('Gagal. Coba lagi.'); })
+    .addPengumuman(judul, isi, kategori, target, currentUser.nama);
+}
+
+function loadIde() {
+  var list = document.getElementById('ide-list');
+  google.script.run
+    .withSuccessHandler(function(data) {
+      if (!data || !data.length) { list.innerHTML = '<div class="empty-state"><div class="empty-icon">💡</div>Belum ada ide masuk</div>'; return; }
+      var stMap = {BARU:['badge-blue','Baru'], DITINJAU:['badge-gold','Ditinjau'], DITERIMA:['badge-green','Diterima'], DITOLAK:['badge-red','Ditolak']};
+      list.innerHTML = data.map(function(ide) {
+        var sm = stMap[ide.status] || ['badge-gray', ide.status];
+        return '<div class="ide-card">'+
+          '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">'+
+          '<div class="ide-title" style="flex:1;margin-right:8px">'+ide.judul+'</div>'+
+          '<span class="badge '+sm[0]+'">'+sm[1]+'</span></div>'+
+          '<div class="ide-meta">'+ide.nama+' · '+ide.bagian+' · '+ide.tgl+'</div>'+
+          (ide.feedback ? '<div style="font-size:11px;color:var(--blue);margin-top:6px;font-style:italic">💬 '+ide.feedback+'</div>' : '')+
+          '</div>';
+      }).join('');
+    })
+    .withFailureHandler(function(){})
+    .getIde();
+}
+
+function submitIde() {
+  var judul = document.getElementById('ide-judul').value.trim();
+  var desk = document.getElementById('ide-deskripsi').value.trim();
+  if (!judul || !desk) { showToast('Judul dan deskripsi wajib diisi'); return; }
+  google.script.run
+    .withSuccessHandler(function() {
+      document.getElementById('ide-judul').value = '';
+      document.getElementById('ide-deskripsi').value = '';
+      showToast('Ide berhasil dikirim!');
+      loadIde();
+    })
+    .withFailureHandler(function(){ showToast('Gagal. Coba lagi.'); })
+    .addIde(currentUser.id, currentUser.nama, judul, desk);
+}
+
+function loadKalender() {
+  var list = document.getElementById('kalender-list');
+  google.script.run
+    .withSuccessHandler(function(data) {
+      if (!data || !data.length) { list.innerHTML = '<div class="empty-state"><div class="empty-icon">🗓️</div>Belum ada hari libur</div>'; return; }
+      list.innerHTML = data.map(function(l) {
+        return '<div class="list-item" style="cursor:default">'+
+          '<div class="list-icon" style="background:#fee2e2">📅</div>'+
+          '<div class="list-info"><h4>'+l.nama+'</h4><p>'+l.tanggal+'</p></div>'+
+          '<span class="badge badge-red">Difasilitasi</span></div>';
+      }).join('');
+    })
+    .withFailureHandler(function(){})
+    .getKalenderLibur();
+}
+
+function submitLibur() {
+  var tgl = document.getElementById('libur-tgl').value;
+  var nama = document.getElementById('libur-nama').value.trim();
+  if (!tgl || !nama) { showToast('Tanggal dan nama wajib diisi'); return; }
+  google.script.run
+    .withSuccessHandler(function() {
+      document.getElementById('libur-tgl').value = '';
+      document.getElementById('libur-nama').value = '';
+      showToast('Hari libur berhasil ditambahkan!');
+      loadKalender();
+    })
+    .withFailureHandler(function(){ showToast('Gagal. Coba lagi.'); })
+    .addLibur(tgl, nama, currentUser.nama);
+}
+
+function loadUsers() {
+  var list = document.getElementById('users-list');
+  list.innerHTML = '<div class="empty-state"><div class="empty-icon">👥</div>Memuat...</div>';
+  google.script.run
+    .withSuccessHandler(function(data) {
+      if (!data || !data.length) { list.innerHTML = '<div class="empty-state">Tidak ada data</div>'; return; }
+      var aktif = data.filter(function(u){ return u.status === 'AKTIF'; });
+      var nonaktif = data.filter(function(u){ return u.status !== 'AKTIF'; });
+      list.innerHTML =
+        (aktif.length ? '<div class="section-label">Aktif</div>' + aktif.map(userCard).join('') : '') +
+        (nonaktif.length ? '<div class="section-label" style="margin-top:12px">Nonaktif</div>' + nonaktif.map(userCard).join('') : '');
+    })
+    .withFailureHandler(function(){ list.innerHTML = '<div class="empty-state">Gagal memuat</div>'; })
+    .getAllUsers();
+}
+
+function userCard(u, i) {
+  var ci = (i||0) % AVT_BG.length;
+  var aksi = u.status === 'AKTIF'
+    ? '<button class="btn btn-danger btn-sm" onclick="tendang(\''+u.id+'\',\''+esc(u.nama)+'\')">Nonaktifkan</button>'
+    : '<span class="badge badge-gray">Nonaktif</span>';
+  return '<div class="list-item" style="cursor:default">'+
+    '<div class="avatar" style="background:'+AVT_BG[ci]+';color:'+AVT_TXT[ci]+'">'+initials(u.nama)+'</div>'+
+    '<div class="list-info"><h4>'+u.nama+'</h4><p>'+u.jabatan+' · '+u.bagian+'</p></div>'+
+    aksi+'</div>';
+}
+
+function tendang(userId, nama) {
+  if (!confirm('Nonaktifkan akses '+nama+'?\nMereka tidak bisa login lagi.')) return;
+  google.script.run
+    .withSuccessHandler(function(){ showToast(nama+' berhasil dinonaktifkan'); loadUsers(); })
+    .withFailureHandler(function(){ showToast('Gagal. Coba lagi.'); })
+    .nonaktifkanUser(userId);
+}
+
+function prosesAbsensi() {
+  var btn = document.getElementById('proses-btn');
+  var resultEl = document.getElementById('upload-result');
+  var titleEl = document.getElementById('upload-result-title');
+  var msgEl = document.getElementById('upload-result-msg');
+  btn.textContent = 'Memproses... Harap tunggu';
+  btn.disabled = true;
+  resultEl.style.display = 'none';
+  google.script.run
+    .withSuccessHandler(function(r) {
+      btn.textContent = 'Proses Data Absensi';
+      btn.disabled = false;
+      resultEl.style.display = 'block';
+      if (r.success) {
+        resultEl.style.cssText = 'display:block;background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:12px;margin-bottom:10px';
+        titleEl.style.color = '#166534'; titleEl.textContent = '✅ Berhasil!';
+        msgEl.style.color = '#166534'; msgEl.textContent = r.msg;
+        document.getElementById('finance-notif').style.display = 'none';
+      } else {
+        resultEl.style.cssText = 'display:block;background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:12px;margin-bottom:10px';
+        titleEl.style.color = '#c2410c'; titleEl.textContent = '⚠️ Gagal';
+        msgEl.style.color = '#92400e'; msgEl.textContent = r.msg;
+      }
+    })
+    .withFailureHandler(function() {
+      btn.textContent = 'Proses Data Absensi';
+      btn.disabled = false;
+      resultEl.style.cssText = 'display:block;background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:12px;margin-bottom:10px';
+      document.getElementById('upload-result-title').textContent = '❌ Error';
+      document.getElementById('upload-result-msg').textContent = 'Koneksi gagal. Coba lagi.';
+    })
+    .processAbsensiUpload();
+}
+
+function loadLaporanAbsensi() {
+  var list = document.getElementById('laporan-list');
+  list.innerHTML = '<div class="empty-state"><div class="empty-icon">📊</div>Memuat...</div>';
+  google.script.run
+    .withSuccessHandler(function(result) {
+      if (!result.data || !result.data.length) {
+        list.innerHTML = '<div class="empty-state"><div class="empty-icon">📊</div>Belum ada data absensi</div>'; return;
+      }
+      document.getElementById('laporan-minggu-label').textContent = 'Minggu ' + result.minggu;
+      var stCls = {BAIK:'badge-green', KUNING:'badge-gold', ORANGE:'badge-orange', MERAH:'badge-red'};
+      var grouped = {};
+      result.data.forEach(function(d){ if (!grouped[d.bagian]) grouped[d.bagian] = []; grouped[d.bagian].push(d); });
+      var html = '';
+      Object.keys(grouped).forEach(function(bag) {
+        html += '<div class="section-label">'+bag+'</div>';
+        grouped[bag].forEach(function(d) {
+          var lembur = (d.lemburMinggu > 0 ? ' · Lembur Minggu '+d.lemburMinggu+'x' : '') + (d.lemburLibur > 0 ? ' · Lembur Libur '+d.lemburLibur+'x' : '');
+          html += '<div class="card" style="margin-bottom:8px;padding:12px">'+
+            '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">'+
+            '<div style="font-size:13px;font-weight:600;color:var(--text-dark)">'+d.nama+'</div>'+
+            '<span class="badge '+(stCls[d.status]||'badge-gray')+'">'+d.status+'</span></div>'+
+            '<div style="font-size:11px;color:var(--text-muted)">Hadir '+d.hadir+'h · Telat '+d.telat+'x · Absen '+d.absen+'x'+lembur+'</div></div>';
+        });
+      });
+      list.innerHTML = html;
+    })
+    .withFailureHandler(function(){ list.innerHTML = '<div class="empty-state">Gagal memuat laporan</div>'; })
+    .getAllAbsensiRekap();
+}
+
+function initials(nama) { return (nama||'').split(' ').map(function(w){return w[0];}).join('').substring(0,2).toUpperCase(); }
+function esc(s) { return (s||'').replace(/'/g,"\\'"); }
+function showToast(msg) {
+  var t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(function(){ t.classList.remove('show'); }, 2500);
+}
+
+window.onload = function() {
+  setTimeout(function() {
+    document.getElementById('loading').style.display = 'none';
+    goTo('s-login');
+  }, 1800);
+};
+</script>
+</div><!-- /app-wrap -->
+
+<!-- PHONE PREVIEW -->
+<button class="preview-btn" onclick="togglePreview()">📱 Preview HP</button>
+
+<script>
+function togglePreview() {
+  var isPhone = document.body.classList.toggle('phone-mode');
+  var btn = document.querySelector('.preview-btn');
+  if (isPhone) {
+    btn.innerHTML = '🖥️ Keluar Preview';
+    window.scrollTo(0,0);
+  } else {
+    btn.innerHTML = '📱 Preview HP';
+  }
+}
+</script>
+</body>
+</html>
