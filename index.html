@@ -558,7 +558,6 @@ function loadHome() {
         document.getElementById('home-kpi').style.display = 'block';
         document.getElementById('home-kpi-content').innerHTML = d.kpi.slice(0,3).map(kpiRow).join('');
       }
-    })
   }, function(){});
 }
 
@@ -582,7 +581,6 @@ function loadJobdeskList() {
           '<div class="list-info"><h4>'+b.bagian+'</h4><p>'+b.count+' anggota aktif</p></div>'+
           '<div class="list-arr">›</div></div>';
       }).join('');
-    })
   }, function(){ list.innerHTML = '<div class="empty-state">Gagal memuat</div>'; });
 }
 
@@ -601,7 +599,6 @@ function openBagian(bagian) {
           '<div class="list-info"><h4>'+s.nama+'</h4><p>'+s.jabatan+' · Aktif</p></div>'+
           '<div class="list-arr">›</div></div>';
       }).join('');
-    })
   }, function(){ list.innerHTML = '<div class="empty-state">Gagal memuat</div>'; });
 }
 
@@ -653,7 +650,6 @@ function loadPengumuman() {
         return '<div class="peng-card"><div class="peng-header"><span class="badge '+(bdg[p.kategori]||'badge-gray')+'">'+p.kategori+'</span><span class="peng-tgl">'+p.tgl+'</span></div>'+
           '<div class="peng-title">'+p.judul+'</div><div class="peng-isi">'+p.isi+'</div></div>';
       }).join('');
-    })
   }, function(){ list.innerHTML = '<div class="empty-state">Gagal memuat</div>'; });
 }
 
@@ -686,7 +682,6 @@ function loadIde() {
           (ide.feedback ? '<div style="font-size:11px;color:var(--blue);margin-top:6px;font-style:italic">💬 '+ide.feedback+'</div>' : '')+
           '</div>';
       }).join('');
-    })
   }, function(){});
 }
 
@@ -712,7 +707,6 @@ function loadKalender() {
           '<div class="list-info"><h4>'+l.nama+'</h4><p>'+l.tanggal+'</p></div>'+
           '<span class="badge badge-red">Difasilitasi</span></div>';
       }).join('');
-    })
   }, function(){});
 }
 
@@ -738,7 +732,6 @@ function loadUsers() {
       list.innerHTML =
         (aktif.length ? '<div class="section-label">Aktif</div>' + aktif.map(userCard).join('') : '') +
         (nonaktif.length ? '<div class="section-label" style="margin-top:12px">Nonaktif</div>' + nonaktif.map(userCard).join('') : '');
-    })
   }, function(){ list.innerHTML = '<div class="empty-state">Gagal memuat</div>'; });
 }
 
@@ -781,7 +774,6 @@ function prosesAbsensi() {
         titleEl.style.color = '#c2410c'; titleEl.textContent = '⚠️ Gagal';
         msgEl.style.color = '#92400e'; msgEl.textContent = r.msg;
       }
-    })
   }, function() {
       btn.textContent = 'Proses Data Absensi';
       btn.disabled = false;
@@ -815,7 +807,6 @@ function loadLaporanAbsensi() {
         });
       });
       list.innerHTML = html;
-    })
   }, function(){ list.innerHTML = '<div class="empty-state">Gagal memuat laporan</div>'; });
 }
 
