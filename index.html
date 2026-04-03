@@ -463,13 +463,11 @@ var AVT_BG = ['#dbeafe','#d1fae5','#fef3c7','#ede9fe','#fce7f3','#fee2e2'];
 var AVT_TXT = ['#1d4ed8','#065f46','#92400e','#5b21b6','#9d174d','#991b1b'];
 
 function gasCall(action, args, success, failure) {
-  fetch(GAS_URL, {
-    method: 'POST',
-    body: JSON.stringify({ action: action, args: args || [] })
-  })
-  .then(function(r) { return r.json(); })
-  .then(success || function(){})
-  .catch(failure || function(e){ console.error('GAS Error:', e); });
+  var url = GAS_URL + '?action=' + encodeURIComponent(action) + '&args=' + encodeURIComponent(JSON.stringify(args || []));
+  fetch(url, { method: 'GET', redirect: 'follow' })
+    .then(function(r) { return r.json(); })
+    .then(success || function(){})
+    .catch(failure || function(e){ console.error('GAS Error:', e); });
 }
 
 function goTo(id) {
