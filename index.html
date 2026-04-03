@@ -463,9 +463,11 @@ var AVT_BG = ['#dbeafe','#d1fae5','#fef3c7','#ede9fe','#fce7f3','#fee2e2'];
 var AVT_TXT = ['#1d4ed8','#065f46','#92400e','#5b21b6','#9d174d','#991b1b'];
 
 function gasCall(action, args, success, failure) {
-  var url = GAS_URL + '?action=' + encodeURIComponent(action) + '&args=' + encodeURIComponent(JSON.stringify(args || []));
-  fetch(url, { method: 'GET', redirect: 'follow', mode: 'cors', credentials: 'omit' })
+  var gasUrl = GAS_URL + '?action=' + encodeURIComponent(action) + '&args=' + encodeURIComponent(JSON.stringify(args || []));
+  var proxyUrl = 'https://api.allorigins.win/get?url=' + encodeURIComponent(gasUrl);
+  fetch(proxyUrl)
     .then(function(r) { return r.json(); })
+    .then(function(proxy) { return JSON.parse(proxy.contents); })
     .then(success || function(){})
     .catch(failure || function(e){ console.error('GAS Error:', e); });
 }
