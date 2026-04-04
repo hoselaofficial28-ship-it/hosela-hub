@@ -555,7 +555,7 @@ function cacheClear(key) {
 }
 
 // Actions yang boleh di-cache (read-only)
-var CACHEABLE = ['getJobdeskList','getStaffByBagian','getJobdeskByBagian','getUserKPI','getKalenderLibur','getAllUsers'];
+var CACHEABLE = ['getJobdeskList','getStaffByBagian','getJobdeskByBagian','getJobdeskByJabatan','getUserKPI','getKalenderLibur','getAllUsers'];
 
 function gasCall(action, args, success, failure) {
   var cacheKey = action + JSON.stringify(args || []);
@@ -607,6 +607,7 @@ function goTo(id) {
   if (id === 's-peraturan') loadPeraturan();
   if (id === 's-kpi-check') loadKPICheck();
   if (id === 's-papan-peringkat') loadPapanPeringkat();
+  if (id === 's-notifikasi') loadNotifikasi();
   if (id === 's-izin') loadIzin();
   if (id === 's-kelola-izin') loadKelolaIzin();
 }
@@ -730,6 +731,7 @@ function loadHome() {
     {id:'s-papan-peringkat', icon:'🏆', bg:'#fef3c7', label:'Papan Peringkat', sub:'Kinerja tim'},
     {id:'s-peraturan', icon:'📜', bg:'#ede9fe', label:'Peraturan', sub:'Tata tertib kantor'},
   ];
+  menus.push({id:'s-notifikasi', icon:'🔔', bg:'#fee2e2', label:'Notifikasi', sub:'Peringatan & info'});
   menus.push({id:'s-izin', icon:'📝', bg:'#d1fae5', label:'Izin / Sakit', sub:'Ajukan ketidakhadiran'});
   if (u.bagian === 'Owner' || u.bagian === 'Finance')
     menus.push({id:'s-kalender', icon:'🗓️', bg:'#fee2e2', label:'Kalender Libur', sub:'Atur hari libur'});
@@ -829,6 +831,12 @@ function loadHome() {
       }
 
       if (d.needsAbsensiUpdate) document.getElementById('finance-notif').style.display = 'block';
+      // Load notifikasi badge
+      gasCall('getNotifikasi', [u.id], function(notifs) {
+        if (!notifs) return;
+        var belumDibaca = notifs.filter(function(n){ return !n.dibaca; }).length;
+        if (belumDibaca > 0) updateNotifBadge(belumDibaca);
+      });
   }, function(){});
 }
 
@@ -917,7 +925,7 @@ function openDetail(userId, nama, jabatan, bagian) {
     el.innerHTML = r.kpi && r.kpi.length ? r.kpi.map(kpiRow).join('') : '<div style="font-size:12px;color:var(--text-muted);text-align:center;padding:8px">Belum ada KPI bulan ini</div>';
   });
 
-  gasCall('getJobdeskByBagian', [bagian], function(jd) {
+  gasCall('getJobdeskByJabatan', [jabatan], function(jd) {
     var el = document.getElementById('detail-jobdesk-content');
     if (jd && jd.link) {
       el.innerHTML = '<div style="font-size:12px;color:var(--text-muted);text-align:center;padding:8px">Klik tombol di bawah untuk buka jobdesk lengkap</div>';
@@ -1450,6 +1458,65 @@ function prosesIzin(izinId, status) {
   });
 }
 
+// ─── NOTIFIKASI ───────────────────────────────────
+function loadNotifikasi() {
+  var list = document.getElementById('notif-list');
+  list.innerHTML = skelCards(3);
+  gasCall('getNotifikasi', [currentUser.id], function(data) {
+    if (!data || !data.length) {
+      list.innerHTML = '<div class="empty-state"><div class="empty-icon">🔔</div>Tidak ada notifikasi</div>';
+      return;
+    }
+    var tipeStyle = {
+      SP3: ['#7f1d1d','#fee2e2','🚨'],
+      SP2: ['#dc2626','#fff7f7','⚠️'],
+      SP1: ['#f59e0b','#fffbeb','⚠️'],
+      PERINGATAN: ['#f59e0b','#fffbeb','📌'],
+      INFO: ['#0e4fa3','#dbeafe','📋']
+    };
+    list.innerHTML = data.map(function(n) {
+      var st = tipeStyle[n.tipe] || ['#6b7280','#f9fafb','🔔'];
+      var opacity = n.dibaca ? 'opacity:0.6' : '';
+      return '<div style="border-left:3px solid '+st[0]+';background:'+st[1]+';border-radius:0 8px 8px 0;padding:12px;margin-bottom:8px;'+opacity+'" onclick="bacaNotif(\''+n.id+'\',this)">'+
+        '<div style="display:flex;justify-content:space-between;align-items:flex-start">'+
+        '<div style="font-size:12px;font-weight:700;color:'+st[0]+'">'+st[2]+' '+n.judul+'</div>'+
+        (!n.dibaca ? '<div style="width:8px;height:8px;border-radius:50%;background:'+st[0]+';flex-shrink:0;margin-top:3px"></div>' : '')+
+        '</div>'+
+        '<div style="font-size:11px;color:var(--text-dark);margin-top:4px">'+n.isi+'</div>'+
+        '<div style="font-size:10px;color:var(--text-muted);margin-top:4px">'+n.tgl+'</div>'+
+        '</div>';
+    }).join('');
+    // Update badge count
+    var belumDibaca = data.filter(function(n){ return !n.dibaca; }).length;
+    updateNotifBadge(belumDibaca);
+  }, function(){ list.innerHTML = '<div class="empty-state">Gagal memuat</div>'; });
+}
+
+function bacaNotif(id, el) {
+  el.style.opacity = '0.6';
+  gasCall('tandaiDibaca', [id], function(){});
+  var badge = el.querySelector('[data-badge]');
+  if (badge) badge.remove();
+}
+
+function updateNotifBadge(count) {
+  var menuCards = document.querySelectorAll('.menu-card');
+  menuCards.forEach(function(card) {
+    if (card.textContent.includes('Notifikasi')) {
+      var existing = card.querySelector('.notif-badge');
+      if (existing) existing.remove();
+      if (count > 0) {
+        var badge = document.createElement('div');
+        badge.className = 'notif-badge';
+        badge.style.cssText = 'position:absolute;top:-4px;right:-4px;background:#dc2626;color:#fff;border-radius:50%;width:18px;height:18px;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center';
+        badge.textContent = count > 9 ? '9+' : count;
+        card.style.position = 'relative';
+        card.appendChild(badge);
+      }
+    }
+  });
+}
+
 function loadPeraturan() {
   var el = document.getElementById('peraturan-content');
   el.innerHTML = skelCards(4);
@@ -1616,6 +1683,18 @@ window.onload = function() {
   </div>
   <div class="content" id="kelola-izin-list">
     <div class="empty-state"><div class="empty-icon">📋</div>Memuat...</div>
+  </div>
+</div>
+
+<!-- NOTIFIKASI -->
+<div class="screen" id="s-notifikasi">
+  <div class="statusbar"></div>
+  <div class="header">
+    <div class="header-row"><button class="back-btn" onclick="goTo('s-home')">‹</button><div><h1>Notifikasi</h1><p>Peringatan & info untukmu</p></div></div>
+    <div class="gold-line"></div>
+  </div>
+  <div class="content" id="notif-list">
+    <div class="empty-state"><div class="empty-icon">🔔</div>Memuat...</div>
   </div>
 </div>
 
