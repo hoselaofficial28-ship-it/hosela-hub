@@ -450,8 +450,13 @@ document.head.appendChild(_link);
     <div class="header-row"><button class="back-btn" onclick="goTo('s-home')">‹</button><div><h1>Peraturan</h1><p>Tata tertib kantor Hosela</p></div></div>
     <div class="gold-line"></div>
   </div>
-  <div class="content" id="peraturan-content">
-    <div class="empty-state"><div class="empty-icon">📜</div>Memuat...</div>
+  <div class="content">
+    <div id="peraturan-notif-btn" style="display:none;margin-bottom:10px">
+      <button class="btn btn-gold" style="width:100%;padding:10px;font-size:12px" onclick="kirimNotifPeraturan()">📢 Kirim Notif Peraturan Baru ke Tim</button>
+    </div>
+    <div id="peraturan-content">
+      <div class="empty-state"><div class="empty-icon">📜</div>Memuat...</div>
+    </div>
   </div>
 </div>
 
@@ -603,12 +608,22 @@ function goTo(id) {
   el.classList.add('active');
   var c = el.querySelector('.content');
   if (c) c.scrollTop = 0;
-  // Simpan history untuk back navigation
   if (prevId && prevId !== id) {
-    if (_navHistory[_navHistory.length - 1] !== id) {
-      _navHistory.push(prevId);
-    }
+    if (_navHistory[_navHistory.length - 1] !== id) _navHistory.push(prevId);
     history.pushState({ screen: id }, '', '#' + id);
+  }
+  // Hapus badge menu yang dibuka + tandai notif menu tsb sebagai dibaca
+  if (currentUser && id !== 's-home') {
+    document.querySelectorAll('.menu-card').forEach(function(card) {
+      var onclick = card.getAttribute('onclick') || '';
+      if (onclick.includes("'"+id+"'")) {
+        var badge = card.querySelector('.menu-badge');
+        if (badge) badge.remove();
+      }
+    });
+    if (id !== 's-notifikasi') {
+      gasCall('tandaiMenuDibaca', [currentUser.id, id], function(){});
+    }
   }
   if (id === 's-pengumuman') loadPengumuman();
   if (id === 's-ide') loadIde();
@@ -750,6 +765,7 @@ function loadHome() {
   if (u.bagian === 'Finance') {
     menus.push({id:'s-absensi-upload', icon:'📤', bg:'#e0f2fe', label:'Upload Absensi', sub:'Data fingerprint'});
     menus.push({id:'s-kelola-izin', icon:'✅', bg:'#d1fae5', label:'Kelola Izin', sub:'Approve pengajuan'});
+    menus.push({id:'s-kpi-check', icon:'📋', bg:'#fef3c7', label:'KPI Checklist', sub:'Update KPI kamu'});
   }
   if (u.bagian === 'Owner') {
     menus.push({id:'s-tambah-pengumuman', icon:'✏️', bg:'#f0fdf4', label:'Buat Pengumuman', sub:'Info baru'});
@@ -824,7 +840,9 @@ function loadHome() {
         }, {passive:true});
       }
 
-      // Badge merah di menu Kelola Izin kalau ada pengajuan pending (Finance/Owner)
+      // Badge semua menu berdasarkan notif belum dibaca
+      if (d.notifCountByMenu) updateAllMenuBadges(d.notifCountByMenu);
+      // Badge Kelola Izin untuk Finance/Owner
       if (u.bagian === 'Finance' || u.bagian === 'Owner') {
         gasCall('getIzinPendingCount', [], function(res) {
           if (res && res.count > 0) {
@@ -881,6 +899,26 @@ function loadHome() {
         if (belumDibaca > 0) updateNotifBadge(belumDibaca);
       });
   }, function(){});
+}
+
+function updateAllMenuBadges(counts) {
+  document.querySelectorAll('.menu-card').forEach(function(card) {
+    var onclick = card.getAttribute('onclick') || '';
+    var match = onclick.match(/goTo\('([^']+)'\)/);
+    if (!match) return;
+    var mid = match[1];
+    var count = (counts && counts[mid]) || 0;
+    var existing = card.querySelector('.menu-badge');
+    if (existing) existing.remove();
+    if (count > 0) {
+      var badge = document.createElement('div');
+      badge.className = 'menu-badge';
+      badge.style.cssText = 'position:absolute;top:-4px;right:-4px;background:#dc2626;color:#fff;border-radius:50%;min-width:18px;height:18px;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 3px;box-sizing:border-box';
+      badge.textContent = count > 9 ? '9+' : count;
+      card.style.position = 'relative';
+      card.appendChild(badge);
+    }
+  });
 }
 
 function showReward(idx) {
@@ -1022,8 +1060,9 @@ function openDetail(userId, nama, jabatan, bagian) {
       html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">';
       html += '<div style="background:#fff;border-radius:8px;padding:8px;text-align:center"><div style="font-size:20px;font-weight:800;color:#22c55e">'+b.totalHadir+'</div><div style="font-size:10px;color:var(--text-muted)">Hari Hadir</div></div>';
       html += '<div style="background:#fff;border-radius:8px;padding:8px;text-align:center"><div style="font-size:20px;font-weight:800;color:#ef4444">'+b.totalAbsen+'</div><div style="font-size:10px;color:var(--text-muted)">Hari Absen</div></div>';
+      var totalLemburDisplay = (b.lemburMinggu||0) + (b.lemburLibur||0) + (b.detailLemburPulang ? b.detailLemburPulang.length : 0);
       html += '<div style="background:#fff;border-radius:8px;padding:8px;text-align:center"><div style="font-size:20px;font-weight:800;color:#f59e0b">'+b.totalTelat+'</div><div style="font-size:10px;color:var(--text-muted)">Kali Telat</div></div>';
-      html += '<div style="background:#fff;border-radius:8px;padding:8px;text-align:center"><div style="font-size:20px;font-weight:800;color:var(--blue)">'+(b.lemburMinggu+b.lemburLibur)+'</div><div style="font-size:10px;color:var(--text-muted)">Lembur</div></div>';
+      html += '<div style="background:#fff;border-radius:8px;padding:8px;text-align:center"><div style="font-size:20px;font-weight:800;color:var(--blue)">'+totalLemburDisplay+'</div><div style="font-size:10px;color:var(--text-muted)">Lembur</div></div>';
       html += '</div>';
 
       // Progress bar
@@ -1547,6 +1586,28 @@ function submitIzin() {
   }, function(){ btn.textContent = 'Kirim Pengajuan'; btn.disabled = false; showToast('Koneksi gagal'); });
 }
 
+function hapusSemuaNotif() {
+  if (!confirm('Hapus semua notifikasi?')) return;
+  gasCall('hapusSemuaNotifikasi', [currentUser.id], function(r) {
+    if (r && r.success) {
+      document.getElementById('notif-list').innerHTML = '<div class="empty-state"><div class="empty-icon">🔔</div>Tidak ada notifikasi</div>';
+      updateNotifBadge(0);
+      showToast('Semua notifikasi dihapus');
+    }
+  });
+}
+
+function hapusSemuaNotif() {
+  if (!confirm('Hapus semua notifikasi?')) return;
+  gasCall('hapusSemuaNotifikasi', [currentUser.id], function(r) {
+    if (r && r.success) {
+      document.getElementById('notif-list').innerHTML = '<div class="empty-state"><div class="empty-icon">🔔</div>Tidak ada notifikasi</div>';
+      updateNotifBadge(0);
+      updateAllMenuBadges({});
+    } else { showToast('Gagal menghapus'); }
+  });
+}
+
 function toggleFotoField(jenis) {
   var fg = document.getElementById('foto-group');
   if (fg) fg.style.display = jenis === 'SAKIT' ? 'block' : 'none';
@@ -1684,15 +1745,35 @@ function bacaNotif(id) {
 
 
 function updateNotifBadge(count) {
-  var menuCards = document.querySelectorAll('.menu-card');
-  menuCards.forEach(function(card) {
-    if (card.textContent.includes('Notifikasi')) {
-      var existing = card.querySelector('.notif-badge');
+  // Update badge notifikasi umum
+  _updateMenuBadge('Notifikasi', count);
+}
+
+function updateAllMenuBadges(countByMenu) {
+  if (!countByMenu) return;
+  // Map menu id ke label menu card
+  var menuMap = {
+    's-notifikasi': 'Notifikasi',
+    's-izin': 'Izin / Sakit',
+    's-papan-peringkat': 'Papan Peringkat',
+    's-peraturan': 'Peraturan',
+    's-kelola-izin': 'Kelola Izin'
+  };
+  Object.keys(menuMap).forEach(function(menuId) {
+    var count = countByMenu[menuId] || 0;
+    _updateMenuBadge(menuMap[menuId], count);
+  });
+}
+
+function _updateMenuBadge(menuLabel, count) {
+  document.querySelectorAll('.menu-card').forEach(function(card) {
+    if (card.textContent.trim().startsWith(menuLabel) || card.querySelector('h3') && card.querySelector('h3').textContent === menuLabel) {
+      var existing = card.querySelector('.menu-badge');
       if (existing) existing.remove();
       if (count > 0) {
         var badge = document.createElement('div');
-        badge.className = 'notif-badge';
-        badge.style.cssText = 'position:absolute;top:-4px;right:-4px;background:#dc2626;color:#fff;border-radius:50%;width:18px;height:18px;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center';
+        badge.className = 'menu-badge';
+        badge.style.cssText = 'position:absolute;top:-4px;right:-4px;background:#dc2626;color:#fff;border-radius:50%;min-width:18px;height:18px;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 3px';
         badge.textContent = count > 9 ? '9+' : count;
         card.style.position = 'relative';
         card.appendChild(badge);
@@ -1704,6 +1785,9 @@ function updateNotifBadge(count) {
 function loadPeraturan() {
   var el = document.getElementById('peraturan-content');
   el.innerHTML = skelCards(4);
+  // Tampilkan tombol notif hanya untuk Owner
+  var notifBtn = document.getElementById('peraturan-notif-btn');
+  if (notifBtn) notifBtn.style.display = (currentUser && currentUser.bagian === 'Owner') ? 'block' : 'none';
   gasCall('getPeraturan', [], function(data) {
     if (!data || !data.length) { el.innerHTML = '<div class="empty-state">Belum ada peraturan</div>'; return; }
     var grouped = {};
@@ -1722,6 +1806,18 @@ function loadPeraturan() {
     });
     el.innerHTML = html;
   }, function(){ el.innerHTML = '<div class="empty-state">Gagal memuat peraturan</div>'; });
+}
+
+function kirimNotifPeraturan() {
+  var ket = prompt('Keterangan peraturan yang diperbarui (opsional):') || 'Ada peraturan baru yang perlu dibaca dan dipahami.';
+  if (ket === null) return; // user cancel
+  var btn = document.querySelector('#peraturan-notif-btn button');
+  if (btn) { btn.textContent = 'Mengirim...'; btn.disabled = true; }
+  gasCall('triggerNotifPeraturan', [ket], function(r) {
+    if (btn) { btn.textContent = '📢 Kirim Notif Peraturan Baru ke Tim'; btn.disabled = false; }
+    if (r && r.success) showToast('Notifikasi berhasil dikirim ke tim ✅');
+    else showToast('Gagal kirim notifikasi');
+  });
 }
 
 function initials(nama) { return (nama||'').split(' ').map(function(w){return w[0];}).join('').substring(0,2).toUpperCase(); }
@@ -1890,7 +1986,9 @@ window.onload = function() {
 <div class="screen" id="s-notifikasi">
   <div class="statusbar"></div>
   <div class="header">
-    <div class="header-row"><button class="back-btn" onclick="goTo('s-home')">‹</button><div><h1>Notifikasi</h1><p>Peringatan & info untukmu</p></div></div>
+    <div class="header-row"><button class="back-btn" onclick="goTo('s-home')">‹</button><div><h1>Notifikasi</h1><p>Peringatan & info untukmu</p></div>
+    <button onclick="hapusSemuaNotif()" style="background:none;border:none;color:rgba(255,255,255,0.7);font-size:12px;cursor:pointer;margin-left:auto">Hapus Semua</button>
+    </div>
     <div class="gold-line"></div>
   </div>
   <div class="content" id="notif-list">
