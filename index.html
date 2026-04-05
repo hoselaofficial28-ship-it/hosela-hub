@@ -947,7 +947,28 @@ function openDetail(userId, nama, jabatan, bagian) {
     var bulanList = res.data;
     var target = bulanList.find(function(b){ return b.bulan === res.bulanIni; }) || bulanList[0];
 
+    var _dropId = 0;
+    function dropdown(label, bgColor, textColor, items, total) {
+      var id = 'drp-'+(++_dropId);
+      var totalStr = total > 0 ? ' <span style="font-weight:800;color:'+textColor+'">Rp '+total.toLocaleString('id-ID')+'</span>' : '';
+      var html = '<div style="margin-top:8px;background:'+bgColor+';border-radius:8px;overflow:hidden">';
+      html += '<div onclick="toggleDropdown(\''+id+'\')" style="padding:10px 12px;display:flex;justify-content:space-between;align-items:center;cursor:pointer">';
+      html += '<span style="font-size:12px;color:'+textColor+';font-weight:600">'+label+'</span>';
+      html += '<span id="'+id+'-arr" style="font-size:11px;color:'+textColor+'">'+totalStr+' ▼</span></div>';
+      html += '<div id="'+id+'" style="display:none;padding:0 12px 10px;border-top:1px solid rgba(0,0,0,0.05)">';
+      if (items.length === 0) {
+        html += '<div style="font-size:11px;color:'+textColor+';opacity:.7;padding-top:8px">Tidak ada</div>';
+      } else {
+        items.forEach(function(item) {
+          html += '<div style="font-size:11px;color:'+textColor+';padding-top:6px">• '+item+'</div>';
+        });
+      }
+      html += '</div></div>';
+      return html;
+    }
+
     function renderBulan(b) {
+      _dropId = 0;
       var totalHariKerja = b.totalHadir + b.totalAbsen;
       var persen = totalHariKerja > 0 ? Math.round((b.totalHadir/totalHariKerja)*100) : 0;
       var barColor = persen >= 90 ? '#22c55e' : persen >= 75 ? '#f59e0b' : '#ef4444';
@@ -962,18 +983,49 @@ function openDetail(userId, nama, jabatan, bagian) {
       html += '<div style="background:#fff;border-radius:8px;padding:8px;text-align:center"><div style="font-size:20px;font-weight:800;color:var(--blue)">'+(b.lemburMinggu+b.lemburLibur)+'</div><div style="font-size:10px;color:var(--text-muted)">Lembur</div></div>';
       html += '</div>';
 
-      // Progress bar kehadiran
+      // Progress bar
       html += '<div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">Kehadiran: '+persen+'%</div>';
       html += '<div style="background:#e2e8f0;border-radius:4px;height:8px"><div style="background:'+barColor+';height:8px;border-radius:4px;width:'+persen+'%;transition:width .5s"></div></div>';
 
-      // Denda bulan ini
-      if (b.totalDenda > 0) {
-        html += '<div style="margin-top:8px;background:#fee2e2;border-radius:8px;padding:8px 12px;display:flex;justify-content:space-between;align-items:center">'+
-          '<span style="font-size:12px;color:#991b1b;font-weight:600">💸 Estimasi Denda Bulan Ini</span>'+
-          '<span style="font-size:13px;font-weight:800;color:#dc2626">Rp '+b.totalDenda.toLocaleString('id-ID')+'</span></div>';
+      // Denda dropdown
+      var dendaItems = [];
+      b.mingguList.forEach(function(w) {
+        if (w.detail && w.detail.telat) {
+          w.detail.telat.forEach(function(d){ dendaItems.push(d.keterangan+' → Rp '+d.nilai.toLocaleString('id-ID')); });
+        }
+      });
+      if (b.totalDenda > 0) html += dropdown('💸 Estimasi Denda Bulan Ini', '#fee2e2', '#991b1b', dendaItems, b.totalDenda);
+
+      // Reward lembur dropdown
+      var rewardItems = [];
+      if (b.detailLemburPulang && b.detailLemburPulang.length > 0) {
+        rewardItems.push('— Lembur Pulang —');
+        b.detailLemburPulang.forEach(function(d){ rewardItems.push(d.keterangan+' → Rp '+d.nilai.toLocaleString('id-ID')); });
+      }
+      if (b.detailLemburMinggu && b.detailLemburMinggu.length > 0) {
+        rewardItems.push('— Lembur Minggu —');
+        b.detailLemburMinggu.forEach(function(d){ rewardItems.push(d.keterangan+' → Rp '+d.nilai.toLocaleString('id-ID')); });
+      }
+      if (b.detailLemburLibur && b.detailLemburLibur.length > 0) {
+        rewardItems.push('— Lembur Hari Libur —');
+        b.detailLemburLibur.forEach(function(d){ rewardItems.push(d.keterangan+' → Rp '+d.nilai.toLocaleString('id-ID')); });
+      }
+      var totalReward = (b.totalRewardLembur||0) + (b.bonusKerajinan||0);
+      if (totalReward > 0) {
+        if (b.bonusKerajinan > 0) rewardItems.push('🌟 Bonus Kerajinan (tidak ada absen) → Rp '+b.bonusKerajinan.toLocaleString('id-ID'));
+        html += dropdown('⚡ Estimasi Reward Bulan Ini', '#d1fae5', '#065f46', rewardItems, totalReward);
       }
 
-      // Libur resmi bulan ini
+      // Absen dropdown
+      var absenItems = [];
+      b.mingguList.forEach(function(w) {
+        if (w.detail && w.detail.absen) {
+          w.detail.absen.forEach(function(d){ absenItems.push(d.keterangan); });
+        }
+      });
+      if (b.totalAbsen > 0) html += dropdown('❌ Hari Absen ('+b.totalAbsen+' hari)', '#fff7f7', '#991b1b', absenItems, 0);
+
+      // Libur resmi
       if (res.liburBulanIni && res.liburBulanIni.length > 0) {
         html += '<div style="margin-top:8px;font-size:11px;color:var(--blue)">🏖️ Libur resmi: '+res.liburBulanIni.join(', ')+'</div>';
       }
@@ -990,14 +1042,26 @@ function openDetail(userId, nama, jabatan, bagian) {
         html += '<span style="font-size:10px;background:'+wColor+'22;color:'+wColor+';padding:2px 8px;border-radius:10px;font-weight:700">'+wIcon+' '+w.status+'</span></div>';
         html += '<div style="font-size:11px;color:var(--text-muted)">';
         html += '✅ Hadir '+w.hadir+' hari &nbsp;·&nbsp; ⏰ Telat '+w.telat+'x &nbsp;·&nbsp; ❌ Absen '+w.absen+'x';
-        if (w.lemburMinggu > 0) html += '<br>⚡ Lembur Minggu '+w.lemburMinggu+'x';
-        if (w.lemburLibur > 0) html += '<br>⚡ Lembur Libur '+w.lemburLibur+'x';
-        if (w.denda > 0) html += '<br><span style="color:#dc2626;font-weight:600">💸 Denda telat: Rp '+w.denda.toLocaleString('id-ID')+'</span>';
-        if (w.libur && w.libur.length > 0) html += '<br>🏖️ <span style="color:var(--blue)">Libur: '+w.libur.join(', ')+'</span>';
+        if (w.denda > 0) {
+          html += '<br><span style="color:#dc2626;font-weight:600">💸 Denda: Rp '+w.denda.toLocaleString('id-ID')+'</span>';
+          if (w.detail && w.detail.telat && w.detail.telat.length > 0) {
+            w.detail.telat.forEach(function(d){ html += '<br><span style="color:#dc2626;font-size:10px">&nbsp;&nbsp;• '+d.keterangan+'</span>'; });
+          }
+        }
+        if (w.detail && w.detail.absen && w.detail.absen.length > 0) {
+          w.detail.absen.forEach(function(d){ html += '<br><span style="color:#991b1b;font-size:10px">&nbsp;&nbsp;• '+d.keterangan+'</span>'; });
+        }
+        var lemburMingguW = w.detail ? (w.detail.lemburMinggu||[]) : [];
+        var lemburLiburW = w.detail ? (w.detail.lemburLibur||[]) : [];
+        var lemburPulangW = w.detail ? (w.detail.lemburPulang||[]) : [];
+        if (lemburMingguW.length > 0) lemburMingguW.forEach(function(d){ html += '<br><span style="color:#065f46;font-size:10px">⚡ '+d.keterangan+' → Rp '+d.nilai.toLocaleString('id-ID')+'</span>'; });
+        if (lemburLiburW.length > 0) lemburLiburW.forEach(function(d){ html += '<br><span style="color:#065f46;font-size:10px">⚡ '+d.keterangan+' → Rp '+d.nilai.toLocaleString('id-ID')+'</span>'; });
+        if (lemburPulangW.length > 0) lemburPulangW.forEach(function(d){ html += '<br><span style="color:#065f46;font-size:10px">⚡ '+d.keterangan+' → Rp '+d.nilai.toLocaleString('id-ID')+'</span>'; });
+        if (w.libur && w.libur.length > 0) html += '<br>🏖️ <span style="color:var(--blue);font-size:10px">Libur: '+w.libur.join(', ')+'</span>';
         html += '</div></div>';
       });
 
-      // Tombol ganti bulan kalau ada history
+      // Tombol ganti bulan
       if (bulanList.length > 1) {
         html += '<div style="font-size:11px;color:var(--blue);text-align:center;margin-top:4px;cursor:pointer" onclick="showBulanPicker()">Lihat bulan lain ›</div>';
         html += '<div id="bulan-picker" style="display:none;margin-top:8px">';
@@ -1013,6 +1077,15 @@ function openDetail(userId, nama, jabatan, bagian) {
     window._absensiRender = renderBulan;
     el.innerHTML = renderBulan(target);
   });
+}
+
+function toggleDropdown(id) {
+  var el = document.getElementById(id);
+  var arr = document.getElementById(id+'-arr');
+  if (!el) return;
+  var isOpen = el.style.display !== 'none';
+  el.style.display = isOpen ? 'none' : 'block';
+  if (arr) arr.innerHTML = arr.innerHTML.replace(isOpen ? '▲' : '▼', isOpen ? '▼' : '▲');
 }
 
 function showBulanPicker() {
