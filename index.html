@@ -609,7 +609,7 @@ function goTo(id) {
   if (id === 's-papan-peringkat') loadPapanPeringkat();
   if (id === 's-notifikasi') loadNotifikasi();
   if (id === 's-izin') loadIzin();
-  if (id === 's-kelola-izin') loadKelolaIzin();
+  if (id === 's-kelola-izin') { loadKelolaIzin(); loadAnomaliPending && document.getElementById('kelola-izin-list').innerHTML = skelCards(3); }
 }
 
 // Handle browser back button / swipe back
@@ -1499,6 +1499,15 @@ function submitIzin() {
   }, function(){ btn.textContent = 'Kirim Pengajuan'; btn.disabled = false; showToast('Koneksi gagal'); });
 }
 
+function switchKelolaTab(tab) {
+  document.getElementById('kelola-izin-list').style.display = tab === 'izin' ? 'block' : 'none';
+  document.getElementById('kelola-anomali-list').style.display = tab === 'anomali' ? 'block' : 'none';
+  document.getElementById('tab-izin').style.cssText = 'flex:1;padding:12px;text-align:center;font-size:12px;cursor:pointer;font-weight:'+(tab==='izin'?'700':'600')+';color:'+(tab==='izin'?'var(--blue)':'var(--text-muted)')+';border-bottom:'+(tab==='izin'?'2px solid var(--blue)':'none');
+  document.getElementById('tab-anomali').style.cssText = 'flex:1;padding:12px;text-align:center;font-size:12px;cursor:pointer;font-weight:'+(tab==='anomali'?'700':'600')+';color:'+(tab==='anomali'?'var(--blue)':'var(--text-muted)')+';border-bottom:'+(tab==='anomali'?'2px solid var(--blue)':'none');
+  if (tab === 'anomali') loadAnomaliPending();
+  else loadKelolaIzin();
+}
+
 function loadKelolaIzin() {
   var list = document.getElementById('kelola-izin-list');
   list.innerHTML = skelCards(3);
@@ -1520,6 +1529,42 @@ function loadKelolaIzin() {
         '</div></div>';
     }).join('');
   }, function(){ list.innerHTML = '<div class="empty-state">Gagal memuat</div>'; });
+}
+
+function loadAnomaliPending() {
+  var list = document.getElementById('kelola-anomali-list');
+  list.innerHTML = skelCards(3);
+  gasCall('getAnomaliPending', [], function(data) {
+    if (!data || !data.length) {
+      list.innerHTML = '<div class="empty-state"><div class="empty-icon">✅</div>Tidak ada tap anomali yang menunggu konfirmasi</div>';
+      return;
+    }
+    list.innerHTML = data.map(function(d) {
+      return '<div class="card" style="margin-bottom:10px;border-left:3px solid #f59e0b">'+
+        '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">'+
+        '<div><div style="font-size:13px;font-weight:700;color:var(--text-dark)">'+d.nama+'</div>'+
+        '<div style="font-size:11px;color:var(--text-muted)">'+d.tanggal+' · Jam '+d.jam+'</div>'+
+        '<div style="font-size:12px;color:#92400e;margin-top:4px;font-weight:600">'+d.tipe+'</div>'+
+        '<div style="font-size:10px;color:var(--text-muted);margin-top:2px">⏰ Deadline konfirmasi: '+d.deadline+'</div></div>'+
+        '<span style="font-size:10px;background:#fff7ed;color:#f59e0b;padding:3px 8px;border-radius:10px;font-weight:700;flex-shrink:0">MENUNGGU</span></div>'+
+        '<div style="display:flex;gap:8px">'+
+        '<button class="btn btn-primary" style="flex:1;padding:8px;font-size:12px" onclick="prosesAnomali(\''+d.id+'\',\'NORMAL\')">✅ Normal (Hadir)</button>'+
+        '<button class="btn" style="flex:1;padding:8px;font-size:12px;background:#fee2e2;color:#dc2626;border:none;border-radius:8px;font-weight:600;cursor:pointer" onclick="prosesAnomali(\''+d.id+'\',\'DENDA\')">💸 Kenakan Denda</button>'+
+        '</div></div>';
+    }).join('');
+  }, function(){ list.innerHTML = '<div class="empty-state">Gagal memuat</div>'; });
+}
+
+function prosesAnomali(anomId, status) {
+  var btn = event.target;
+  btn.textContent = 'Memproses...'; btn.disabled = true;
+  gasCall('konfirmasiAnomali', [anomId, status], function(r) {
+    btn.disabled = false;
+    if (r.success) {
+      showToast(status === 'NORMAL' ? 'Dikonfirmasi hadir ✅' : 'Denda dikenakan 💸');
+      loadAnomaliPending();
+    } else { btn.textContent = status === 'NORMAL' ? '✅ Normal (Hadir)' : '💸 Kenakan Denda'; showToast('Gagal. Coba lagi.'); }
+  }, function(){ btn.disabled = false; showToast('Koneksi gagal'); });
 }
 
 function prosesIzin(izinId, status) {
@@ -1751,11 +1796,16 @@ window.onload = function() {
 <div class="screen" id="s-kelola-izin">
   <div class="statusbar"></div>
   <div class="header">
-    <div class="header-row"><button class="back-btn" onclick="goTo('s-home')">‹</button><div><h1>Kelola Izin</h1><p>Approve pengajuan karyawan</p></div></div>
+    <div class="header-row"><button class="back-btn" onclick="goTo('s-home')">‹</button><div><h1>Kelola</h1><p>Izin & Tap Anomali</p></div></div>
     <div class="gold-line"></div>
   </div>
-  <div class="content" id="kelola-izin-list">
-    <div class="empty-state"><div class="empty-icon">📋</div>Memuat...</div>
+  <div style="display:flex;border-bottom:2px solid var(--gray-border);background:#fff;flex-shrink:0">
+    <div id="tab-izin" onclick="switchKelolaTab('izin')" style="flex:1;padding:12px;text-align:center;font-size:12px;font-weight:700;color:var(--blue);border-bottom:2px solid var(--blue);cursor:pointer">📝 Izin/Sakit</div>
+    <div id="tab-anomali" onclick="switchKelolaTab('anomali')" style="flex:1;padding:12px;text-align:center;font-size:12px;font-weight:600;color:var(--text-muted);cursor:pointer">⚠️ Tap Anomali</div>
+  </div>
+  <div class="content">
+    <div id="kelola-izin-list"></div>
+    <div id="kelola-anomali-list" style="display:none"></div>
   </div>
 </div>
 
