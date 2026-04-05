@@ -787,13 +787,13 @@ function loadHome() {
         document.getElementById('home-ann-text').textContent = '📢 ' + latestPeng.judul;
         document.getElementById('home-ann-banner').style.display = 'flex';
       }
-      // Reward slider - kotak geser ke samping
+      // Reward slider - hanya tampilkan karyawan ranking 1
       var rwdList = (d.rewards && d.rewards.length > 0) ? d.rewards : (d.reward ? [d.reward] : []);
       if (rwdList.length > 0) {
         var cards = rwdList.map(function(r, i) {
           return '<div style="min-width:100%;padding:0 2px">'+
             '<div class="reward-card" style="margin:0">'+
-            '<div class="reward-label">🏆🏆🏆 Bintang Bulan Ini · '+r.bulan+'</div>'+
+            '<div class="reward-label">🏆 BINTANG BULAN INI · '+r.bulan+'</div>'+
             '<div class="reward-avatar-big">'+initials(r.nama)+'</div>'+
             '<div class="reward-name">'+r.nama+'</div>'+
             '<div class="reward-sub">'+r.bagian+'</div>'+
@@ -822,6 +822,26 @@ function loadHome() {
             showReward(next);
           }
         }, {passive:true});
+      }
+
+      // Badge merah di menu Kelola Izin kalau ada pengajuan pending (Finance/Owner)
+      if (u.bagian === 'Finance' || u.bagian === 'Owner') {
+        gasCall('getIzinPendingCount', [], function(res) {
+          if (res && res.count > 0) {
+            document.querySelectorAll('.menu-card').forEach(function(card) {
+              if (card.textContent.includes('Kelola Izin')) {
+                var existing = card.querySelector('.izin-badge');
+                if (existing) existing.remove();
+                var badge = document.createElement('div');
+                badge.className = 'izin-badge';
+                badge.style.cssText = 'position:absolute;top:-4px;right:-4px;background:#dc2626;color:#fff;border-radius:50%;width:18px;height:18px;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center';
+                badge.textContent = res.count > 9 ? '9+' : res.count;
+                card.style.position = 'relative';
+                card.appendChild(badge);
+              }
+            });
+          }
+        });
       }
 
       // Profile card — hanya untuk staff biasa
@@ -1414,21 +1434,23 @@ function loadPapanPeringkat() {
   el.innerHTML = skelCards(5);
   gasCall('getPapanPeringkat', [], function(data) {
     if (!data || !data.length) { el.innerHTML = '<div class="empty-state"><div class="empty-icon">🏆</div>Belum ada data penilaian</div>'; return; }
-    var html = '<div style="font-size:12px;color:var(--text-muted);margin-bottom:12px">Penilaian berdasarkan KPI checklist + kehadiran bulan ini</div>';
+    var html = '<div style="font-size:12px;color:var(--text-muted);margin-bottom:12px">Diperbarui setiap tanggal 10. Berdasarkan KPI + kehadiran bulan lalu.</div>';
     html += data.map(function(d, i) {
-      var rank = i+1;
+      var rank = d.ranking || i+1;
       var rankClass = rank===1?'rank-1':rank===2?'rank-2':rank===3?'rank-3':'rank-other';
       var rankIcon = rank===1?'🥇':rank===2?'🥈':rank===3?'🥉':'#'+rank;
       var stars = '';
-      for (var si = 0; si < 5; si++) stars += '<span style="color:'+(si<d.bintang?'#c9971f':'#e2e8f0');stars += ';font-size:14px">★</span>';
+      for (var si = 0; si < 5; si++) stars += '<span style="color:'+(si<d.bintang?'#c9971f':'#e2e8f0')+';font-size:14px">★</span>';
       var isSelf = d.id === currentUser.id;
-      return '<div class="rank-card"'+(isSelf?' style="border:2px solid var(--blue)"':'')+'>'+
+      var apresiasiHtml = isSelf ? '<div style="font-size:11px;color:var(--blue);font-weight:600;margin-top:3px">'+d.apresiasi+'</div>' : '';
+      return '<div class="rank-card"'+(isSelf?' style="border:2px solid var(--blue);background:#f0f7ff"':'')+'>'+
         '<div class="rank-num '+rankClass+'">'+rankIcon+'</div>'+
         '<div class="avatar" style="background:'+AVT_BG[i%AVT_BG.length]+';color:'+AVT_TXT[i%AVT_TXT.length]+'">'+initials(d.nama)+'</div>'+
         '<div style="flex:1">'+
         '<div style="font-size:13px;font-weight:600;color:var(--text-dark)">'+d.nama+(isSelf?' <span style="font-size:10px;color:var(--blue)">(Kamu)</span>':'')+' </div>'+
         '<div style="font-size:11px;color:var(--text-muted)">'+d.jabatan+'</div>'+
         '<div>'+stars+'<span style="font-size:11px;color:var(--text-muted);margin-left:4px">'+d.skor+'/100</span></div>'+
+        apresiasiHtml+
         '</div></div>';
     }).join('');
     el.innerHTML = html;
@@ -1508,18 +1530,26 @@ function submitIzin() {
   var tgl = document.getElementById('izin-tanggal').value;
   var jenis = document.getElementById('izin-jenis').value;
   var ket = document.getElementById('izin-keterangan').value.trim();
+  var foto = document.getElementById('izin-foto').value.trim();
   if (!tgl) { showToast('Pilih tanggal dulu'); return; }
   if (!ket) { showToast('Keterangan wajib diisi'); return; }
+  if (jenis === 'SAKIT' && !foto) { showToast('Surat dokter wajib untuk izin SAKIT'); return; }
   var btn = event.target;
   btn.textContent = 'Mengirim...'; btn.disabled = true;
-  gasCall('submitIzin', [currentUser.id, tgl, jenis, ket], function(r) {
+  gasCall('submitIzin', [currentUser.id, tgl, jenis, ket, foto], function(r) {
     btn.textContent = 'Kirim Pengajuan'; btn.disabled = false;
     if (r.success) {
       document.getElementById('izin-keterangan').value = '';
+      document.getElementById('izin-foto').value = '';
       showToast('Pengajuan berhasil dikirim! ✅');
       loadIzin();
     } else { showToast('Gagal mengirim. Coba lagi.'); }
   }, function(){ btn.textContent = 'Kirim Pengajuan'; btn.disabled = false; showToast('Koneksi gagal'); });
+}
+
+function toggleFotoField(jenis) {
+  var fg = document.getElementById('foto-group');
+  if (fg) fg.style.display = jenis === 'SAKIT' ? 'block' : 'none';
 }
 
 function switchKelolaTab(tab) {
@@ -1540,11 +1570,14 @@ function loadKelolaIzin() {
       return;
     }
     list.innerHTML = data.map(function(d) {
+      var fotoHtml = d.linkFoto ? '<a href="'+d.linkFoto+'" target="_blank" style="font-size:11px;color:var(--blue);font-weight:600">📎 Lihat Surat Dokter</a>' : '';
       return '<div class="card" style="margin-bottom:10px">'+
         '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">'+
         '<div><div style="font-size:13px;font-weight:700;color:var(--text-dark)">'+d.nama+'</div>'+
         '<div style="font-size:11px;color:var(--text-muted)">'+d.jenis+' · '+d.tanggal+'</div>'+
-        '<div style="font-size:12px;color:var(--text-dark);margin-top:4px">'+d.keterangan+'</div></div>'+
+        '<div style="font-size:12px;color:var(--text-dark);margin-top:4px">'+d.keterangan+'</div>'+
+        (fotoHtml?'<div style="margin-top:4px">'+fotoHtml+'</div>':'')+
+        '</div>'+
         '<span style="font-size:10px;background:#fff7ed;color:#f59e0b;padding:3px 8px;border-radius:10px;font-weight:700;flex-shrink:0">MENUNGGU</span></div>'+
         '<div style="display:flex;gap:8px">'+
         '<button class="btn btn-primary" style="flex:1;padding:8px;font-size:12px" onclick="prosesIzin(\''+d.id+'\',\'DISETUJUI\')">✅ Setujui</button>'+
@@ -1606,7 +1639,7 @@ function loadNotifikasi() {
   gasCall('getNotifikasi', [currentUser.id], function(data) {
     if (!data || !data.length) {
       list.innerHTML = '<div class="empty-state"><div class="empty-icon">🔔</div>Tidak ada notifikasi</div>';
-      return;
+      updateNotifBadge(0); return;
     }
     var tipeStyle = {
       SP3: ['#7f1d1d','#fee2e2','🚨'],
@@ -1618,27 +1651,37 @@ function loadNotifikasi() {
     list.innerHTML = data.map(function(n) {
       var st = tipeStyle[n.tipe] || ['#6b7280','#f9fafb','🔔'];
       var opacity = n.dibaca ? 'opacity:0.6' : '';
-      return '<div style="border-left:3px solid '+st[0]+';background:'+st[1]+';border-radius:0 8px 8px 0;padding:12px;margin-bottom:8px;'+opacity+'" onclick="bacaNotif(\''+n.id+'\',this)">'+
+      return '<div id="notif-'+n.id+'" style="border-left:3px solid '+st[0]+';background:'+st[1]+';border-radius:0 8px 8px 0;padding:12px;margin-bottom:8px;'+opacity+'">'+
         '<div style="display:flex;justify-content:space-between;align-items:flex-start">'+
-        '<div style="font-size:12px;font-weight:700;color:'+st[0]+'">'+st[2]+' '+n.judul+'</div>'+
-        (!n.dibaca ? '<div style="width:8px;height:8px;border-radius:50%;background:'+st[0]+';flex-shrink:0;margin-top:3px"></div>' : '')+
-        '</div>'+
+        '<div style="font-size:12px;font-weight:700;color:'+st[0]+';flex:1"'+(!n.dibaca?' onclick="bacaNotif(\''+n.id+'\')"':'')+'>'+st[2]+' '+n.judul+'</div>'+
+        '<div style="display:flex;align-items:center;gap:6px;flex-shrink:0">'+
+        (!n.dibaca?'<div style="width:8px;height:8px;border-radius:50%;background:'+st[0]+'"></div>':'')+
+        '<button onclick="hapusNotif(\''+n.id+'\')" style="background:none;border:none;cursor:pointer;font-size:14px;padding:0 2px;opacity:0.5">🗑️</button>'+
+        '</div></div>'+
         '<div style="font-size:11px;color:var(--text-dark);margin-top:4px">'+n.isi+'</div>'+
         '<div style="font-size:10px;color:var(--text-muted);margin-top:4px">'+n.tgl+'</div>'+
         '</div>';
     }).join('');
-    // Update badge count
     var belumDibaca = data.filter(function(n){ return !n.dibaca; }).length;
     updateNotifBadge(belumDibaca);
   }, function(){ list.innerHTML = '<div class="empty-state">Gagal memuat</div>'; });
 }
 
-function bacaNotif(id, el) {
-  el.style.opacity = '0.6';
-  gasCall('tandaiDibaca', [id], function(){});
-  var badge = el.querySelector('[data-badge]');
-  if (badge) badge.remove();
+function hapusNotif(id) {
+  var el = document.getElementById('notif-'+id);
+  if (el) { el.style.opacity = '0.3'; }
+  gasCall('hapusNotifikasi', [id], function(r) {
+    if (r && r.success && el) el.remove();
+    else if (el) el.style.opacity = '1';
+  });
 }
+
+function bacaNotif(id) {
+  var el = document.getElementById('notif-'+id);
+  if (el) el.style.opacity = '0.6';
+  gasCall('tandaiDibaca', [id], function(){});
+}
+
 
 function updateNotifBadge(count) {
   var menuCards = document.querySelectorAll('.menu-card');
@@ -1797,7 +1840,7 @@ window.onload = function() {
       </div>
       <div class="form-group">
         <label class="form-label">Jenis</label>
-        <select class="form-input" id="izin-jenis">
+        <select class="form-input" id="izin-jenis" onchange="toggleFotoField(this.value)">
           <option value="SAKIT">Sakit</option>
           <option value="IZIN">Izin</option>
         </select>
@@ -1805,6 +1848,17 @@ window.onload = function() {
       <div class="form-group">
         <label class="form-label">Keterangan</label>
         <textarea class="form-input" id="izin-keterangan" rows="3" placeholder="Jelaskan alasan ketidakhadiran..."></textarea>
+      </div>
+      <div class="form-group" id="foto-group">
+        <label class="form-label">📎 Link Surat Dokter <span style="color:#dc2626">*Wajib untuk SAKIT</span></label>
+        <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:10px;margin-bottom:8px;font-size:11px;color:#92400e;line-height:1.6">
+          <b>Cara upload foto surat dokter:</b><br>
+          1. Foto surat dokter dari HP kamu<br>
+          2. Upload ke <b>Google Drive</b><br>
+          3. Klik kanan file → <b>Bagikan</b> → pilih <b>"Siapa saja yang punya link"</b><br>
+          4. Klik <b>Salin link</b> → paste di kolom di bawah
+        </div>
+        <input type="url" class="form-input" id="izin-foto" placeholder="https://drive.google.com/file/d/...">
       </div>
       <button class="btn btn-primary" onclick="submitIzin()">Kirim Pengajuan</button>
     </div>
