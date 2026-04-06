@@ -991,16 +991,10 @@ function openDetail(userId, nama, jabatan, bagian) {
   document.getElementById('detail-nama').textContent = nama;
   document.getElementById('detail-jabatan').textContent = jabatan;
   document.getElementById('detail-badges').innerHTML = '<span class="badge badge-blue">Aktif</span> <span class="badge badge-gold">'+bagian+'</span>';
-  document.getElementById('detail-kpi-content').innerHTML = '<div style="font-size:12px;color:var(--text-muted);text-align:center;padding:8px">Memuat...</div>';
   document.getElementById('detail-absensi-content').innerHTML = '<div style="font-size:12px;color:var(--text-muted);text-align:center;padding:8px">Memuat...</div>';
   document.getElementById('detail-jobdesk-content').innerHTML = '<div style="font-size:12px;color:var(--text-muted);text-align:center;padding:8px">Memuat...</div>';
   document.getElementById('detail-doc-link').style.display = 'none';
   goTo('s-detail');
-
-  gasCall('getUserKPI', [userId], function(r) {
-    var el = document.getElementById('detail-kpi-content');
-    el.innerHTML = r.kpi && r.kpi.length ? r.kpi.map(kpiRow).join('') : '<div style="font-size:12px;color:var(--text-muted);text-align:center;padding:8px">Belum ada KPI bulan ini</div>';
-  });
 
   gasCall('getJobdeskByJabatan', [jabatan], function(jd) {
     var el = document.getElementById('detail-jobdesk-content');
