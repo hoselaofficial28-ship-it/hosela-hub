@@ -269,10 +269,35 @@ document.head.appendChild(_link);
   </div>
 </div>
 
+<!-- SIDE MENU OVERLAY -->
+<div id="side-menu-overlay" onclick="closeSideMenu()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:1000"></div>
+<div id="side-menu" style="display:none;position:fixed;top:0;left:0;width:75%;max-width:280px;height:100%;background:#fff;z-index:1001;box-shadow:4px 0 20px rgba(0,0,0,0.2);flex-direction:column;overflow-y:auto">
+  <div style="background:var(--blue);padding:32px 20px 20px;color:#fff">
+    <div style="font-size:24px;font-weight:800" id="sm-nama">—</div>
+    <div style="font-size:12px;opacity:.8" id="sm-jabatan">—</div>
+  </div>
+  <div style="padding:16px;flex:1">
+    <div onclick="openPanduan()" style="display:flex;align-items:center;gap:12px;padding:12px;border-radius:8px;cursor:pointer;margin-bottom:4px" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">
+      <span style="font-size:20px">📖</span><div><div style="font-size:13px;font-weight:600">Panduan Aplikasi</div><div style="font-size:11px;color:var(--text-muted)">Cara penggunaan Hosela Hub</div></div>
+    </div>
+    <div onclick="bukaEmailSettings()" style="display:flex;align-items:center;gap:12px;padding:12px;border-radius:8px;cursor:pointer;margin-bottom:4px" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">
+      <span style="font-size:20px">📧</span><div><div style="font-size:13px;font-weight:600">Email Saya</div><div style="font-size:11px;color:var(--text-muted)" id="sm-email">Belum diisi</div></div>
+    </div>
+    <div id="sm-email-form" style="display:none;background:#f7f9fc;border-radius:8px;padding:12px;margin-bottom:8px">
+      <input type="email" id="sm-email-input" class="form-input" placeholder="email@gmail.com" style="margin-bottom:8px">
+      <button class="btn btn-primary" style="width:100%;padding:8px;font-size:12px" onclick="simpanEmail()">Simpan Email</button>
+    </div>
+  </div>
+  <div style="padding:16px;border-top:1px solid var(--gray-border)">
+    <button onclick="doLogout()" style="width:100%;padding:12px;background:#fee2e2;color:#dc2626;border:none;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer">🚪 Logout</button>
+  </div>
+</div>
+
 <!-- HOME -->
 <div class="screen" id="s-home">
   <div class="statusbar"></div>
   <div class="home-hero">
+    <button onclick="openSideMenu()" style="position:absolute;top:12px;left:12px;background:rgba(255,255,255,0.15);border:none;border-radius:8px;padding:6px 10px;cursor:pointer;font-size:18px;color:#fff;line-height:1">☰</button>
     <div class="home-greeting">Selamat datang,</div>
     <div class="home-name" id="home-name">—</div>
     <div id="home-jabatan-badge"></div>
@@ -632,6 +657,7 @@ function goTo(id) {
   if (id === 's-papan-peringkat') loadPapanPeringkat();
   if (id === 's-notifikasi') loadNotifikasi();
   if (id === 's-izin') loadIzin();
+  if (id === 's-sanksi-manual') loadSanksiManual();
   if (id === 's-kelola-izin') { loadKelolaIzin(); }
 }
 
@@ -762,11 +788,13 @@ function loadHome() {
     menus.push({id:'s-absensi-upload', icon:'📤', bg:'#e0f2fe', label:'Upload Absensi', sub:'Data fingerprint'});
     menus.push({id:'s-kelola-izin', icon:'✅', bg:'#d1fae5', label:'Kelola Izin', sub:'Approve pengajuan'});
     menus.push({id:'s-kpi-check', icon:'📋', bg:'#fef3c7', label:'KPI Checklist', sub:'Update KPI kamu'});
+    menus.push({id:'s-sanksi-manual', icon:'⚖️', bg:'#fce7f3', label:'Sanksi Manual', sub:'Denda & reward khusus'});
   }
   if (u.bagian === 'Owner') {
     menus.push({id:'s-tambah-pengumuman', icon:'✏️', bg:'#f0fdf4', label:'Buat Pengumuman', sub:'Info baru'});
     menus.push({id:'s-manage-users', icon:'👥', bg:'#fef3c7', label:'Kelola Tim', sub:'Aktif / Nonaktif'});
     menus.push({id:'s-laporan-absensi', icon:'📊', bg:'#e0f2fe', label:'Laporan Absensi', sub:'Rekap kehadiran'});
+    menus.push({id:'s-sanksi-manual', icon:'⚖️', bg:'#fce7f3', label:'Sanksi Manual', sub:'Denda & reward khusus'});
   }
   menus.push({id:'s-ganti-pin', icon:'🔐', bg:'#f1f5f9', label:'Ganti Sandi', sub:'Ubah PIN login kamu'});
   var prevBtn = document.querySelector('.preview-btn');
@@ -888,6 +916,8 @@ function loadHome() {
       } else {
         document.getElementById('anomali-banner').style.display = 'none';
       }
+      // Load pengaturan (link panduan dll)
+      gasCall('getPengaturan', [], function(cfg){ window._cfg = cfg||{}; });
       // Load notifikasi badge
       gasCall('getNotifikasi', [u.id], function(notifs) {
         if (!notifs) return;
@@ -1837,6 +1867,125 @@ function kirimNotifPeraturan() {
   });
 }
 
+function openSideMenu() {
+  var menu = document.getElementById('side-menu');
+  var overlay = document.getElementById('side-menu-overlay');
+  menu.style.display = 'flex';
+  overlay.style.display = 'block';
+  setTimeout(function(){ menu.style.transform = 'translateX(0)'; }, 10);
+  // Isi data user
+  if (currentUser) {
+    document.getElementById('sm-nama').textContent = currentUser.nama || '—';
+    document.getElementById('sm-jabatan').textContent = currentUser.jabatan + ' · ' + currentUser.bagian;
+    // Load email dari USERS
+    gasCall('getPengaturan', [], function(cfg){ /* panduan link */ window._cfg = cfg||{}; });
+  }
+}
+
+function closeSideMenu() {
+  document.getElementById('side-menu').style.display = 'none';
+  document.getElementById('side-menu-overlay').style.display = 'none';
+}
+
+function openPanduan() {
+  closeSideMenu();
+  var link = (window._cfg && window._cfg['LINK_PANDUAN']) || '';
+  if (link) { window.open(link, '_blank'); }
+  else { showToast('Link panduan belum diset di sheet PENGATURAN'); }
+}
+
+function bukaEmailSettings() {
+  var form = document.getElementById('sm-email-form');
+  form.style.display = form.style.display === 'none' ? 'block' : 'none';
+}
+
+function simpanEmail() {
+  var email = document.getElementById('sm-email-input').value.trim();
+  if (!email || !email.includes('@')) { showToast('Email tidak valid'); return; }
+  gasCall('updateEmail', [currentUser.id, email], function(r) {
+    if (r.success) {
+      document.getElementById('sm-email').textContent = email;
+      document.getElementById('sm-email-form').style.display = 'none';
+      showToast('Email berhasil disimpan ✅');
+    } else { showToast('Gagal simpan email'); }
+  });
+}
+
+function doLogout() {
+  if (!confirm('Yakin ingin logout?')) return;
+  closeSideMenu();
+  currentUser = null;
+  localStorage.removeItem('hh_username');
+  goTo('s-login');
+  document.getElementById('login-password').value = '';
+}
+
+// ─── SANKSI MANUAL ───────────────────────────────
+function loadSanksiManual() {
+  // Load karyawan list
+  var sel = document.getElementById('sanksi-user');
+  sel.innerHTML = '<option value="">Pilih karyawan...</option>';
+  gasCall('getAllUsers', [], function(users) {
+    if (!users) return;
+    users.filter(function(u){ return u.status === 'AKTIF' && u.bagian !== 'Owner' && u.bagian !== 'Finance'; })
+      .forEach(function(u) {
+        var opt = document.createElement('option');
+        opt.value = u.id; opt.textContent = u.nama + ' (' + u.jabatan + ')';
+        sel.appendChild(opt);
+      });
+  });
+  // Load riwayat
+  var hist = document.getElementById('sanksi-history');
+  hist.innerHTML = skelCards(3);
+  gasCall('getSanksiManual', [], function(data) {
+    if (!data || !data.length) { hist.innerHTML = '<div class="empty-state">Belum ada sanksi manual</div>'; return; }
+    hist.innerHTML = data.map(function(s) {
+      var isDenda = s.tipe === 'DENDA_MANUAL';
+      var bg = isDenda ? '#fee2e2' : '#d1fae5';
+      var color = isDenda ? '#dc2626' : '#065f46';
+      return '<div style="border:1px solid var(--gray-border);border-radius:8px;padding:10px;margin-bottom:8px;border-left:3px solid '+(isDenda?'#dc2626':'#22c55e')+'">'+
+        '<div style="display:flex;justify-content:space-between;align-items:flex-start">'+
+        '<div><div style="font-size:12px;font-weight:700;color:var(--text-dark)">'+s.nama+'</div>'+
+        '<div style="font-size:11px;color:var(--text-muted)">'+s.tgl+'</div>'+
+        '<div style="font-size:11px;color:var(--text-dark);margin-top:2px">'+s.keterangan+'</div></div>'+
+        '<div style="text-align:right;flex-shrink:0;margin-left:8px">'+
+        '<div style="font-size:13px;font-weight:800;color:'+color+'">'+(isDenda?'-':'+')+'Rp '+parseInt(s.nominal).toLocaleString('id-ID')+'</div>'+
+        '<button onclick="batalkanSanksi(\''+s.id+'\')" style="background:#fee2e2;color:#dc2626;border:none;border-radius:6px;padding:3px 8px;font-size:10px;cursor:pointer;margin-top:4px">Batalkan</button>'+
+        '</div></div></div>';
+    }).join('');
+  }, function(){ hist.innerHTML = '<div class="empty-state">Gagal memuat</div>'; });
+}
+
+function submitSanksiManual() {
+  var userId = document.getElementById('sanksi-user').value;
+  var tipe = document.getElementById('sanksi-tipe').value;
+  var nominal = document.getElementById('sanksi-nominal').value;
+  var ket = document.getElementById('sanksi-keterangan').value.trim();
+  if (!userId) { showToast('Pilih karyawan dulu'); return; }
+  if (!nominal || parseInt(nominal) <= 0) { showToast('Nominal harus lebih dari 0'); return; }
+  if (!ket) { showToast('Keterangan wajib diisi'); return; }
+  var btn = event.target;
+  btn.textContent = '⏳ Memproses...'; btn.disabled = true;
+  gasCall('addSanksiManual', [currentUser.nama, userId, tipe, nominal, ket], function(r) {
+    btn.textContent = 'Terapkan Sanksi'; btn.disabled = false;
+    if (r.success) {
+      document.getElementById('sanksi-nominal').value = '';
+      document.getElementById('sanksi-keterangan').value = '';
+      document.getElementById('sanksi-user').value = '';
+      showToast((tipe==='DENDA_MANUAL'?'Denda':'Reward')+' berhasil diterapkan ✅');
+      loadSanksiManual();
+    } else { showToast('Gagal. Coba lagi.'); }
+  }, function(){ btn.textContent = 'Terapkan Sanksi'; btn.disabled = false; showToast('Koneksi gagal'); });
+}
+
+function batalkanSanksi(id) {
+  if (!confirm('Batalkan sanksi ini?')) return;
+  gasCall('batalSanksiManual', [id], function(r) {
+    if (r.success) { showToast('Sanksi dibatalkan ✅'); loadSanksiManual(); }
+    else showToast(r.msg || 'Gagal membatalkan');
+  });
+}
+
 function initials(nama) { return (nama||'').split(' ').map(function(w){return w[0];}).join('').substring(0,2).toUpperCase(); }
 function esc(s) { return (s||'').replace(/'/g,"\\'"); }
 function showToast(msg) {
@@ -1850,13 +1999,45 @@ window.onload = function() {
   setTimeout(function() {
     document.getElementById('loading').style.display = 'none';
     goTo('s-login');
-    // Pre-fill username kalau sudah tersimpan
     var savedUsername = localStorage.getItem('hh_username');
     if (savedUsername) {
       document.getElementById('login-username').value = savedUsername;
       document.getElementById('login-password').focus();
     }
   }, 1800);
+
+  // Pull-to-refresh
+  var _pullStart = 0, _pulling = false;
+  document.addEventListener('touchstart', function(e) {
+    var active = document.querySelector('.screen.active');
+    if (!active) return;
+    var content = active.querySelector('.content');
+    if (content && content.scrollTop === 0) _pullStart = e.touches[0].clientY;
+  }, { passive: true });
+  document.addEventListener('touchend', function(e) {
+    if (!_pullStart) return;
+    var diff = e.changedTouches[0].clientY - _pullStart;
+    if (diff > 80 && !_pulling) {
+      _pulling = true;
+      showToast('🔄 Memperbarui...');
+      setTimeout(function() {
+        var active = document.querySelector('.screen.active');
+        if (active) {
+          var id = active.id;
+          // Reload halaman aktif
+          if (id === 's-home') loadHome();
+          else if (id === 's-notifikasi') loadNotifikasi();
+          else if (id === 's-kelola-izin') loadKelolaIzin();
+          else if (id === 's-papan-peringkat') loadPapanPeringkat();
+          else if (id === 's-pengumuman') loadPengumuman();
+          else if (id === 's-izin') loadIzin();
+          else if (id === 's-peraturan') loadPeraturan();
+        }
+        _pulling = false;
+        _pullStart = 0;
+      }, 500);
+    } else { _pullStart = 0; }
+  }, { passive: true });
 };
 </script>
 </div><!-- /app-wrap -->
@@ -2014,6 +2195,44 @@ window.onload = function() {
   </div>
   <div class="content" id="notif-list">
     <div class="empty-state"><div class="empty-icon">🔔</div>Memuat...</div>
+  </div>
+</div>
+
+<!-- SANKSI MANUAL (Finance/Owner) -->
+<div class="screen" id="s-sanksi-manual">
+  <div class="statusbar"></div>
+  <div class="header">
+    <div class="header-row"><button class="back-btn" onclick="goTo('s-home')">‹</button><div><h1>Sanksi Manual</h1><p>Denda & reward di luar sistem</p></div></div>
+    <div class="gold-line"></div>
+  </div>
+  <div class="content">
+    <div class="card">
+      <div class="card-title"><div class="card-dot"></div>Buat Sanksi Baru</div>
+      <div class="form-group">
+        <label class="form-label">Karyawan</label>
+        <select class="form-input" id="sanksi-user"></select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Tipe</label>
+        <select class="form-input" id="sanksi-tipe">
+          <option value="DENDA_MANUAL">💸 Denda</option>
+          <option value="REWARD_MANUAL">🎁 Reward</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Nominal (Rp)</label>
+        <input type="number" class="form-input" id="sanksi-nominal" placeholder="50000">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Keterangan</label>
+        <textarea class="form-input" id="sanksi-keterangan" rows="2" placeholder="Alasan denda/reward..."></textarea>
+      </div>
+      <button class="btn btn-primary" onclick="submitSanksiManual()">Terapkan Sanksi</button>
+    </div>
+    <div class="card" style="margin-top:10px">
+      <div class="card-title"><div class="card-dot"></div>Riwayat Sanksi Manual</div>
+      <div id="sanksi-history"><div class="empty-state">Memuat...</div></div>
+    </div>
   </div>
 </div>
 
