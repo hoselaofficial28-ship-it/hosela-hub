@@ -364,10 +364,6 @@ document.head.appendChild(_link);
       <a id="detail-doc-link" href="#" target="_blank" style="display:none;margin-top:10px;text-align:center;font-size:12px;color:var(--blue);font-weight:600;padding:8px;border:1px solid var(--blue);border-radius:8px;text-decoration:none">📄 Buka Dokumen Lengkap</a>
     </div>
     <div class="card">
-      <div class="card-title"><div class="card-dot"></div>KPI Bulan Ini</div>
-      <div id="detail-kpi-content"><div style="font-size:12px;color:var(--text-muted);text-align:center;padding:8px">Belum ada KPI bulan ini</div></div>
-    </div>
-    <div class="card">
       <div class="card-title"><div class="card-dot"></div>Rekap Kehadiran Bulan Ini</div>
       <div id="detail-absensi-content"><div style="font-size:12px;color:var(--text-muted);text-align:center;padding:8px">Belum ada data kehadiran</div></div>
     </div>
@@ -1940,8 +1936,12 @@ window.onload = function() {
   </div>
   <div class="content">
     <div class="card">
-      <div class="form-group">
-        <label class="form-label">Tanggal Tidak Masuk</label>
+      <div class="card-title"><div class="card-dot"></div>Ajukan Izin / Sakit</div>
+      <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:10px;margin-bottom:12px;font-size:11px;color:#92400e;line-height:1.6">
+        <b>⚠️ Perhatian:</b><br>
+        Pengajuan izin sakit hanya dapat diproses jika diajukan <b>pada hari yang sama</b> dengan tanggal tidak masuk.<br>
+        Pengajuan yang terlambat berhak <b>ditolak</b> oleh Finance.
+      </div>
         <input type="date" class="form-input" id="izin-tanggal">
       </div>
       <div class="form-group">
