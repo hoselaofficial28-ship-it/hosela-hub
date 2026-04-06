@@ -1685,11 +1685,28 @@ function prosesAnomali(anomId, status) {
 }
 
 function prosesIzin(izinId, status) {
+  var btn = event.target;
+  var originalText = btn.textContent;
+  btn.textContent = '⏳ Memproses...';
+  btn.disabled = true;
+  // Disable tombol pasangan juga
+  var parentDiv = btn.parentElement;
+  if (parentDiv) parentDiv.querySelectorAll('button').forEach(function(b){ b.disabled = true; });
   gasCall('approveIzin', [izinId, status, currentUser.nama], function(r) {
+    btn.disabled = false;
+    if (parentDiv) parentDiv.querySelectorAll('button').forEach(function(b){ b.disabled = false; });
     if (r.success) {
-      showToast(status === 'DISETUJUI' ? 'Izin disetujui ✅' : 'Izin ditolak');
+      showToast(status === 'DISETUJUI' ? 'Izin disetujui ✅' : 'Izin ditolak ❌');
       loadKelolaIzin();
-    } else { showToast('Gagal. Coba lagi.'); }
+    } else {
+      btn.textContent = originalText;
+      showToast('Gagal. Coba lagi.');
+    }
+  }, function(){
+    btn.textContent = originalText;
+    btn.disabled = false;
+    if (parentDiv) parentDiv.querySelectorAll('button').forEach(function(b){ b.disabled = false; });
+    showToast('Koneksi gagal');
   });
 }
 
