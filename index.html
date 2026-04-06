@@ -1069,13 +1069,23 @@ function openDetail(userId, nama, jabatan, bagian) {
       html += '<div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">Kehadiran: '+persen+'%</div>';
       html += '<div style="background:#e2e8f0;border-radius:4px;height:8px"><div style="background:'+barColor+';height:8px;border-radius:4px;width:'+persen+'%;transition:width .5s"></div></div>';
 
-      // Denda dropdown
+      // Denda dropdown — telat + SP + anomali
       var dendaItems = [];
       b.mingguList.forEach(function(w) {
         if (w.detail && w.detail.telat) {
           w.detail.telat.forEach(function(d){ dendaItems.push(d.keterangan+' → Rp '+d.nilai.toLocaleString('id-ID')); });
         }
+        if (w.detail && w.detail.dendaSP) {
+          w.detail.dendaSP.forEach(function(d){ dendaItems.push('⚠️ '+d.keterangan+' → Rp '+d.nilai.toLocaleString('id-ID')); });
+        }
       });
+      // Tambah denda SP dari bulan (yang mungkin lintas minggu)
+      if (b.detailDendaSP && b.detailDendaSP.length > 0) {
+        b.detailDendaSP.forEach(function(d){
+          var already = dendaItems.some(function(x){ return x.includes(d.keterangan); });
+          if (!already) dendaItems.push('⚠️ '+d.keterangan+' → Rp '+d.nilai.toLocaleString('id-ID'));
+        });
+      }
       if (b.totalDenda > 0) html += dropdown('💸 Estimasi Denda Bulan Ini', '#fee2e2', '#991b1b', dendaItems, b.totalDenda);
 
       // Reward lembur dropdown
