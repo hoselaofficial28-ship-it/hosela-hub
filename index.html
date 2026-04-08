@@ -658,6 +658,7 @@ function goTo(id) {
   if (id === 's-notifikasi') loadNotifikasi();
   if (id === 's-izin') loadIzin();
   if (id === 's-sanksi-manual') loadSanksiManual();
+  if (id === 's-rekap-bulanan') loadRekapBulanan();
   if (id === 's-kelola-izin') { loadKelolaIzin(); }
 }
 
@@ -789,12 +790,14 @@ function loadHome() {
     menus.push({id:'s-kelola-izin', icon:'✅', bg:'#d1fae5', label:'Kelola Izin', sub:'Approve pengajuan'});
     menus.push({id:'s-kpi-check', icon:'📋', bg:'#fef3c7', label:'KPI Checklist', sub:'Update KPI kamu'});
     menus.push({id:'s-sanksi-manual', icon:'⚖️', bg:'#fce7f3', label:'Sanksi Manual', sub:'Denda & reward khusus'});
+    menus.push({id:'s-rekap-bulanan', icon:'📊', bg:'#e0f2fe', label:'Rekap Bulanan', sub:'Ringkasan semua karyawan'});
   }
   if (u.bagian === 'Owner') {
     menus.push({id:'s-tambah-pengumuman', icon:'✏️', bg:'#f0fdf4', label:'Buat Pengumuman', sub:'Info baru'});
     menus.push({id:'s-manage-users', icon:'👥', bg:'#fef3c7', label:'Kelola Tim', sub:'Aktif / Nonaktif'});
     menus.push({id:'s-laporan-absensi', icon:'📊', bg:'#e0f2fe', label:'Laporan Absensi', sub:'Rekap kehadiran'});
     menus.push({id:'s-sanksi-manual', icon:'⚖️', bg:'#fce7f3', label:'Sanksi Manual', sub:'Denda & reward khusus'});
+    menus.push({id:'s-rekap-bulanan', icon:'📈', bg:'#d1fae5', label:'Rekap Bulanan', sub:'Ringkasan semua karyawan'});
   }
   menus.push({id:'s-ganti-pin', icon:'🔐', bg:'#f1f5f9', label:'Ganti Sandi', sub:'Ubah PIN login kamu'});
   var prevBtn = document.querySelector('.preview-btn');
@@ -1089,7 +1092,7 @@ function openDetail(userId, nama, jabatan, bagian) {
       html += '<div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">Kehadiran: '+persen+'%</div>';
       html += '<div style="background:#e2e8f0;border-radius:4px;height:8px"><div style="background:'+barColor+';height:8px;border-radius:4px;width:'+persen+'%;transition:width .5s"></div></div>';
 
-      // Denda dropdown — telat + SP + anomali
+      // Denda dropdown — telat + SP + anomali + manual
       var dendaItems = [];
       b.mingguList.forEach(function(w) {
         if (w.detail && w.detail.telat) {
@@ -1098,17 +1101,27 @@ function openDetail(userId, nama, jabatan, bagian) {
         if (w.detail && w.detail.dendaSP) {
           w.detail.dendaSP.forEach(function(d){ dendaItems.push('⚠️ '+d.keterangan+' → Rp '+d.nilai.toLocaleString('id-ID')); });
         }
+        if (w.detail && w.detail.dendaManual) {
+          w.detail.dendaManual.forEach(function(d){ dendaItems.push('💼 '+d.keterangan+' → Rp '+d.nilai.toLocaleString('id-ID')); });
+        }
       });
-      // Tambah denda SP dari bulan (yang mungkin lintas minggu)
+      // Denda SP bulan (lintas minggu) — deduplicate
       if (b.detailDendaSP && b.detailDendaSP.length > 0) {
         b.detailDendaSP.forEach(function(d){
-          var already = dendaItems.some(function(x){ return x.includes(d.keterangan); });
+          var already = dendaItems.some(function(x){ return x.includes(d.keterangan.substring(0,15)); });
           if (!already) dendaItems.push('⚠️ '+d.keterangan+' → Rp '+d.nilai.toLocaleString('id-ID'));
+        });
+      }
+      // Denda manual bulan (deduplicate)
+      if (b.detailDendaManual && b.detailDendaManual.length > 0) {
+        b.detailDendaManual.forEach(function(d){
+          var already = dendaItems.some(function(x){ return x.includes(d.keterangan.substring(0,15)); });
+          if (!already) dendaItems.push('💼 '+d.keterangan+' → Rp '+d.nilai.toLocaleString('id-ID'));
         });
       }
       if (b.totalDenda > 0) html += dropdown('💸 Estimasi Denda Bulan Ini', '#fee2e2', '#991b1b', dendaItems, b.totalDenda);
 
-      // Reward lembur dropdown
+      // Reward lembur + manual dropdown
       var rewardItems = [];
       if (b.detailLemburPulang && b.detailLemburPulang.length > 0) {
         rewardItems.push('— Lembur Pulang —');
@@ -1121,6 +1134,10 @@ function openDetail(userId, nama, jabatan, bagian) {
       if (b.detailLemburLibur && b.detailLemburLibur.length > 0) {
         rewardItems.push('— Lembur Hari Libur —');
         b.detailLemburLibur.forEach(function(d){ rewardItems.push(d.keterangan+' → Rp '+d.nilai.toLocaleString('id-ID')); });
+      }
+      if (b.detailRewardManual && b.detailRewardManual.length > 0) {
+        rewardItems.push('— Reward Manual —');
+        b.detailRewardManual.forEach(function(d){ rewardItems.push('🎁 '+d.keterangan+' → Rp '+d.nilai.toLocaleString('id-ID')); });
       }
       var totalReward = (b.totalRewardLembur||0) + (b.bonusKerajinan||0);
       if (totalReward > 0) {
@@ -1986,6 +2003,73 @@ function batalkanSanksi(id) {
   });
 }
 
+// ─── REKAP BULANAN ───────────────────────────────
+function loadRekapBulanan() {
+  // Isi dropdown bulan kalau belum
+  var sel = document.getElementById('rekap-bulan-sel');
+  if (sel.options.length === 0) {
+    var now = new Date();
+    for (var i = 0; i < 6; i++) {
+      var d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      var key = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+      var bulanNames = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+      var label = bulanNames[d.getMonth()] + ' ' + d.getFullYear();
+      var opt = document.createElement('option');
+      opt.value = key; opt.textContent = label;
+      if (i === 0) opt.selected = true;
+      sel.appendChild(opt);
+    }
+  }
+  var bulanKey = sel.value;
+  var el = document.getElementById('rekap-bulanan-content');
+  el.innerHTML = skelCards(4);
+
+  gasCall('getRekapBulananSemua', [bulanKey], function(res) {
+    if (!res || !res.data || !res.data.length) {
+      el.innerHTML = '<div class="empty-state"><div class="empty-icon">📊</div>Belum ada data bulan ini</div>';
+      return;
+    }
+    var data = res.data;
+    // Summary cards
+    var totalHadir = data.reduce(function(s,r){ return s+r.hadir; }, 0);
+    var totalAbsen = data.reduce(function(s,r){ return s+r.absen; }, 0);
+    var totalDenda = data.reduce(function(s,r){ return s+r.totalDenda; }, 0);
+    var totalReward = data.reduce(function(s,r){ return s+r.totalReward+r.bonusKerajinan; }, 0);
+
+    var html = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">';
+    html += '<div class="card" style="padding:10px;text-align:center"><div style="font-size:20px;font-weight:800;color:var(--green)">'+totalHadir+'</div><div style="font-size:11px;color:var(--text-muted)">Total Hadir</div></div>';
+    html += '<div class="card" style="padding:10px;text-align:center"><div style="font-size:20px;font-weight:800;color:var(--red)">'+totalAbsen+'</div><div style="font-size:11px;color:var(--text-muted)">Total Absen</div></div>';
+    html += '<div class="card" style="padding:10px;text-align:center"><div style="font-size:14px;font-weight:800;color:#dc2626">Rp '+totalDenda.toLocaleString('id-ID')+'</div><div style="font-size:11px;color:var(--text-muted)">Total Denda</div></div>';
+    html += '<div class="card" style="padding:10px;text-align:center"><div style="font-size:14px;font-weight:800;color:#16a34a">Rp '+totalReward.toLocaleString('id-ID')+'</div><div style="font-size:11px;color:var(--text-muted)">Total Reward</div></div>';
+    html += '</div>';
+
+    // Tabel per karyawan
+    data.forEach(function(r) {
+      var bintangStr = '⭐'.repeat(Math.max(0, r.bintang||0));
+      var netDenda = r.totalDenda;
+      var netReward = r.totalReward + r.bonusKerajinan;
+      html += '<div class="card" style="margin-bottom:8px;padding:12px">';
+      html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">';
+      html += '<div><div style="font-weight:700;font-size:13px">'+r.nama+'</div><div style="font-size:11px;color:var(--text-muted)">'+r.jabatan+' · '+r.bagian+'</div></div>';
+      html += '<div style="text-align:right"><div style="font-size:14px">'+bintangStr+'</div><div style="font-size:10px;color:var(--text-muted)">'+r.skor+'/100</div></div>';
+      html += '</div>';
+      html += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-bottom:8px">';
+      html += '<div style="text-align:center;background:#f0fdf4;border-radius:6px;padding:6px"><div style="font-size:14px;font-weight:700;color:#16a34a">'+r.hadir+'</div><div style="font-size:9px;color:var(--text-muted)">Hadir</div></div>';
+      html += '<div style="text-align:center;background:#fef3c7;border-radius:6px;padding:6px"><div style="font-size:14px;font-weight:700;color:#d97706">'+r.telat+'</div><div style="font-size:9px;color:var(--text-muted)">Telat</div></div>';
+      html += '<div style="text-align:center;background:#fee2e2;border-radius:6px;padding:6px"><div style="font-size:14px;font-weight:700;color:#dc2626">'+r.absen+'</div><div style="font-size:9px;color:var(--text-muted)">Absen</div></div>';
+      html += '<div style="text-align:center;background:#ede9fe;border-radius:6px;padding:6px"><div style="font-size:14px;font-weight:700;color:#7c3aed">'+(r.lemburMinggu+r.lemburLibur)+'</div><div style="font-size:9px;color:var(--text-muted)">Lembur</div></div>';
+      html += '</div>';
+      if (netDenda > 0) html += '<div style="display:flex;justify-content:space-between;font-size:11px;color:#dc2626;padding:4px 0;border-top:1px solid var(--gray-border)"><span>💸 Estimasi Denda</span><span style="font-weight:700">- Rp '+netDenda.toLocaleString('id-ID')+'</span></div>';
+      if (netReward > 0) html += '<div style="display:flex;justify-content:space-between;font-size:11px;color:#16a34a;padding:4px 0;border-top:1px solid var(--gray-border)"><span>⚡ Estimasi Reward</span><span style="font-weight:700">+ Rp '+netReward.toLocaleString('id-ID')+'</span></div>';
+      html += '</div>';
+    });
+
+    el.innerHTML = html;
+  }, function() {
+    el.innerHTML = '<div class="empty-state">Gagal memuat data</div>';
+  });
+}
+
 function initials(nama) { return (nama||'').split(' ').map(function(w){return w[0];}).join('').substring(0,2).toUpperCase(); }
 function esc(s) { return (s||'').replace(/'/g,"\\'"); }
 function showToast(msg) {
@@ -2233,6 +2317,22 @@ window.onload = function() {
       <div class="card-title"><div class="card-dot"></div>Riwayat Sanksi Manual</div>
       <div id="sanksi-history"><div class="empty-state">Memuat...</div></div>
     </div>
+  </div>
+</div>
+
+<!-- REKAP BULANAN (Finance/Owner) -->
+<div class="screen" id="s-rekap-bulanan">
+  <div class="statusbar"></div>
+  <div class="header">
+    <div class="header-row"><button class="back-btn" onclick="goTo('s-home')">‹</button><div><h1>Rekap Bulanan</h1><p>Ringkasan semua karyawan</p></div></div>
+    <div class="gold-line"></div>
+  </div>
+  <div class="content">
+    <div style="display:flex;gap:8px;margin-bottom:12px">
+      <select id="rekap-bulan-sel" class="form-input" style="flex:1" onchange="loadRekapBulanan()">
+      </select>
+    </div>
+    <div id="rekap-bulanan-content"><div class="empty-state"><div class="empty-icon">📊</div>Memuat...</div></div>
   </div>
 </div>
 
