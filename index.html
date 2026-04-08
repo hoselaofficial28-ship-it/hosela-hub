@@ -1092,36 +1092,25 @@ function openDetail(userId, nama, jabatan, bagian) {
       html += '<div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">Kehadiran: '+persen+'%</div>';
       html += '<div style="background:#e2e8f0;border-radius:4px;height:8px"><div style="background:'+barColor+';height:8px;border-radius:4px;width:'+persen+'%;transition:width .5s"></div></div>';
 
-      // Denda dropdown — telat + SP + anomali + manual
+      // Denda dropdown — HANYA dari detailByBulan (bukan mingguList, hindari dobel)
       var dendaItems = [];
       b.mingguList.forEach(function(w) {
         if (w.detail && w.detail.telat) {
           w.detail.telat.forEach(function(d){ dendaItems.push(d.keterangan+' → Rp '+d.nilai.toLocaleString('id-ID')); });
         }
-        if (w.detail && w.detail.dendaSP) {
-          w.detail.dendaSP.forEach(function(d){ dendaItems.push('⚠️ '+d.keterangan+' → Rp '+d.nilai.toLocaleString('id-ID')); });
-        }
         if (w.detail && w.detail.dendaManual) {
           w.detail.dendaManual.forEach(function(d){ dendaItems.push('💼 '+d.keterangan+' → Rp '+d.nilai.toLocaleString('id-ID')); });
         }
       });
-      // Denda SP bulan (lintas minggu) — deduplicate
+      // SP dan anomali dari detailByBulan (sudah deduplicate di backend)
       if (b.detailDendaSP && b.detailDendaSP.length > 0) {
         b.detailDendaSP.forEach(function(d){
-          var already = dendaItems.some(function(x){ return x.includes(d.keterangan.substring(0,15)); });
-          if (!already) dendaItems.push('⚠️ '+d.keterangan+' → Rp '+d.nilai.toLocaleString('id-ID'));
-        });
-      }
-      // Denda manual bulan (deduplicate)
-      if (b.detailDendaManual && b.detailDendaManual.length > 0) {
-        b.detailDendaManual.forEach(function(d){
-          var already = dendaItems.some(function(x){ return x.includes(d.keterangan.substring(0,15)); });
-          if (!already) dendaItems.push('💼 '+d.keterangan+' → Rp '+d.nilai.toLocaleString('id-ID'));
+          dendaItems.push('⚠️ '+d.keterangan+' → Rp '+d.nilai.toLocaleString('id-ID'));
         });
       }
       if (b.totalDenda > 0) html += dropdown('💸 Estimasi Denda Bulan Ini', '#fee2e2', '#991b1b', dendaItems, b.totalDenda);
 
-      // Reward lembur + manual dropdown
+      // Reward dropdown — HANYA dari detailByBulan (bukan mingguList, hindari dobel)
       var rewardItems = [];
       if (b.detailLemburPulang && b.detailLemburPulang.length > 0) {
         rewardItems.push('— Lembur Pulang —');
@@ -1141,17 +1130,22 @@ function openDetail(userId, nama, jabatan, bagian) {
       }
       var totalReward = (b.totalRewardLembur||0) + (b.bonusKerajinan||0);
       if (totalReward > 0) {
-        if (b.bonusKerajinan > 0) rewardItems.push('🌟 Bonus Kerajinan (tidak ada absen) → Rp '+b.bonusKerajinan.toLocaleString('id-ID'));
+        if (b.bonusKerajinan > 0) rewardItems.push('🌟 Bonus Kerajinan → Rp '+b.bonusKerajinan.toLocaleString('id-ID'));
         html += dropdown('⚡ Estimasi Reward Bulan Ini', '#d1fae5', '#065f46', rewardItems, totalReward);
       }
 
-      // Absen dropdown
+      // Absen dropdown — HANYA dari detailByBulan
       var absenItems = [];
-      b.mingguList.forEach(function(w) {
-        if (w.detail && w.detail.absen) {
-          w.detail.absen.forEach(function(d){ absenItems.push(d.keterangan); });
-        }
-      });
+      if (b.detailAbsen && b.detailAbsen.length > 0) {
+        b.detailAbsen.forEach(function(d){ absenItems.push(d.keterangan); });
+      } else {
+        // fallback ke mingguList kalau detailAbsen belum ada
+        b.mingguList.forEach(function(w) {
+          if (w.detail && w.detail.absen) {
+            w.detail.absen.forEach(function(d){ absenItems.push(d.keterangan); });
+          }
+        });
+      }
       if (b.totalAbsen > 0) html += dropdown('❌ Hari Absen ('+b.totalAbsen+' hari)', '#fff7f7', '#991b1b', absenItems, 0);
 
       // Libur resmi
