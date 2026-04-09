@@ -729,7 +729,7 @@ function doLogin() {
 
 function loadHome() {
   var u = currentUser;
-  cacheClear('getHomeData' + JSON.stringify([u.id, u.bagian]));
+  // GAS CacheService mengelola cache server-side — tidak perlu bust dari frontend
 
   // Kata-kata semangat rotasi harian
   var quotes = [
