@@ -271,7 +271,7 @@ document.head.appendChild(_link);
 
 <!-- SIDE MENU OVERLAY -->
 <div id="side-menu-overlay" onclick="closeSideMenu()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:1000"></div>
-<div id="side-menu" style="display:none;position:fixed;top:0;left:0;width:75%;max-width:280px;height:100%;background:#fff;z-index:1001;box-shadow:4px 0 20px rgba(0,0,0,0.2);flex-direction:column;overflow-y:auto">
+<div id="side-menu" style="display:none;position:fixed;top:0;right:0;width:75%;max-width:280px;height:100%;background:#fff;z-index:1001;box-shadow:-4px 0 20px rgba(0,0,0,0.2);flex-direction:column;overflow-y:auto;transform:translateX(100%);transition:transform .28s cubic-bezier(.4,0,.2,1)">
   <div style="background:var(--blue);padding:32px 20px 20px;color:#fff">
     <div style="font-size:24px;font-weight:800" id="sm-nama">—</div>
     <div style="font-size:12px;opacity:.8" id="sm-jabatan">—</div>
@@ -1903,8 +1903,11 @@ function openSideMenu() {
 }
 
 function closeSideMenu() {
-  document.getElementById('side-menu').style.display = 'none';
-  document.getElementById('side-menu-overlay').style.display = 'none';
+  var menu = document.getElementById('side-menu');
+  var overlay = document.getElementById('side-menu-overlay');
+  menu.style.transform = 'translateX(100%)';
+  overlay.style.display = 'none';
+  setTimeout(function(){ menu.style.display = 'none'; }, 280);
 }
 
 function openPanduan() {
