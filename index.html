@@ -602,8 +602,10 @@ function gasCall(action, args, success, failure) {
     var cached = cacheGet(cacheKey);
     if (cached) { if (success) success(cached); return; }
   }
-  var url = GAS_URL + '?action=' + encodeURIComponent(action) + '&args=' + encodeURIComponent(JSON.stringify(args || []));
-  fetch(url, { redirect: 'follow' })
+  // Tambah timestamp untuk bust browser cache pada action non-cacheable
+  var ts = CACHEABLE.indexOf(action) !== -1 ? '' : '&_t=' + Date.now();
+  var url = GAS_URL + '?action=' + encodeURIComponent(action) + '&args=' + encodeURIComponent(JSON.stringify(args || [])) + ts;
+  fetch(url, { redirect: 'follow', cache: 'no-store' })
     .then(function(r) { return r.json(); })
     .then(function(data) {
       if (CACHEABLE.indexOf(action) !== -1) cacheSet(cacheKey, data);
