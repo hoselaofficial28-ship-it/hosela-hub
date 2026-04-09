@@ -1108,11 +1108,12 @@ function openDetail(userId, nama, jabatan, bagian) {
           dendaItems.push('⚠️ '+d.keterangan+' → Rp '+d.nilai.toLocaleString('id-ID'));
         });
       }
-      // Penalty manual dari detailByBulan (deduplicate)
+      // Penalty Manual dari detailByBulan (deduplicate)
       if (b.detailDendaManual && b.detailDendaManual.length > 0) {
         dendaItems.push('— Penalty Manual —');
         b.detailDendaManual.forEach(function(d){
-          dendaItems.push('💼 '+d.keterangan+' → Rp '+d.nilai.toLocaleString('id-ID'));
+          var tglLabel = d.tanggal ? formatTglShort(d.tanggal)+' · ' : '';
+          dendaItems.push('💼 '+tglLabel+d.keterangan+' → Rp '+d.nilai.toLocaleString('id-ID'));
         });
       }
       if (b.totalDenda > 0) html += dropdown('💸 Estimasi Denda Bulan Ini', '#fee2e2', '#991b1b', dendaItems, b.totalDenda);
@@ -1133,7 +1134,10 @@ function openDetail(userId, nama, jabatan, bagian) {
       }
       if (b.detailRewardManual && b.detailRewardManual.length > 0) {
         rewardItems.push('— Reward Manual —');
-        b.detailRewardManual.forEach(function(d){ rewardItems.push('🎁 '+d.keterangan+' → Rp '+d.nilai.toLocaleString('id-ID')); });
+        b.detailRewardManual.forEach(function(d){
+          var tglLabel = d.tanggal ? formatTglShort(d.tanggal)+' · ' : '';
+          rewardItems.push('🎁 '+tglLabel+d.keterangan+' → Rp '+d.nilai.toLocaleString('id-ID'));
+        });
       }
       if (b.bonusKerajinan > 0) rewardItems.push('🌟 Bonus Kerajinan → Rp '+b.bonusKerajinan.toLocaleString('id-ID'));
       var totalReward = (b.totalRewardLembur||0) + (b.bonusKerajinan||0);
@@ -2079,6 +2083,14 @@ function loadRekapBulanan() {
 
 function initials(nama) { return (nama||'').split(' ').map(function(w){return w[0];}).join('').substring(0,2).toUpperCase(); }
 function esc(s) { return (s||'').replace(/'/g,"\\'"); }
+function formatTglShort(tglStr) {
+  // "2026-03-15" → "15 Mar"
+  if (!tglStr) return '';
+  var m = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+  var parts = String(tglStr).split('-');
+  if (parts.length >= 3) return parseInt(parts[2])+' '+m[parseInt(parts[1])-1];
+  return tglStr;
+}
 function showToast(msg) {
   var t = document.getElementById('toast');
   t.textContent = msg; t.classList.add('show');
