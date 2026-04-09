@@ -791,14 +791,14 @@ function loadHome() {
     menus.push({id:'s-absensi-upload', icon:'📤', bg:'#e0f2fe', label:'Upload Absensi', sub:'Data fingerprint'});
     menus.push({id:'s-kelola-izin', icon:'✅', bg:'#d1fae5', label:'Kelola Izin', sub:'Approve pengajuan'});
     menus.push({id:'s-kpi-check', icon:'📋', bg:'#fef3c7', label:'KPI Checklist', sub:'Update KPI kamu'});
-    menus.push({id:'s-sanksi-manual', icon:'⚖️', bg:'#fce7f3', label:'Sanksi Manual', sub:'Denda & reward khusus'});
+    menus.push({id:'s-sanksi-manual', icon:'⚖️', bg:'#fce7f3', label:'Reward & Penalty', sub:'Denda & reward manual'});
     menus.push({id:'s-rekap-bulanan', icon:'📊', bg:'#e0f2fe', label:'Rekap Bulanan', sub:'Ringkasan semua karyawan'});
   }
   if (u.bagian === 'Owner') {
     menus.push({id:'s-tambah-pengumuman', icon:'✏️', bg:'#f0fdf4', label:'Buat Pengumuman', sub:'Info baru'});
     menus.push({id:'s-manage-users', icon:'👥', bg:'#fef3c7', label:'Kelola Tim', sub:'Aktif / Nonaktif'});
     menus.push({id:'s-laporan-absensi', icon:'📊', bg:'#e0f2fe', label:'Laporan Absensi', sub:'Rekap kehadiran'});
-    menus.push({id:'s-sanksi-manual', icon:'⚖️', bg:'#fce7f3', label:'Sanksi Manual', sub:'Denda & reward khusus'});
+    menus.push({id:'s-sanksi-manual', icon:'⚖️', bg:'#fce7f3', label:'Reward & Penalty', sub:'Denda & reward manual'});
     menus.push({id:'s-rekap-bulanan', icon:'📈', bg:'#d1fae5', label:'Rekap Bulanan', sub:'Ringkasan semua karyawan'});
   }
   menus.push({id:'s-ganti-pin', icon:'🔐', bg:'#f1f5f9', label:'Ganti Sandi', sub:'Ubah PIN login kamu'});
@@ -1095,25 +1095,29 @@ function openDetail(userId, nama, jabatan, bagian) {
       html += '<div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">Kehadiran: '+persen+'%</div>';
       html += '<div style="background:#e2e8f0;border-radius:4px;height:8px"><div style="background:'+barColor+';height:8px;border-radius:4px;width:'+persen+'%;transition:width .5s"></div></div>';
 
-      // Denda dropdown — HANYA dari detailByBulan (bukan mingguList, hindari dobel)
+      // Denda dropdown — telat + SP + penalty manual (dari detailByBulan, bukan mingguList)
       var dendaItems = [];
       b.mingguList.forEach(function(w) {
         if (w.detail && w.detail.telat) {
           w.detail.telat.forEach(function(d){ dendaItems.push(d.keterangan+' → Rp '+d.nilai.toLocaleString('id-ID')); });
         }
-        if (w.detail && w.detail.dendaManual) {
-          w.detail.dendaManual.forEach(function(d){ dendaItems.push('💼 '+d.keterangan+' → Rp '+d.nilai.toLocaleString('id-ID')); });
-        }
       });
-      // SP dan anomali dari detailByBulan (sudah deduplicate di backend)
+      // SP dari detailByBulan (deduplicate)
       if (b.detailDendaSP && b.detailDendaSP.length > 0) {
         b.detailDendaSP.forEach(function(d){
           dendaItems.push('⚠️ '+d.keterangan+' → Rp '+d.nilai.toLocaleString('id-ID'));
         });
       }
+      // Penalty manual dari detailByBulan (deduplicate)
+      if (b.detailDendaManual && b.detailDendaManual.length > 0) {
+        dendaItems.push('— Penalty Manual —');
+        b.detailDendaManual.forEach(function(d){
+          dendaItems.push('💼 '+d.keterangan+' → Rp '+d.nilai.toLocaleString('id-ID'));
+        });
+      }
       if (b.totalDenda > 0) html += dropdown('💸 Estimasi Denda Bulan Ini', '#fee2e2', '#991b1b', dendaItems, b.totalDenda);
 
-      // Reward dropdown — HANYA dari detailByBulan (bukan mingguList, hindari dobel)
+      // Reward dropdown — lembur + reward manual
       var rewardItems = [];
       if (b.detailLemburPulang && b.detailLemburPulang.length > 0) {
         rewardItems.push('— Lembur Pulang —');
@@ -1131,11 +1135,9 @@ function openDetail(userId, nama, jabatan, bagian) {
         rewardItems.push('— Reward Manual —');
         b.detailRewardManual.forEach(function(d){ rewardItems.push('🎁 '+d.keterangan+' → Rp '+d.nilai.toLocaleString('id-ID')); });
       }
+      if (b.bonusKerajinan > 0) rewardItems.push('🌟 Bonus Kerajinan → Rp '+b.bonusKerajinan.toLocaleString('id-ID'));
       var totalReward = (b.totalRewardLembur||0) + (b.bonusKerajinan||0);
-      if (totalReward > 0) {
-        if (b.bonusKerajinan > 0) rewardItems.push('🌟 Bonus Kerajinan → Rp '+b.bonusKerajinan.toLocaleString('id-ID'));
-        html += dropdown('⚡ Estimasi Reward Bulan Ini', '#d1fae5', '#065f46', rewardItems, totalReward);
-      }
+      if (totalReward > 0) html += dropdown('⚡ Estimasi Reward Bulan Ini', '#d1fae5', '#065f46', rewardItems, totalReward);
 
       // Absen dropdown — HANYA dari detailByBulan
       var absenItems = [];
@@ -1934,8 +1936,14 @@ function doLogout() {
   document.getElementById('login-password').value = '';
 }
 
-// ─── SANKSI MANUAL ───────────────────────────────
+// ─── REWARD & PENALTY MANUAL ─────────────────────
 function loadSanksiManual() {
+  // Set default tanggal = hari ini
+  var today = new Date();
+  var tglInput = document.getElementById('sanksi-tanggal');
+  if (tglInput && !tglInput.value) {
+    tglInput.value = today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');
+  }
   // Load karyawan list
   var sel = document.getElementById('sanksi-user');
   sel.innerHTML = '<option value="">Pilih karyawan...</option>';
@@ -1952,15 +1960,15 @@ function loadSanksiManual() {
   var hist = document.getElementById('sanksi-history');
   hist.innerHTML = skelCards(3);
   gasCall('getSanksiManual', [], function(data) {
-    if (!data || !data.length) { hist.innerHTML = '<div class="empty-state">Belum ada sanksi manual</div>'; return; }
+    if (!data || !data.length) { hist.innerHTML = '<div class="empty-state">Belum ada data</div>'; return; }
     hist.innerHTML = data.map(function(s) {
       var isDenda = s.tipe === 'DENDA_MANUAL';
-      var bg = isDenda ? '#fee2e2' : '#d1fae5';
       var color = isDenda ? '#dc2626' : '#065f46';
+      var label = isDenda ? '💸 Penalty' : '🎁 Reward';
       return '<div style="border:1px solid var(--gray-border);border-radius:8px;padding:10px;margin-bottom:8px;border-left:3px solid '+(isDenda?'#dc2626':'#22c55e')+'">'+
         '<div style="display:flex;justify-content:space-between;align-items:flex-start">'+
-        '<div><div style="font-size:12px;font-weight:700;color:var(--text-dark)">'+s.nama+'</div>'+
-        '<div style="font-size:11px;color:var(--text-muted)">'+s.tgl+'</div>'+
+        '<div><div style="font-size:11px;font-weight:700;color:'+color+'">'+label+' · '+s.nama+'</div>'+
+        '<div style="font-size:10px;color:var(--text-muted)">'+s.tgl+'</div>'+
         '<div style="font-size:11px;color:var(--text-dark);margin-top:2px">'+s.keterangan+'</div></div>'+
         '<div style="text-align:right;flex-shrink:0;margin-left:8px">'+
         '<div style="font-size:13px;font-weight:800;color:'+color+'">'+(isDenda?'-':'+')+'Rp '+parseInt(s.nominal).toLocaleString('id-ID')+'</div>'+
@@ -1974,28 +1982,30 @@ function submitSanksiManual() {
   var userId = document.getElementById('sanksi-user').value;
   var tipe = document.getElementById('sanksi-tipe').value;
   var nominal = document.getElementById('sanksi-nominal').value;
+  var tanggal = document.getElementById('sanksi-tanggal').value;
   var ket = document.getElementById('sanksi-keterangan').value.trim();
   if (!userId) { showToast('Pilih karyawan dulu'); return; }
   if (!nominal || parseInt(nominal) <= 0) { showToast('Nominal harus lebih dari 0'); return; }
   if (!ket) { showToast('Keterangan wajib diisi'); return; }
+  if (!tanggal) { showToast('Tanggal wajib diisi'); return; }
   var btn = event.target;
   btn.textContent = '⏳ Memproses...'; btn.disabled = true;
-  gasCall('addSanksiManual', [currentUser.nama, userId, tipe, nominal, ket], function(r) {
-    btn.textContent = 'Terapkan Sanksi'; btn.disabled = false;
+  gasCall('addSanksiManual', [currentUser.nama, userId, tipe, nominal, ket, tanggal], function(r) {
+    btn.textContent = 'Terapkan'; btn.disabled = false;
     if (r.success) {
       document.getElementById('sanksi-nominal').value = '';
       document.getElementById('sanksi-keterangan').value = '';
       document.getElementById('sanksi-user').value = '';
-      showToast((tipe==='DENDA_MANUAL'?'Denda':'Reward')+' berhasil diterapkan ✅');
+      showToast((tipe==='DENDA_MANUAL'?'💸 Penalty':'🎁 Reward')+' berhasil diterapkan ✅');
       loadSanksiManual();
     } else { showToast('Gagal. Coba lagi.'); }
-  }, function(){ btn.textContent = 'Terapkan Sanksi'; btn.disabled = false; showToast('Koneksi gagal'); });
+  }, function(){ btn.textContent = 'Terapkan'; btn.disabled = false; showToast('Koneksi gagal'); });
 }
 
 function batalkanSanksi(id) {
-  if (!confirm('Batalkan sanksi ini?')) return;
+  if (!confirm('Batalkan ini?')) return;
   gasCall('batalSanksiManual', [id], function(r) {
-    if (r.success) { showToast('Sanksi dibatalkan ✅'); loadSanksiManual(); }
+    if (r.success) { showToast('Dibatalkan ✅'); loadSanksiManual(); }
     else showToast(r.msg || 'Gagal membatalkan');
   });
 }
@@ -2279,16 +2289,16 @@ window.onload = function() {
   </div>
 </div>
 
-<!-- SANKSI MANUAL (Finance/Owner) -->
+<!-- REWARD & PENALTY MANUAL (Finance/Owner) -->
 <div class="screen" id="s-sanksi-manual">
   <div class="statusbar"></div>
   <div class="header">
-    <div class="header-row"><button class="back-btn" onclick="goTo('s-home')">‹</button><div><h1>Sanksi Manual</h1><p>Denda & reward di luar sistem</p></div></div>
+    <div class="header-row"><button class="back-btn" onclick="goTo('s-home')">‹</button><div><h1>Reward & Penalty</h1><p>Denda & reward manual</p></div></div>
     <div class="gold-line"></div>
   </div>
   <div class="content">
     <div class="card">
-      <div class="card-title"><div class="card-dot"></div>Buat Sanksi Baru</div>
+      <div class="card-title"><div class="card-dot"></div>Tambah Baru</div>
       <div class="form-group">
         <label class="form-label">Karyawan</label>
         <select class="form-input" id="sanksi-user"></select>
@@ -2296,7 +2306,7 @@ window.onload = function() {
       <div class="form-group">
         <label class="form-label">Tipe</label>
         <select class="form-input" id="sanksi-tipe">
-          <option value="DENDA_MANUAL">💸 Denda</option>
+          <option value="DENDA_MANUAL">💸 Penalty (Denda)</option>
           <option value="REWARD_MANUAL">🎁 Reward</option>
         </select>
       </div>
@@ -2305,13 +2315,17 @@ window.onload = function() {
         <input type="number" class="form-input" id="sanksi-nominal" placeholder="50000">
       </div>
       <div class="form-group">
-        <label class="form-label">Keterangan</label>
-        <textarea class="form-input" id="sanksi-keterangan" rows="2" placeholder="Alasan denda/reward..."></textarea>
+        <label class="form-label">Tanggal</label>
+        <input type="date" class="form-input" id="sanksi-tanggal">
       </div>
-      <button class="btn btn-primary" onclick="submitSanksiManual()">Terapkan Sanksi</button>
+      <div class="form-group">
+        <label class="form-label">Keterangan</label>
+        <textarea class="form-input" id="sanksi-keterangan" rows="2" placeholder="Alasan penalty/reward..."></textarea>
+      </div>
+      <button class="btn btn-primary" onclick="submitSanksiManual()">Terapkan</button>
     </div>
     <div class="card" style="margin-top:10px">
-      <div class="card-title"><div class="card-dot"></div>Riwayat Sanksi Manual</div>
+      <div class="card-title"><div class="card-dot"></div>Riwayat Reward & Penalty</div>
       <div id="sanksi-history"><div class="empty-state">Memuat...</div></div>
     </div>
   </div>
