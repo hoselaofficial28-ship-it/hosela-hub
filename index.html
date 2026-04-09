@@ -867,9 +867,10 @@ function loadHome() {
             showReward(next);
           }
         }, {passive:true});
+      } else {
+        // Tidak ada data reward — sembunyikan section
+        document.getElementById('reward-section').innerHTML = '';
       }
-
-      // Badge semua menu berdasarkan notif belum dibaca
       if (d.notifCountByMenu) updateAllMenuBadges(d.notifCountByMenu);
       // Badge Kelola Izin untuk Finance/Owner
       if (u.bagian === 'Finance' || u.bagian === 'Owner') {
