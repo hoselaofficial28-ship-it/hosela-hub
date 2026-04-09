@@ -1112,8 +1112,8 @@ function openDetail(userId, nama, jabatan, bagian) {
       if (b.detailDendaManual && b.detailDendaManual.length > 0) {
         dendaItems.push('— Penalty Manual —');
         b.detailDendaManual.forEach(function(d){
-          var tglLabel = d.tanggal ? formatTglShort(d.tanggal)+' · ' : '';
-          dendaItems.push('💼 '+tglLabel+d.keterangan+' → Rp '+d.nilai.toLocaleString('id-ID'));
+          var prefix = formatTglJam(d.tanggal, d.jam);
+          dendaItems.push('💼 '+prefix+d.keterangan+' → Rp '+d.nilai.toLocaleString('id-ID'));
         });
       }
       if (b.totalDenda > 0) html += dropdown('💸 Estimasi Denda Bulan Ini', '#fee2e2', '#991b1b', dendaItems, b.totalDenda);
@@ -1135,8 +1135,8 @@ function openDetail(userId, nama, jabatan, bagian) {
       if (b.detailRewardManual && b.detailRewardManual.length > 0) {
         rewardItems.push('— Reward Manual —');
         b.detailRewardManual.forEach(function(d){
-          var tglLabel = d.tanggal ? formatTglShort(d.tanggal)+' · ' : '';
-          rewardItems.push('🎁 '+tglLabel+d.keterangan+' → Rp '+d.nilai.toLocaleString('id-ID'));
+          var prefix = formatTglJam(d.tanggal, d.jam);
+          rewardItems.push('🎁 '+prefix+d.keterangan+' → Rp '+d.nilai.toLocaleString('id-ID'));
         });
       }
       if (b.bonusKerajinan > 0) rewardItems.push('🌟 Bonus Kerajinan → Rp '+b.bonusKerajinan.toLocaleString('id-ID'));
@@ -1942,12 +1942,6 @@ function doLogout() {
 
 // ─── REWARD & PENALTY MANUAL ─────────────────────
 function loadSanksiManual() {
-  // Set default tanggal = hari ini
-  var today = new Date();
-  var tglInput = document.getElementById('sanksi-tanggal');
-  if (tglInput && !tglInput.value) {
-    tglInput.value = today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');
-  }
   // Load karyawan list
   var sel = document.getElementById('sanksi-user');
   sel.innerHTML = '<option value="">Pilih karyawan...</option>';
@@ -1986,15 +1980,14 @@ function submitSanksiManual() {
   var userId = document.getElementById('sanksi-user').value;
   var tipe = document.getElementById('sanksi-tipe').value;
   var nominal = document.getElementById('sanksi-nominal').value;
-  var tanggal = document.getElementById('sanksi-tanggal').value;
   var ket = document.getElementById('sanksi-keterangan').value.trim();
   if (!userId) { showToast('Pilih karyawan dulu'); return; }
   if (!nominal || parseInt(nominal) <= 0) { showToast('Nominal harus lebih dari 0'); return; }
   if (!ket) { showToast('Keterangan wajib diisi'); return; }
-  if (!tanggal) { showToast('Tanggal wajib diisi'); return; }
   var btn = event.target;
   btn.textContent = '⏳ Memproses...'; btn.disabled = true;
-  gasCall('addSanksiManual', [currentUser.nama, userId, tipe, nominal, ket, tanggal], function(r) {
+  // Real-time: tidak ada tanggal manual — backend pakai timestamp sekarang
+  gasCall('addSanksiManual', [currentUser.nama, userId, tipe, nominal, ket], function(r) {
     btn.textContent = 'Terapkan'; btn.disabled = false;
     if (r.success) {
       document.getElementById('sanksi-nominal').value = '';
@@ -2084,12 +2077,18 @@ function loadRekapBulanan() {
 function initials(nama) { return (nama||'').split(' ').map(function(w){return w[0];}).join('').substring(0,2).toUpperCase(); }
 function esc(s) { return (s||'').replace(/'/g,"\\'"); }
 function formatTglShort(tglStr) {
-  // "2026-03-15" → "15 Mar"
   if (!tglStr) return '';
   var m = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
   var parts = String(tglStr).split('-');
   if (parts.length >= 3) return parseInt(parts[2])+' '+m[parseInt(parts[1])-1];
   return tglStr;
+}
+function formatTglJam(tglStr, jamStr) {
+  // "2026-04-09" + "17:35" → "09 Apr 17:35 · "
+  var tgl = formatTglShort(tglStr);
+  var jam = jamStr || '';
+  if (!tgl && !jam) return '';
+  return (tgl + (jam ? ' '+jam : '') + ' · ');
 }
 function showToast(msg) {
   var t = document.getElementById('toast');
@@ -2325,10 +2324,6 @@ window.onload = function() {
       <div class="form-group">
         <label class="form-label">Nominal (Rp)</label>
         <input type="number" class="form-input" id="sanksi-nominal" placeholder="50000">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Tanggal</label>
-        <input type="date" class="form-input" id="sanksi-tanggal">
       </div>
       <div class="form-group">
         <label class="form-label">Keterangan</label>
