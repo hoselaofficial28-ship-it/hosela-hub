@@ -1164,34 +1164,63 @@ function openDetail(userId, nama, jabatan, bagian) {
       html += '</div>';
 
       // Detail per minggu
-      html += '<div style="font-size:11px;font-weight:700;color:var(--text-muted);margin-bottom:6px;letter-spacing:.05em">DETAIL PER MINGGU</div>';
+      // ── DETAIL BULAN INI (gabungan semua hari, tidak terpatahkan minggu) ──
+      var allTelat = [], allAbsen = [], allLemburM = [], allLemburL = [], allLemburP = [];
+      // Kumpulkan dari detailByBulan via b.detail* fields
+      if (b.detailLemburPulang) allLemburP = b.detailLemburPulang;
+      if (b.detailLemburMinggu) allLemburM = b.detailLemburMinggu;
+      if (b.detailLemburLibur)  allLemburL = b.detailLemburLibur;
+      if (b.detailAbsen)        allAbsen   = b.detailAbsen;
+      // Telat dari mingguList (masih akurat per item)
       b.mingguList.forEach(function(w) {
-        var wColor = w.status === 'BAIK' ? '#22c55e' : w.status === 'KUNING' ? '#f59e0b' : w.status === 'ORANGE' ? '#f97316' : '#ef4444';
-        var wIcon = w.status === 'BAIK' ? '✅' : w.status === 'KUNING' ? '⚠️' : '❌';
-        html += '<div style="border:1px solid var(--gray-border);border-radius:8px;padding:10px;margin-bottom:8px">';
-        html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">';
-        html += '<div style="font-size:11px;font-weight:600;color:var(--text-dark)">'+w.range+'</div>';
-        html += '<span style="font-size:10px;background:'+wColor+'22;color:'+wColor+';padding:2px 8px;border-radius:10px;font-weight:700">'+wIcon+' '+w.status+'</span></div>';
-        html += '<div style="font-size:11px;color:var(--text-muted)">';
-        html += '✅ Hadir '+w.hadir+' hari &nbsp;·&nbsp; ⏰ Telat '+w.telat+'x &nbsp;·&nbsp; ❌ Absen '+w.absen+'x';
-        if (w.denda > 0) {
-          html += '<br><span style="color:#dc2626;font-weight:600">💸 Denda: Rp '+w.denda.toLocaleString('id-ID')+'</span>';
-          if (w.detail && w.detail.telat && w.detail.telat.length > 0) {
-            w.detail.telat.forEach(function(d){ html += '<br><span style="color:#dc2626;font-size:10px">&nbsp;&nbsp;• '+d.keterangan+'</span>'; });
-          }
-        }
-        if (w.detail && w.detail.absen && w.detail.absen.length > 0) {
-          w.detail.absen.forEach(function(d){ html += '<br><span style="color:#991b1b;font-size:10px">&nbsp;&nbsp;• '+d.keterangan+'</span>'; });
-        }
-        var lemburMingguW = w.detail ? (w.detail.lemburMinggu||[]) : [];
-        var lemburLiburW = w.detail ? (w.detail.lemburLibur||[]) : [];
-        var lemburPulangW = w.detail ? (w.detail.lemburPulang||[]) : [];
-        if (lemburMingguW.length > 0) lemburMingguW.forEach(function(d){ html += '<br><span style="color:#065f46;font-size:10px">⚡ '+d.keterangan+' → Rp '+d.nilai.toLocaleString('id-ID')+'</span>'; });
-        if (lemburLiburW.length > 0) lemburLiburW.forEach(function(d){ html += '<br><span style="color:#065f46;font-size:10px">⚡ '+d.keterangan+' → Rp '+d.nilai.toLocaleString('id-ID')+'</span>'; });
-        if (lemburPulangW.length > 0) lemburPulangW.forEach(function(d){ html += '<br><span style="color:#065f46;font-size:10px">⚡ '+d.keterangan+' → Rp '+d.nilai.toLocaleString('id-ID')+'</span>'; });
-        if (w.libur && w.libur.length > 0) html += '<br>🏖️ <span style="color:var(--blue);font-size:10px">Libur: '+w.libur.join(', ')+'</span>';
-        html += '</div></div>';
+        if (w.detail && w.detail.telat) allTelat = allTelat.concat(w.detail.telat);
       });
+
+      // Hitung range tanggal aktual dari semua item
+      var allTanggal = [];
+      allTelat.concat(allAbsen).concat(allLemburP).concat(allLemburM).concat(allLemburL).forEach(function(d){
+        if (d.tanggal) allTanggal.push(d.tanggal);
+      });
+      // Tambahkan dari mingguList hadir jika ada
+      b.mingguList.forEach(function(w){
+        if (w.detail && w.detail.hadir) w.detail.hadir.forEach(function(d){ if(d.tanggal) allTanggal.push(d.tanggal); });
+      });
+      allTanggal.sort();
+      var mNm = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+      var rangeLabel = b.label;
+      if (allTanggal.length > 0) {
+        var d0 = allTanggal[0], dN = allTanggal[allTanggal.length-1];
+        var p0 = d0.split('-'), pN = dN.split('-');
+        rangeLabel = parseInt(p0[2])+' '+mNm[parseInt(p0[1])-1]+' - '+parseInt(pN[2])+' '+mNm[parseInt(pN[1])-1]+' '+pN[0];
+      }
+
+      // Status berdasarkan total bulan
+      var bStatus = 'BAIK', bIcon = '✅', bColor = '#22c55e';
+      if (b.totalAbsen >= 3 || b.totalTelat >= 5) { bStatus='MERAH'; bIcon='❌'; bColor='#ef4444'; }
+      else if (b.totalAbsen >= 2 || b.totalTelat >= 3) { bStatus='KUNING'; bIcon='⚠️'; bColor='#f59e0b'; }
+
+      html += '<div style="font-size:11px;font-weight:700;color:var(--text-muted);margin-bottom:6px;letter-spacing:.05em">DETAIL BULAN INI</div>';
+      html += '<div style="border:1px solid var(--gray-border);border-radius:8px;padding:10px;margin-bottom:8px">';
+      html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">';
+      html += '<div style="font-size:11px;font-weight:600;color:var(--text-dark)">'+rangeLabel+'</div>';
+      html += '<span style="font-size:10px;background:'+bColor+'22;color:'+bColor+';padding:2px 8px;border-radius:10px;font-weight:700">'+bIcon+' '+bStatus+'</span></div>';
+      html += '<div style="font-size:11px;color:var(--text-muted)">';
+      html += '✅ Hadir '+b.totalHadir+' hari &nbsp;·&nbsp; ⏰ Telat '+b.totalTelat+'x &nbsp;·&nbsp; ❌ Absen '+b.totalAbsen+'x';
+
+      // Denda telat
+      if (allTelat.length > 0) {
+        html += '<br><span style="color:#dc2626;font-weight:600">💸 Denda: Rp '+b.totalDenda.toLocaleString('id-ID')+'</span>';
+        allTelat.forEach(function(d){ html += '<br><span style="color:#dc2626;font-size:10px">&nbsp;&nbsp;• '+d.keterangan+'</span>'; });
+      }
+      // Hari absen
+      if (allAbsen.length > 0) {
+        allAbsen.forEach(function(d){ html += '<br><span style="color:#991b1b;font-size:10px">&nbsp;&nbsp;• '+d.keterangan+'</span>'; });
+      }
+      // Lembur
+      if (allLemburM.length > 0) allLemburM.forEach(function(d){ html += '<br><span style="color:#065f46;font-size:10px">⚡ '+d.keterangan+' → Rp '+d.nilai.toLocaleString('id-ID')+'</span>'; });
+      if (allLemburL.length > 0) allLemburL.forEach(function(d){ html += '<br><span style="color:#065f46;font-size:10px">⚡ '+d.keterangan+' → Rp '+d.nilai.toLocaleString('id-ID')+'</span>'; });
+      if (allLemburP.length > 0) allLemburP.forEach(function(d){ html += '<br><span style="color:#065f46;font-size:10px">⚡ '+d.keterangan+' → Rp '+d.nilai.toLocaleString('id-ID')+'</span>'; });
+      html += '</div></div>';
 
       // Tombol ganti bulan
       if (bulanList.length > 1) {
