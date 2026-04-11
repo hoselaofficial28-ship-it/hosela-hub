@@ -1187,12 +1187,16 @@ function openDetail(userId, nama, jabatan, bagian) {
       });
       allTanggal.sort();
       var mNm = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
-      var rangeLabel = b.label;
+      var bParts = b.bulan.split('-');
+      var bYear = parseInt(bParts[0]), bMonth = parseInt(bParts[1]);
+      // Cari tanggal terakhir yang ada datanya
+      var lastDataDate = '';
       if (allTanggal.length > 0) {
-        var d0 = allTanggal[0], dN = allTanggal[allTanggal.length-1];
-        var p0 = d0.split('-'), pN = dN.split('-');
-        rangeLabel = parseInt(p0[2])+' '+mNm[parseInt(p0[1])-1]+' - '+parseInt(pN[2])+' '+mNm[parseInt(pN[1])-1]+' '+pN[0];
+        var dN = allTanggal[allTanggal.length-1];
+        var pN = dN.split('-');
+        lastDataDate = parseInt(pN[2])+' '+mNm[parseInt(pN[1])-1];
       }
+      var rangeLabel = mNm[bMonth-1]+' '+bYear + (lastDataDate ? ' <span style="font-size:10px;color:var(--text-muted);font-weight:400">(data s/d '+lastDataDate+')</span>' : '');
 
       // Status berdasarkan total bulan
       var bStatus = 'BAIK', bIcon = '✅', bColor = '#22c55e';
