@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbxDAHTGFbjG2RMjIPqUmdLbPO3TqKFfpPuEw9p5sdc4tEJXy6zsyyzhQ6pO65Pben4ywQ/exec';
-var APP_VERSION = '20260522a';
+var APP_VERSION = '20260522b';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -236,7 +236,7 @@ function invalidateReadCacheAfterMutation(action) {
   submitKPILaporan: ['getKPILaporan','getPapanPeringkat','getHomeData'],
   submitIzin: ['getIzinKaryawan','getIzinPending','getIzinPendingCount','getHomeData','getNotifikasi'],
   approveIzin: ['getIzinKaryawan','getIzinPending','getIzinPendingCount','getAbsensiRekap','getRekapBulananSemua','getHomeData','getNotifikasi'],
-  konfirmasiAnomali: ['getAnomaliPending','getAbsensiRekap','getRekapBulananSemua','getHomeData','getNotifikasi'],
+  konfirmasiAnomali: ['getAnomaliPending','getAbsensiMatrix','getAbsensiMatrixUser','getAbsensiRekap','getRekapBulananSemua','getHomeData','getNotifikasi'],
   addSanksiManual: ['getSanksiManual','getAbsensiRekap','getRekapBulananSemua','getPayrollPreview'],
   batalSanksiManual: ['getSanksiManual','getAbsensiRekap','getRekapBulananSemua','getPayrollPreview'],
   gantiPIN: ['getHomeData'],
@@ -480,6 +480,7 @@ function prefetchCommonData() {
  jobs.push(['getIzinPendingCount', []]);
  jobs.push(['getRekapBulananSemua', [bulanKey]]);
  jobs.push(['getPayrollPreview', [bulanKey]]);
+ jobs.push(['getAbsensiMatrix', [bulanKey]]);
  }
  jobs.forEach(function(job, idx) {
  setTimeout(function() { gasCall(job[0], job[1], function(){}, function(){}); }, 650 + idx * 220);
@@ -789,11 +790,9 @@ function loadHome(forceRefresh) {
  document.getElementById('home-menu').innerHTML = renderHomeMenuSections(menus);
  setTimeout(prefetchCommonData, 450);
 
- // Spinner reward untuk semua user
- document.getElementById('reward-section').innerHTML =
- '<div style="display:flex;align-items:center;justify-content:center;background:var(--blue);border-radius:14px;padding:18px;margin-bottom:10px">'+
- '<div style="width:20px;height:20px;border:3px solid rgba(255,255,255,0.2);border-top:3px solid #c9971f;border-radius:50%;animation:spin .7s linear infinite"></div>'+
- '<span style="color:rgba(255,255,255,0.7);font-size:12px;margin-left:10px">Memuat bintang bulan ini...</span></div>';
+ // Reward dilengkapi saat data Home tiba; jangan bikin halaman awal terasa tertahan.
+ var rewardSection = document.getElementById('reward-section');
+ if (rewardSection && !rewardSection.querySelector('.reward-card')) rewardSection.innerHTML = '';
 
  // Spinner profile card hanya untuk karyawan biasa
  if (u.bagian !== 'Owner' && u.bagian !== 'Finance') {
