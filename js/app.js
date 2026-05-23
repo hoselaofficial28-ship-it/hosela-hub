@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbxDAHTGFbjG2RMjIPqUmdLbPO3TqKFfpPuEw9p5sdc4tEJXy6zsyyzhQ6pO65Pben4ywQ/exec';
-var APP_VERSION = '20260522b';
+var APP_VERSION = '20260523a';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -1626,7 +1626,9 @@ function prosesAbsensi() {
 
 function loadLaporanAbsensi() {
  var list = document.getElementById('laporan-list');
+ if (!cacheGet('getAllAbsensiRekap' + JSON.stringify([]))) {
  list.innerHTML = '<div class="empty-state"><div class="empty-icon"></div>Memuat...</div>';
+ }
  gasCall('getAllAbsensiRekap', [], function(result) {
  if (!result.data || !result.data.length) {
  list.innerHTML = '<div class="empty-state"><div class="empty-icon"></div>Belum ada data absensi</div>'; return;
@@ -2536,7 +2538,11 @@ function loadRekapBulanan() {
  }
  var bulanKey = sel.value;
  var el = document.getElementById('rekap-bulanan-content');
+ var cachedKey = 'getRekapBulananSemua' + JSON.stringify([bulanKey]);
+ var hasCachedRekap = !!cacheGet(cachedKey);
+ if (!hasCachedRekap) {
  el.innerHTML = skelCards(4);
+ }
 
  gasCall('getRekapBulananSemua', [bulanKey], function(res) {
  if (!res || !res.data || !res.data.length) {
