@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbxDAHTGFbjG2RMjIPqUmdLbPO3TqKFfpPuEw9p5sdc4tEJXy6zsyyzhQ6pO65Pben4ywQ/exec';
-var APP_VERSION = '20260523a';
+var APP_VERSION = '20260523b';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -1687,7 +1687,7 @@ function loadKPICheck() {
  var catatan = existing ? (existing.catatan||'') : '';
  return '<div class="kpi-check-item" id="kpi-item-'+i+'">'+
  '<div class="kpi-check-header">'+
- '<div class="kpi-check-no">'+(i+1)+'</div>'+
+ '<div class="kpi-check-no"><span class="kpi-star-symbol">&#9733;</span><small>'+(i+1)+'</small></div>'+
  '<div><div class="kpi-check-title">'+k.indikator+'</div>'+
  '<div class="kpi-check-desc">'+k.keterangan+'</div></div></div>'+
  '<div class="kpi-toggle">'+
