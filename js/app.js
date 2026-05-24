@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbxDAHTGFbjG2RMjIPqUmdLbPO3TqKFfpPuEw9p5sdc4tEJXy6zsyyzhQ6pO65Pben4ywQ/exec';
-var APP_VERSION = '20260524a';
+var APP_VERSION = '20260524b';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -2785,7 +2785,6 @@ function saveAttendanceEdit(userId, tanggal) {
  var masuk = document.getElementById('att-edit-masuk').value;
  var pulang = document.getElementById('att-edit-pulang').value;
  var note = document.getElementById('att-edit-note').value || '';
- if (!masuk && !pulang) { showToast('Isi minimal jam masuk atau pulang'); return; }
  var saveBtn = document.getElementById('att-edit-save');
  var cancelBtn = document.getElementById('att-edit-cancel');
  var statusEl = document.getElementById('att-edit-status');
