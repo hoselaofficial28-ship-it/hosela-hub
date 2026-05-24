@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbxDAHTGFbjG2RMjIPqUmdLbPO3TqKFfpPuEw9p5sdc4tEJXy6zsyyzhQ6pO65Pben4ywQ/exec';
-var APP_VERSION = '20260523b';
+var APP_VERSION = '20260524a';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -2769,8 +2769,9 @@ function openAttendanceEdit(userId, nama, bulanKey, day, masuk, pulang) {
  '<label>Jam Pulang</label><input class="form-input" id="att-edit-pulang" type="time" value="'+(pulang ? pulang.substring(0,5) : '')+'">'+
  '<label>Catatan</label><input class="form-input" id="att-edit-note" placeholder="Contoh: koreksi manual Finance">'+
  '<div style="display:flex;gap:8px;margin-top:14px">'+
- '<button class="btn" style="background:#eef2f6;color:#344054" onclick="closeAttendanceEdit()">Batal</button>'+
- '<button class="btn btn-primary" onclick="saveAttendanceEdit(&quot;'+userId+'&quot;,&quot;'+tanggal+'&quot;)">Simpan</button>'+
+ '<button class="btn" id="att-edit-cancel" style="background:#eef2f6;color:#344054" onclick="closeAttendanceEdit()">Batal</button>'+
+ '<button class="btn btn-primary" id="att-edit-save" onclick="saveAttendanceEdit(&quot;'+userId+'&quot;,&quot;'+tanggal+'&quot;)">Simpan</button>'+
+ '<div id="att-edit-status" style="display:none;width:100%;font-size:12px;color:var(--text-muted);margin-top:2px;text-align:center">Menyimpan koreksi...</div>'+
  '</div></div></div>';
  document.body.insertAdjacentHTML('beforeend', html);
 }
@@ -2785,8 +2786,20 @@ function saveAttendanceEdit(userId, tanggal) {
  var pulang = document.getElementById('att-edit-pulang').value;
  var note = document.getElementById('att-edit-note').value || '';
  if (!masuk && !pulang) { showToast('Isi minimal jam masuk atau pulang'); return; }
- gasCall('updateAbsensiMatrixDay', [userId, tanggal, masuk, pulang, note, currentUser ? currentUser.nama : ''], function(res) {
- if (!res || !res.success) { showToast(res && res.msg ? res.msg : 'Gagal menyimpan'); return; }
+ var saveBtn = document.getElementById('att-edit-save');
+ var cancelBtn = document.getElementById('att-edit-cancel');
+ var statusEl = document.getElementById('att-edit-status');
+ if (saveBtn) { saveBtn.textContent = 'Menyimpan...'; saveBtn.disabled = true; saveBtn.classList.add('btn-loading'); }
+ if (cancelBtn) cancelBtn.disabled = true;
+ if (statusEl) statusEl.style.display = 'block';
+ gasCall('updateAbsensiMatrixDay', [userId, tanggal, masuk, pulang, note, currentUser ? currentUser.nama : '', true], function(res) {
+ if (!res || !res.success) {
+ if (saveBtn) { saveBtn.textContent = 'Simpan'; saveBtn.disabled = false; saveBtn.classList.remove('btn-loading'); }
+ if (cancelBtn) cancelBtn.disabled = false;
+ if (statusEl) statusEl.style.display = 'none';
+ showToast(res && res.msg ? res.msg : 'Gagal menyimpan');
+ return;
+ }
  closeAttendanceEdit();
  var sel = document.getElementById('att-matrix-bulan');
  var bulanKey = sel ? sel.value : tanggal.substring(0, 7);
@@ -2795,6 +2808,9 @@ function saveAttendanceEdit(userId, tanggal) {
  showToast('Catatan kehadiran disimpan');
  loadAttendanceMatrix(true);
  }, function() {
+ if (saveBtn) { saveBtn.textContent = 'Simpan'; saveBtn.disabled = false; saveBtn.classList.remove('btn-loading'); }
+ if (cancelBtn) cancelBtn.disabled = false;
+ if (statusEl) statusEl.style.display = 'none';
  showToast('Koneksi gagal saat menyimpan');
  });
 }
