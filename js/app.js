@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbxDAHTGFbjG2RMjIPqUmdLbPO3TqKFfpPuEw9p5sdc4tEJXy6zsyyzhQ6pO65Pben4ywQ/exec';
-var APP_VERSION = '20260524c';
+var APP_VERSION = '20260524d';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -1081,13 +1081,13 @@ function openDetail(userId, nama, jabatan, bagian) {
  var dendaItems = [];
  b.mingguList.forEach(function(w) {
  if (w.detail && w.detail.telat) {
- w.detail.telat.forEach(function(d){ dendaItems.push(d.keterangan+' → Rp '+d.nilai.toLocaleString('id-ID')); });
+ w.detail.telat.forEach(function(d){ dendaItems.push(cleanAbsensiText(d.keterangan)+' → Rp '+d.nilai.toLocaleString('id-ID')); });
  }
  });
  // SP dari detailByBulan (deduplicate)
  if (b.detailDendaSP && b.detailDendaSP.length > 0) {
  b.detailDendaSP.forEach(function(d){
- dendaItems.push(' '+d.keterangan+' → Rp '+d.nilai.toLocaleString('id-ID'));
+ dendaItems.push(' '+cleanAbsensiText(d.keterangan)+' → Rp '+d.nilai.toLocaleString('id-ID'));
  });
  }
  // Penalty Manual dari detailByBulan (deduplicate)
@@ -1095,7 +1095,7 @@ function openDetail(userId, nama, jabatan, bagian) {
  dendaItems.push('— Penalty Manual —');
  b.detailDendaManual.forEach(function(d){
  var prefix = formatTglJam(d.tanggal, d.jam);
- dendaItems.push(' '+prefix+d.keterangan+' → Rp '+d.nilai.toLocaleString('id-ID'));
+ dendaItems.push(' '+prefix+cleanAbsensiText(d.keterangan)+' → Rp '+d.nilai.toLocaleString('id-ID'));
  });
  }
  if (b.totalDenda > 0) html += dropdown(' Estimasi Denda Bulan Ini', '#fee2e2', '#991b1b', dendaItems, b.totalDenda);
@@ -1104,21 +1104,21 @@ function openDetail(userId, nama, jabatan, bagian) {
  var rewardItems = [];
  if (b.detailLemburPulang && b.detailLemburPulang.length > 0) {
  rewardItems.push('— Lembur Pulang —');
- b.detailLemburPulang.forEach(function(d){ rewardItems.push(d.keterangan+' → Rp '+d.nilai.toLocaleString('id-ID')); });
+ b.detailLemburPulang.forEach(function(d){ rewardItems.push(cleanAbsensiText(d.keterangan)+' → Rp '+d.nilai.toLocaleString('id-ID')); });
  }
  if (b.detailLemburMinggu && b.detailLemburMinggu.length > 0) {
  rewardItems.push('— Lembur Minggu —');
- b.detailLemburMinggu.forEach(function(d){ rewardItems.push(d.keterangan+' → Rp '+d.nilai.toLocaleString('id-ID')); });
+ b.detailLemburMinggu.forEach(function(d){ rewardItems.push(cleanAbsensiText(d.keterangan)+' → Rp '+d.nilai.toLocaleString('id-ID')); });
  }
  if (b.detailLemburLibur && b.detailLemburLibur.length > 0) {
  rewardItems.push('— Lembur Hari Libur —');
- b.detailLemburLibur.forEach(function(d){ rewardItems.push(d.keterangan+' → Rp '+d.nilai.toLocaleString('id-ID')); });
+ b.detailLemburLibur.forEach(function(d){ rewardItems.push(cleanAbsensiText(d.keterangan)+' → Rp '+d.nilai.toLocaleString('id-ID')); });
  }
  if (b.detailRewardManual && b.detailRewardManual.length > 0) {
  rewardItems.push('— Reward Manual —');
  b.detailRewardManual.forEach(function(d){
  var prefix = formatTglJam(d.tanggal, d.jam);
- rewardItems.push(' '+prefix+d.keterangan+' → Rp '+d.nilai.toLocaleString('id-ID'));
+ rewardItems.push(' '+prefix+cleanAbsensiText(d.keterangan)+' → Rp '+d.nilai.toLocaleString('id-ID'));
  });
  }
  if (b.bonusKerajinan > 0) rewardItems.push(' Bonus Kerajinan → Rp '+b.bonusKerajinan.toLocaleString('id-ID'));
@@ -1128,12 +1128,12 @@ function openDetail(userId, nama, jabatan, bagian) {
  // Absen dropdown — HANYA dari detailByBulan
  var absenItems = [];
  if (b.detailAbsen && b.detailAbsen.length > 0) {
- b.detailAbsen.forEach(function(d){ absenItems.push(d.keterangan); });
+ b.detailAbsen.forEach(function(d){ absenItems.push(cleanAbsensiText(d.keterangan)); });
  } else {
  // fallback ke mingguList kalau detailAbsen belum ada
  b.mingguList.forEach(function(w) {
  if (w.detail && w.detail.absen) {
- w.detail.absen.forEach(function(d){ absenItems.push(d.keterangan); });
+ w.detail.absen.forEach(function(d){ absenItems.push(cleanAbsensiText(d.keterangan)); });
  }
  });
  }
@@ -1196,16 +1196,16 @@ function openDetail(userId, nama, jabatan, bagian) {
  // Denda telat
  if (allTelat.length > 0) {
  html += '<br><span style="color:#dc2626;font-weight:600"> Denda: Rp '+b.totalDenda.toLocaleString('id-ID')+'</span>';
- allTelat.forEach(function(d){ html += '<br><span style="color:#dc2626;font-size:10px">&nbsp;&nbsp;• '+d.keterangan+'</span>'; });
+ allTelat.forEach(function(d){ html += '<br><span style="color:#dc2626;font-size:10px">&nbsp;&nbsp;• '+cleanAbsensiText(d.keterangan)+'</span>'; });
  }
  // Hari absen
  if (allAbsen.length > 0) {
- allAbsen.forEach(function(d){ html += '<br><span style="color:#991b1b;font-size:10px">&nbsp;&nbsp;• '+d.keterangan+'</span>'; });
+ allAbsen.forEach(function(d){ html += '<br><span style="color:#991b1b;font-size:10px">&nbsp;&nbsp;• '+cleanAbsensiText(d.keterangan)+'</span>'; });
  }
  // Lembur
- if (allLemburM.length > 0) allLemburM.forEach(function(d){ html += '<br><span style="color:#065f46;font-size:10px"> '+d.keterangan+' → Rp '+d.nilai.toLocaleString('id-ID')+'</span>'; });
- if (allLemburL.length > 0) allLemburL.forEach(function(d){ html += '<br><span style="color:#065f46;font-size:10px"> '+d.keterangan+' → Rp '+d.nilai.toLocaleString('id-ID')+'</span>'; });
- if (allLemburP.length > 0) allLemburP.forEach(function(d){ html += '<br><span style="color:#065f46;font-size:10px"> '+d.keterangan+' → Rp '+d.nilai.toLocaleString('id-ID')+'</span>'; });
+ if (allLemburM.length > 0) allLemburM.forEach(function(d){ html += '<br><span style="color:#065f46;font-size:10px"> '+cleanAbsensiText(d.keterangan)+' → Rp '+d.nilai.toLocaleString('id-ID')+'</span>'; });
+ if (allLemburL.length > 0) allLemburL.forEach(function(d){ html += '<br><span style="color:#065f46;font-size:10px"> '+cleanAbsensiText(d.keterangan)+' → Rp '+d.nilai.toLocaleString('id-ID')+'</span>'; });
+ if (allLemburP.length > 0) allLemburP.forEach(function(d){ html += '<br><span style="color:#065f46;font-size:10px"> '+cleanAbsensiText(d.keterangan)+' → Rp '+d.nilai.toLocaleString('id-ID')+'</span>'; });
  html += '</div></div>';
 
  // Tombol ganti bulan
@@ -1247,7 +1247,7 @@ function renderAbsensiDetailHtml(res, bulanKey, scopeId) {
 
  function money(n) { return (parseInt(n, 10) || 0).toLocaleString('id-ID'); }
  function detailLine(item, withMoney) {
- var text = item.keterangan || '';
+ var text = cleanAbsensiText(item.keterangan || '');
  if (withMoney && item.nilai) text += ' &rarr; Rp ' + money(item.nilai);
  return text;
  }
@@ -1302,8 +1302,8 @@ function renderAbsensiDetailHtml(res, bulanKey, scopeId) {
  if (totalReward > 0) html += dropdown('Estimasi Reward Bulan Ini', '#d1fae5', '#065f46', rewardItems, totalReward);
 
  var absenItems = [];
- if (b.detailAbsen && b.detailAbsen.length) b.detailAbsen.forEach(function(d){ absenItems.push(d.keterangan); });
- else mingguList.forEach(function(w){ if (w.detail && w.detail.absen) w.detail.absen.forEach(function(d){ absenItems.push(d.keterangan); }); });
+ if (b.detailAbsen && b.detailAbsen.length) b.detailAbsen.forEach(function(d){ absenItems.push(cleanAbsensiText(d.keterangan)); });
+ else mingguList.forEach(function(w){ if (w.detail && w.detail.absen) w.detail.absen.forEach(function(d){ absenItems.push(cleanAbsensiText(d.keterangan)); }); });
  if (b.totalAbsen > 0) html += dropdown('Hari Absen ('+(b.totalAbsen || 0)+' hari)', '#fff7f7', '#991b1b', absenItems, 0);
  html += '</div>';
 
@@ -1322,9 +1322,9 @@ function renderAbsensiDetailHtml(res, bulanKey, scopeId) {
  html += '<div style="font-size:11px;color:var(--text-muted)">Hadir '+(b.totalHadir || 0)+' hari &nbsp;&middot;&nbsp; Telat '+(b.totalTelat || 0)+'x &nbsp;&middot;&nbsp; Absen '+(b.totalAbsen || 0)+'x';
  if (allTelat.length) {
  html += '<br><span style="color:#dc2626;font-weight:600">Denda: Rp '+money(b.totalDenda)+'</span>';
- allTelat.forEach(function(d){ html += '<br><span style="color:#dc2626;font-size:10px">&nbsp;&nbsp;&bull; '+d.keterangan+'</span>'; });
+ allTelat.forEach(function(d){ html += '<br><span style="color:#dc2626;font-size:10px">&nbsp;&nbsp;&bull; '+cleanAbsensiText(d.keterangan)+'</span>'; });
  }
- allAbsen.forEach(function(d){ html += '<br><span style="color:#991b1b;font-size:10px">&nbsp;&nbsp;&bull; '+d.keterangan+'</span>'; });
+ allAbsen.forEach(function(d){ html += '<br><span style="color:#991b1b;font-size:10px">&nbsp;&nbsp;&bull; '+cleanAbsensiText(d.keterangan)+'</span>'; });
  allLembur.forEach(function(d){ html += '<br><span style="color:#065f46;font-size:10px">Lembur: '+detailLine(d, true)+'</span>'; });
  html += '</div></div>';
  return html;
@@ -2842,7 +2842,7 @@ function processAttendanceAppRecap() {
  if (!currentUser || (currentUser.bagian !== 'Owner' && currentUser.bagian !== 'Finance')) return;
  var sel = document.getElementById('att-matrix-bulan');
  var bulanKey = sel ? sel.value : attendanceMonthKey(new Date());
- if (!confirm('Proses absensi kamera bulan '+bulanKey+' ke rekap resmi? Data [APP_SYNC] bulan ini akan dibuat ulang.')) return;
+ if (!confirm('Proses absensi kamera bulan '+bulanKey+' ke rekap resmi? Data bulan ini akan disinkronkan ulang.')) return;
  var btn = document.querySelector('.attendance-process-btn');
  if (btn) { btn.textContent = 'Memproses...'; btn.disabled = true; }
  gasCall('processAbsensiAppToRekap', [bulanKey, currentUser.nama], function(res) {
@@ -2866,6 +2866,12 @@ function formatTglShort(tglStr) {
  var parts = String(tglStr).split('-');
  if (parts.length >= 3) return parseInt(parts[2])+' '+m[parseInt(parts[1])-1];
  return tglStr;
+}
+function cleanAbsensiText(text) {
+ return String(text || '')
+  .replace(/\[[A-Z_]*SYNC\]\s*/gi, '')
+  .replace(/\s+/g, ' ')
+  .trim();
 }
 function formatTglJam(tglStr, jamStr) {
  // "2026-04-09" + "17:35" → "09 Apr 17:35 · "
