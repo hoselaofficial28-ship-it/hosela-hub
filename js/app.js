@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbxDAHTGFbjG2RMjIPqUmdLbPO3TqKFfpPuEw9p5sdc4tEJXy6zsyyzhQ6pO65Pben4ywQ/exec';
-var APP_VERSION = '20260524b';
+var APP_VERSION = '20260524c';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -246,6 +246,7 @@ function invalidateReadCacheAfterMutation(action) {
   tandaiDibaca: ['getNotifikasi','getHomeData'],
   tandaiMenuDibaca: ['getNotifikasi','getHomeData'],
   submitAbsensiCamera: ['getAbsensiCameraToday','getAbsensiMatrix','getAbsensiMatrixUser','getHomeData'],
+  updateAbsensiMatrixDay: ['getAbsensiMatrix','getAbsensiMatrixUser','getAbsensiRekap','getRekapBulananSemua','getAllAbsensiRekap','getHomeData','getPayrollPreview'],
   importAbsensiUploadToApp: ['getAbsensiMatrix','getAbsensiMatrixUser'],
   processAttendanceAppRecap: ['getAbsensiMatrix','getAbsensiMatrixUser','getAbsensiRekap','getRekapBulananSemua','getAllAbsensiRekap','getHomeData','getPayrollPreview'],
   processAbsensiUpload: ['getAbsensiRekap','getRekapBulananSemua','getAllAbsensiRekap','getHomeData','getPayrollPreview']
@@ -2804,6 +2805,10 @@ function saveAttendanceEdit(userId, tanggal) {
  var bulanKey = sel ? sel.value : tanggal.substring(0, 7);
  clearAttendanceMatrixCache(userId, bulanKey);
  cacheClear('getAbsensiCameraToday'+JSON.stringify([userId]));
+ cacheClearAction('getAbsensiRekap');
+ cacheClearAction('getRekapBulananSemua');
+ cacheClearAction('getPayrollPreview');
+ cacheClearAction('getHomeData');
  showToast('Catatan kehadiran disimpan');
  loadAttendanceMatrix(true);
  }, function() {
