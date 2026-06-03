@@ -1,6 +1,8 @@
 var _payrollPreviewCache = {};
 var _payrollDetailCache = {};
 var _slipDetailCache = {};
+var _salaryUsersCache = [];
+var _salaryUserMap = {};
 
 function getDefaultPayrollMonth() {
  var now = new Date();
@@ -55,6 +57,140 @@ function loadPayrollPreview() {
  renderPayrollPreview(res, bulanKey);
  }, function() {
  renderPayrollSetupState(bulanKey);
+ });
+}
+
+function salaryEsc(s) {
+ return String(s == null ? '' : s)
+ .replace(/&/g, '&amp;')
+ .replace(/</g, '&lt;')
+ .replace(/>/g, '&gt;')
+ .replace(/"/g, '&quot;')
+ .replace(/'/g, '&#39;');
+}
+
+function loadSalarySettings(force) {
+ if (!currentUser || (currentUser.bagian !== 'Finance' && currentUser.bagian !== 'Owner')) {
+ goTo('s-home');
+ showToast('Setting gaji hanya untuk Finance dan Owner');
+ return;
+ }
+ var el = document.getElementById('salary-settings-content');
+ if (!el) return;
+ if (!force && _salaryUsersCache.length) {
+ renderSalaryUsers(_salaryUsersCache);
+ return;
+ }
+ el.innerHTML = skelCards(4);
+ gasCall('getSalaryUsers', [currentUser.id], function(res) {
+ if (!res || res.error || res.success === false) {
+ el.innerHTML = '<div class="empty-state"><div class="empty-icon"></div>'+(salaryEsc((res && (res.msg || res.error)) || 'Gagal memuat data gaji'))+'</div>';
+ return;
+ }
+ _salaryUsersCache = res.data || [];
+ renderSalaryUsers(_salaryUsersCache);
+ }, function() {
+ el.innerHTML = '<div class="empty-state"><div class="empty-icon"></div>Gagal memuat data gaji</div>';
+ });
+}
+
+function renderSalaryUsers(rows) {
+ var el = document.getElementById('salary-settings-content');
+ if (!el) return;
+ _salaryUserMap = {};
+ if (!rows.length) {
+ el.innerHTML = '<div class="empty-state"><div class="empty-icon"></div>Belum ada karyawan aktif</div>';
+ return;
+ }
+ var total = rows.reduce(function(s, r){ return s + (parseInt(r.gajiBulanan || 0, 10) || 0); }, 0);
+ var html =
+ '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">' +
+ '<div class="card" style="padding:10px;text-align:center"><div style="font-size:18px;font-weight:900;color:var(--blue)">'+rows.length+'</div><div style="font-size:11px;color:var(--text-muted)">Karyawan</div></div>' +
+ '<div class="card" style="padding:10px;text-align:center"><div style="font-size:14px;font-weight:900;color:var(--green)">Rp '+total.toLocaleString('id-ID')+'</div><div style="font-size:11px;color:var(--text-muted)">Total gaji</div></div>' +
+ '</div>' +
+ '<button class="btn btn-sm btn-primary" style="width:100%;margin-bottom:10px" onclick="loadSalarySettings(true)">Refresh Data</button>';
+ rows.forEach(function(r) {
+ var id = String(r.id || '');
+ var safeId = id.replace(/[^a-zA-Z0-9_-]/g, '');
+ _salaryUserMap[id] = r;
+ html += '<div class="card salary-user-card" data-search="'+salaryEsc((r.nama+' '+r.bagian+' '+r.jabatan).toLowerCase())+'" style="padding:12px;margin-bottom:8px">' +
+ '<div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;margin-bottom:10px">' +
+ '<div><div style="font-size:13px;font-weight:900;color:var(--text-dark)">'+salaryEsc(r.nama)+'</div><div style="font-size:11px;color:var(--text-muted)">'+salaryEsc(r.jabatan || '-')+' · '+salaryEsc(r.bagian || '-')+'</div></div>' +
+ '<span class="badge '+(r.status === 'AKTIF' ? 'badge-green' : 'badge-gray')+'">'+salaryEsc(r.status || '-')+'</span>' +
+ '</div>' +
+ '<label class="form-label">Gaji Bulanan</label>' +
+ '<input class="form-input" type="number" min="0" inputmode="numeric" id="salary-'+safeId+'" value="'+(parseInt(r.gajiBulanan || 0, 10) || 0)+'" style="margin-bottom:8px">' +
+ '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">' +
+ '<div style="font-size:11px;color:var(--text-muted)">Saat ini: <b>Rp '+(parseInt(r.gajiBulanan || 0, 10) || 0).toLocaleString('id-ID')+'</b></div>' +
+ '<div style="display:flex;gap:6px">' +
+ '<button class="btn btn-sm btn-danger" onclick="deleteSalaryUser(&quot;'+salaryEsc(id)+'&quot;, this)">Hapus</button>' +
+ '<button class="btn btn-sm btn-gold" onclick="saveSalaryUser(&quot;'+salaryEsc(id)+'&quot;, this)">Simpan</button>' +
+ '</div>' +
+ '</div>' +
+ '</div>';
+ });
+ el.innerHTML = html;
+}
+
+function filterSalaryUsers() {
+ var input = document.getElementById('salary-search');
+ var q = input ? input.value.trim().toLowerCase() : '';
+ document.querySelectorAll('.salary-user-card').forEach(function(card) {
+ var text = card.getAttribute('data-search') || '';
+ card.style.display = text.indexOf(q) !== -1 ? '' : 'none';
+ });
+}
+
+function saveSalaryUser(userId, btn) {
+ if (!currentUser || (currentUser.bagian !== 'Finance' && currentUser.bagian !== 'Owner')) {
+ showToast('Akses ditolak');
+ return;
+ }
+ var safeId = String(userId).replace(/[^a-zA-Z0-9_-]/g, '');
+ var input = document.getElementById('salary-' + safeId);
+ var salary = parseInt(input ? input.value : 0, 10) || 0;
+ if (salary <= 0) { showToast('Gaji harus lebih dari 0'); return; }
+ if (btn) { btn.disabled = true; btn.textContent = 'Menyimpan...'; }
+ gasCall('updateUserSalary', [currentUser.id, userId, salary], function(res) {
+ if (!res || res.error || res.success === false) {
+ showToast((res && (res.msg || res.error)) || 'Gagal simpan gaji');
+ if (btn) { btn.disabled = false; btn.textContent = 'Simpan'; }
+ return;
+ }
+ _salaryUsersCache = [];
+ Object.keys(_payrollPreviewCache).forEach(function(k){ delete _payrollPreviewCache[k]; });
+ Object.keys(_payrollDetailCache).forEach(function(k){ delete _payrollDetailCache[k]; });
+ showToast('Gaji berhasil diperbarui');
+ loadSalarySettings(true);
+ }, function() {
+ showToast('Gagal simpan gaji');
+ if (btn) { btn.disabled = false; btn.textContent = 'Simpan'; }
+ });
+}
+
+function deleteSalaryUser(userId, btn) {
+ if (!currentUser || (currentUser.bagian !== 'Finance' && currentUser.bagian !== 'Owner')) {
+ showToast('Akses ditolak');
+ return;
+ }
+ var user = _salaryUserMap[userId] || {};
+ var nama = user.nama || userId;
+ if (!confirm('Hapus/nonaktifkan '+nama+'?\nKaryawan tidak bisa login lagi dan tidak muncul di payroll aktif.')) return;
+ if (btn) { btn.disabled = true; btn.textContent = 'Menghapus...'; }
+ gasCall('deactivateSalaryUser', [currentUser.id, userId], function(res) {
+ if (!res || res.error || res.success === false) {
+ showToast((res && (res.msg || res.error)) || 'Gagal hapus karyawan');
+ if (btn) { btn.disabled = false; btn.textContent = 'Hapus'; }
+ return;
+ }
+ _salaryUsersCache = [];
+ Object.keys(_payrollPreviewCache).forEach(function(k){ delete _payrollPreviewCache[k]; });
+ Object.keys(_payrollDetailCache).forEach(function(k){ delete _payrollDetailCache[k]; });
+ showToast((res.nama || nama)+' berhasil dinonaktifkan');
+ loadSalarySettings(true);
+ }, function() {
+ showToast('Gagal hapus karyawan');
+ if (btn) { btn.disabled = false; btn.textContent = 'Hapus'; }
  });
 }
 

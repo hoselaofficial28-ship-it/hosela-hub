@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbxDAHTGFbjG2RMjIPqUmdLbPO3TqKFfpPuEw9p5sdc4tEJXy6zsyyzhQ6pO65Pben4ywQ/exec';
-var APP_VERSION = '20260524d';
+var APP_VERSION = '20260603e';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -595,6 +595,7 @@ function goTo(id) {
  if (id === 's-sanksi-manual') loadSanksiManual();
  if (id === 's-rekap-bulanan') loadRekapBulanan();
  if (id === 's-catatan-kehadiran') loadAttendanceMatrix();
+ if (id === 's-setting-gaji') loadSalarySettings();
  if (id === 's-payroll') loadPayroll();
  if (id === 's-slip-gaji') loadSlipGaji();
  if (id === 's-kelola-izin') { loadKelolaIzin(); }
@@ -770,6 +771,8 @@ function loadHome(forceRefresh) {
  menus.push({id:'s-slip-gaji', icon:'receipt', bg:'#e0f2fe', label:'Slip Gaji', sub:'Riwayat gaji kamu'});
  if (u.bagian === 'Owner' || u.bagian === 'Finance')
  menus.push({id:'s-kalender', icon:'calendar', bg:'#fee2e2', label:'Kalender Libur', sub:'Atur hari libur'});
+ if (u.bagian === 'Owner' || u.bagian === 'Finance')
+ menus.push({id:'s-setting-gaji', icon:'money', bg:'#e0f2fe', label:'Setting Gaji', sub:'Update gaji karyawan'});
  if (u.bagian === 'Finance') {
  menus.push({id:'s-kelola-izin', icon:'check', bg:'#d1fae5', label:'Kelola Izin', sub:'Approve pengajuan'});
  menus.push({id:'s-kpi-check', icon:'clipboard', bg:'#fef3c7', label:'KPI Checklist', sub:'Update KPI kamu'});
@@ -1349,7 +1352,7 @@ function startHomeClock() {
 
 function menuCategory(m) {
  if (['s-absensi-camera','s-catatan-kehadiran','s-izin','s-slip-gaji'].indexOf(m.id) !== -1) return 'Kehadiran & Personal';
- if (['s-kelola-izin','s-rekap-bulanan','s-payroll','s-sanksi-manual','s-laporan-absensi','s-kalender'].indexOf(m.id) !== -1) return 'Finance & Owner';
+ if (['s-kelola-izin','s-rekap-bulanan','s-payroll','s-setting-gaji','s-sanksi-manual','s-laporan-absensi','s-kalender'].indexOf(m.id) !== -1) return 'Finance & Owner';
  if (['s-jobdesk','s-kpi-check','s-papan-peringkat','s-peraturan'].indexOf(m.id) !== -1) return 'Kerja & Produktivitas';
  if (['s-pengumuman','s-ide','s-notifikasi','s-tambah-pengumuman'].indexOf(m.id) !== -1) return 'Komunikasi Tim';
  return 'Akun';
