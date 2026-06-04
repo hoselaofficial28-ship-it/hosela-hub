@@ -384,7 +384,8 @@ function renderPayrollItems(items) {
  var html = '<div style="font-size:11px;font-weight:800;color:var(--text-muted);margin-top:12px;margin-bottom:6px">ITEM DETAIL</div>';
  items.forEach(function(it) {
  var n = parseInt(it.nominal || 0, 10) || 0;
- var color = n < 0 || String(it.tipe).indexOf('DENDA') !== -1 ? '#dc2626' : '#065f46';
+ var tipe = String(it.tipe || '');
+ var color = n < 0 || tipe.indexOf('DENDA') !== -1 || tipe.indexOf('POTONGAN') !== -1 ? '#dc2626' : '#065f46';
  html += '<div style="border:1px solid var(--gray-border);border-radius:8px;padding:8px;margin-bottom:6px;background:#fff">';
  html += '<div style="display:flex;justify-content:space-between;gap:8px"><div style="font-size:11px;font-weight:800;color:var(--text-dark)">'+it.tipe+'</div><div style="font-size:11px;font-weight:900;color:'+color+'">Rp '+Math.abs(n).toLocaleString('id-ID')+'</div></div>';
  html += '<div style="font-size:10px;color:var(--text-muted);line-height:1.5;margin-top:3px">'+(it.tanggal || '')+' '+(it.keterangan || '')+'</div>';

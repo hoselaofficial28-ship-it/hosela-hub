@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbxDAHTGFbjG2RMjIPqUmdLbPO3TqKFfpPuEw9p5sdc4tEJXy6zsyyzhQ6pO65Pben4ywQ/exec';
-var APP_VERSION = '20260603e';
+var APP_VERSION = '20260604a';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -1088,6 +1088,12 @@ function openDetail(userId, nama, jabatan, bagian) {
  }
  });
  // SP dari detailByBulan (deduplicate)
+ if (b.detailPotonganAbsen && b.detailPotonganAbsen.length > 0) {
+ dendaItems.push('Potongan Absen');
+ b.detailPotonganAbsen.forEach(function(d){
+ dendaItems.push(' '+cleanAbsensiText(d.keterangan)+' -> Rp '+d.nilai.toLocaleString('id-ID'));
+ });
+ }
  if (b.detailDendaSP && b.detailDendaSP.length > 0) {
  b.detailDendaSP.forEach(function(d){
  dendaItems.push(' '+cleanAbsensiText(d.keterangan)+' → Rp '+d.nilai.toLocaleString('id-ID'));
@@ -1197,9 +1203,10 @@ function openDetail(userId, nama, jabatan, bagian) {
  html += ' Hadir '+b.totalHadir+' hari &nbsp;·&nbsp; Telat '+b.totalTelat+'x &nbsp;·&nbsp; Absen '+b.totalAbsen+'x';
 
  // Denda telat
- if (allTelat.length > 0) {
+ if (allTelat.length > 0 || (b.detailPotonganAbsen && b.detailPotonganAbsen.length > 0)) {
  html += '<br><span style="color:#dc2626;font-weight:600"> Denda: Rp '+b.totalDenda.toLocaleString('id-ID')+'</span>';
  allTelat.forEach(function(d){ html += '<br><span style="color:#dc2626;font-size:10px">&nbsp;&nbsp;• '+cleanAbsensiText(d.keterangan)+'</span>'; });
+ if (b.detailPotonganAbsen) b.detailPotonganAbsen.forEach(function(d){ html += '<br><span style="color:#dc2626;font-size:10px">&nbsp;&nbsp;• '+cleanAbsensiText(d.keterangan)+' - Rp '+d.nilai.toLocaleString('id-ID')+'</span>'; });
  }
  // Hari absen
  if (allAbsen.length > 0) {
@@ -1285,6 +1292,7 @@ function renderAbsensiDetailHtml(res, bulanKey, scopeId) {
 
  var dendaItems = [];
  mingguList.forEach(function(w){ if (w.detail && w.detail.telat) w.detail.telat.forEach(function(d){ dendaItems.push(detailLine(d, true)); }); });
+ if (b.detailPotonganAbsen) b.detailPotonganAbsen.forEach(function(d){ dendaItems.push('Potongan Absen: '+detailLine(d, true)); });
  if (b.detailDendaSP) b.detailDendaSP.forEach(function(d){ dendaItems.push('SP: '+detailLine(d, true)); });
  if (b.detailDendaManual && b.detailDendaManual.length) {
  dendaItems.push('Penalty Manual');
@@ -1323,9 +1331,10 @@ function renderAbsensiDetailHtml(res, bulanKey, scopeId) {
  html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><div style="font-size:11px;font-weight:600;color:var(--text-dark)">'+(b.label || b.bulan)+'</div>';
  html += '<span style="font-size:10px;background:'+bColor+'22;color:'+bColor+';padding:2px 8px;border-radius:10px;font-weight:700">'+bStatus+'</span></div>';
  html += '<div style="font-size:11px;color:var(--text-muted)">Hadir '+(b.totalHadir || 0)+' hari &nbsp;&middot;&nbsp; Telat '+(b.totalTelat || 0)+'x &nbsp;&middot;&nbsp; Absen '+(b.totalAbsen || 0)+'x';
- if (allTelat.length) {
+ if (allTelat.length || (b.detailPotonganAbsen && b.detailPotonganAbsen.length)) {
  html += '<br><span style="color:#dc2626;font-weight:600">Denda: Rp '+money(b.totalDenda)+'</span>';
  allTelat.forEach(function(d){ html += '<br><span style="color:#dc2626;font-size:10px">&nbsp;&nbsp;&bull; '+cleanAbsensiText(d.keterangan)+'</span>'; });
+ if (b.detailPotonganAbsen) b.detailPotonganAbsen.forEach(function(d){ html += '<br><span style="color:#dc2626;font-size:10px">&nbsp;&nbsp;&bull; '+cleanAbsensiText(d.keterangan)+' - Rp '+money(d.nilai)+'</span>'; });
  }
  allAbsen.forEach(function(d){ html += '<br><span style="color:#991b1b;font-size:10px">&nbsp;&nbsp;&bull; '+cleanAbsensiText(d.keterangan)+'</span>'; });
  allLembur.forEach(function(d){ html += '<br><span style="color:#065f46;font-size:10px">Lembur: '+detailLine(d, true)+'</span>'; });
