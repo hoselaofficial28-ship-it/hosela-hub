@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbxDAHTGFbjG2RMjIPqUmdLbPO3TqKFfpPuEw9p5sdc4tEJXy6zsyyzhQ6pO65Pben4ywQ/exec';
-var APP_VERSION = '20260604b';
+var APP_VERSION = '20260604c';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -2758,8 +2758,33 @@ function renderAttendanceMatrix(res) {
  '<div class="att-grid">'+days+'</div>'+
  '</div>';
  }).join('');
+ if (_attendanceMatrixCanEdit) html += renderAttendanceLegend();
  el.innerHTML = html;
  filterAttendanceMatrix();
+}
+
+function renderAttendanceLegend() {
+ var rows = [
+ { cls:'filled complete', symbol:'&#10003;', title:'Hadir lengkap', desc:'Ada jam masuk dan jam pulang.' },
+ { cls:'filled late', symbol:'!', title:'Telat', desc:'Jam masuk melewati jadwal.' },
+ { cls:'anomaly', symbol:'!', title:'Tap anomali', desc:'Perlu dicek atau dikonfirmasi Finance.' },
+ { cls:'filled overtime', symbol:'+', title:'Lembur', desc:'Ada catatan lembur pada hari tersebut.' },
+ { cls:'absent', symbol:'A', title:'Absen', desc:'Tidak masuk atau tidak ada tap masuk.' },
+ { cls:'rejected', symbol:'&times;', title:'Ditolak', desc:'Absensi ditolak oleh sistem.' },
+ { cls:'filled partial', symbol:'&hellip;', title:'Belum pulang', desc:'Sudah tap masuk, belum ada tap pulang.' },
+ { cls:'filled partial', symbol:'?', title:'Tanpa masuk', desc:'Ada tap pulang, tapi tidak ada tap masuk.' },
+ { cls:'', symbol:'&middot;', title:'Belum ada data', desc:'Belum ada catatan pada tanggal itu.' },
+ { cls:'sunday', symbol:'Min', title:'Hari Minggu', desc:'Kotak oranye menandai hari Minggu.' }
+ ];
+ return '<div class="card att-legend-card">'+
+ '<div class="card-title"><div class="card-dot"></div>Keterangan Simbol</div>'+
+ '<div class="att-legend-list">'+rows.map(function(r) {
+ return '<div class="att-legend-item">'+
+ '<span class="att-day '+r.cls+'"><em>'+r.symbol+'</em></span>'+
+ '<div><b>'+r.title+'</b><p>'+r.desc+'</p></div>'+
+ '</div>';
+ }).join('')+'</div>'+
+ '</div>';
 }
 
 function filterAttendanceMatrix() {

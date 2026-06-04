@@ -731,6 +731,14 @@ textarea.form-input{line-height:1.45}
 .att-day.overtime span{color:#027a48}
 .att-day.overtime em{color:#027a48;background:#d1fadf}
 .att-day.complete em{color:#1557d8;background:#e8f0ff}
+.att-legend-card{margin-top:12px;padding:14px}
+.att-legend-list{display:grid;grid-template-columns:1fr;gap:8px;margin-top:10px}
+.att-legend-item{display:flex;align-items:center;gap:10px;padding:8px;border:1px solid #eef2f7;border-radius:8px;background:#fff}
+.att-legend-item .att-day{width:42px;height:42px;min-height:42px;padding:0;flex-shrink:0;pointer-events:none}
+.att-legend-item .att-day span,.att-legend-item .att-day small{display:none}
+.att-legend-item .att-day em{margin:0}
+.att-legend-item b{display:block;font-size:12px;font-weight:900;color:#101828;line-height:1.2}
+.att-legend-item p{margin:2px 0 0;font-size:10px;line-height:1.35;color:#667085}
 
 #side-menu-overlay{
   z-index:9000!important;
