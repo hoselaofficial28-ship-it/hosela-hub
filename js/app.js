@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbxDAHTGFbjG2RMjIPqUmdLbPO3TqKFfpPuEw9p5sdc4tEJXy6zsyyzhQ6pO65Pben4ywQ/exec';
-var APP_VERSION = '20260604c';
+var APP_VERSION = '20260604d';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -479,7 +479,6 @@ function prefetchCommonData() {
  if (u.bagian === 'Owner' || u.bagian === 'Finance') {
  jobs.push(['getKalenderLibur', []]);
  jobs.push(['getIzinPendingCount', []]);
- jobs.push(['getRekapBulananSemua', [bulanKey]]);
  jobs.push(['getPayrollPreview', [bulanKey]]);
  jobs.push(['getAbsensiMatrix', [bulanKey]]);
  }
@@ -593,7 +592,6 @@ function goTo(id) {
  if (id === 's-izin') loadIzin();
  if (id === 's-absensi-camera') loadAbsensiCamera();
  if (id === 's-sanksi-manual') loadSanksiManual();
- if (id === 's-rekap-bulanan') loadRekapBulanan();
  if (id === 's-catatan-kehadiran') loadAttendanceMatrix();
  if (id === 's-setting-gaji') loadSalarySettings();
  if (id === 's-payroll') loadPayroll();
@@ -777,7 +775,6 @@ function loadHome(forceRefresh) {
  menus.push({id:'s-kelola-izin', icon:'check', bg:'#d1fae5', label:'Kelola Izin', sub:'Setujui pengajuan'});
  menus.push({id:'s-kpi-check', icon:'clipboard', bg:'#fef3c7', label:'KPI Checklist', sub:'Update KPI kamu'});
  menus.push({id:'s-sanksi-manual', icon:'scale', bg:'#fce7f3', label:'Penghargaan & Denda', sub:'Denda dan penghargaan manual'});
- menus.push({id:'s-rekap-bulanan', icon:'chart', bg:'#e0f2fe', label:'Rekap Bulanan', sub:'Ringkasan semua karyawan'});
  menus.push({id:'s-payroll', icon:'card', bg:'#ede9fe', label:'Penggajian', sub:'Pratinjau dan terbitkan slip'});
  }
  if (u.bagian === 'Owner') {
@@ -785,7 +782,6 @@ function loadHome(forceRefresh) {
  menus.push({id:'s-manage-users', icon:'users', bg:'#fef3c7', label:'Kelola Tim', sub:'Aktif / Nonaktif'});
  menus.push({id:'s-laporan-absensi', icon:'chart', bg:'#e0f2fe', label:'Laporan Absensi', sub:'Rekap kehadiran'});
  menus.push({id:'s-sanksi-manual', icon:'scale', bg:'#fce7f3', label:'Penghargaan & Denda', sub:'Denda dan penghargaan manual'});
- menus.push({id:'s-rekap-bulanan', icon:'chart', bg:'#d1fae5', label:'Rekap Bulanan', sub:'Ringkasan semua karyawan'});
  menus.push({id:'s-payroll', icon:'card', bg:'#ede9fe', label:'Penggajian', sub:'Tinjau gaji tim'});
  }
  menus.push({id:'s-ganti-pin', icon:'lock', bg:'#f1f5f9', label:'Ganti Sandi', sub:'Ubah PIN login kamu'});
@@ -1361,7 +1357,7 @@ function startHomeClock() {
 
 function menuCategory(m) {
  if (['s-absensi-camera','s-catatan-kehadiran','s-izin','s-slip-gaji'].indexOf(m.id) !== -1) return 'Kehadiran & Personal';
- if (['s-kelola-izin','s-rekap-bulanan','s-payroll','s-setting-gaji','s-sanksi-manual','s-laporan-absensi','s-kalender'].indexOf(m.id) !== -1) return 'Finance & Owner';
+ if (['s-kelola-izin','s-payroll','s-setting-gaji','s-sanksi-manual','s-laporan-absensi','s-kalender'].indexOf(m.id) !== -1) return 'Finance & Owner';
  if (['s-jobdesk','s-kpi-check','s-papan-peringkat','s-peraturan'].indexOf(m.id) !== -1) return 'Kerja & Produktivitas';
  if (['s-pengumuman','s-ide','s-notifikasi','s-tambah-pengumuman'].indexOf(m.id) !== -1) return 'Komunikasi Tim';
  return 'Akun';
@@ -2525,92 +2521,9 @@ function toggleOwnerRekapDetail(userId, bulanKey, targetId, btnId) {
  });
 }
 
-function filterOwnerRekap() {
- var input = document.getElementById('rekap-search');
- var q = input ? input.value.trim().toLowerCase() : '';
- document.querySelectorAll('.owner-rekap-card').forEach(function(card) {
- card.style.display = !q || card.textContent.toLowerCase().indexOf(q) !== -1 ? 'block' : 'none';
- });
-}
-
-function loadRekapBulanan() {
- // Isi dropdown bulan kalau belum
- var sel = document.getElementById('rekap-bulan-sel');
- if (sel.options.length === 0) {
- var now = new Date();
- for (var i = 0; i < 6; i++) {
- var d = new Date(now.getFullYear(), now.getMonth() - i, 1);
- var key = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
- var bulanNames = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
- var label = bulanNames[d.getMonth()] + ' ' + d.getFullYear();
- var opt = document.createElement('option');
- opt.value = key; opt.textContent = label;
- if (i === 0) opt.selected = true;
- sel.appendChild(opt);
- }
- }
- var bulanKey = sel.value;
- var el = document.getElementById('rekap-bulanan-content');
- var cachedKey = 'getRekapBulananSemua' + JSON.stringify([bulanKey]);
- var hasCachedRekap = !!cacheGet(cachedKey);
- if (!hasCachedRekap) {
- el.innerHTML = skelCards(4);
- }
-
- gasCall('getRekapBulananSemua', [bulanKey], function(res) {
- if (!res || !res.data || !res.data.length) {
- el.innerHTML = '<div class="empty-state"><div class="empty-icon"></div>Belum ada data bulan ini</div>';
- return;
- }
- var data = res.data;
- // Summary cards
- var totalHadir = data.reduce(function(s,r){ return s+r.hadir; }, 0);
- var totalAbsen = data.reduce(function(s,r){ return s+r.absen; }, 0);
- var totalDenda = data.reduce(function(s,r){ return s+r.totalDenda; }, 0);
- var totalReward = data.reduce(function(s,r){ return s+r.totalReward+r.bonusKerajinan; }, 0);
-
- var html = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">';
- html += '<div class="card" style="padding:10px;text-align:center"><div style="font-size:20px;font-weight:800;color:var(--green)">'+totalHadir+'</div><div style="font-size:11px;color:var(--text-muted)">Total Hadir</div></div>';
- html += '<div class="card" style="padding:10px;text-align:center"><div style="font-size:20px;font-weight:800;color:var(--red)">'+totalAbsen+'</div><div style="font-size:11px;color:var(--text-muted)">Total Absen</div></div>';
- html += '<div class="card" style="padding:10px;text-align:center"><div style="font-size:14px;font-weight:800;color:#dc2626">Rp '+totalDenda.toLocaleString('id-ID')+'</div><div style="font-size:11px;color:var(--text-muted)">Total Denda</div></div>';
- html += '<div class="card" style="padding:10px;text-align:center"><div style="font-size:14px;font-weight:800;color:#16a34a">Rp '+totalReward.toLocaleString('id-ID')+'</div><div style="font-size:11px;color:var(--text-muted)">Total Penghargaan</div></div>';
- html += '</div>';
-
- // Tabel per karyawan
- data.forEach(function(r) {
- var bintangStr = ''.repeat(Math.max(0, r.bintang||0));
- var netDenda = r.totalDenda;
- var netReward = r.totalReward + r.bonusKerajinan;
- var userId = r.id || r.userId || r.user_id || r.ID || '';
- var safeId = String(userId || r.nama || '').replace(/[^a-zA-Z0-9_-]/g, '');
- var detailId = 'owner-rekap-detail-' + safeId + '-' + bulanKey;
- var btnId = 'owner-rekap-btn-' + safeId + '-' + bulanKey;
- html += '<div class="card owner-rekap-card" style="margin-bottom:8px;padding:12px">';
- html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">';
- html += '<div><div style="font-weight:700;font-size:13px">'+r.nama+'</div><div style="font-size:11px;color:var(--text-muted)">'+r.jabatan+' · '+r.bagian+'</div></div>';
- html += '<div style="text-align:right"><div style="font-size:14px">'+bintangStr+'</div><div style="font-size:10px;color:var(--text-muted)">'+r.skor+'/100</div></div>';
- html += '</div>';
- html += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-bottom:8px">';
- html += '<div style="text-align:center;background:#f0fdf4;border-radius:6px;padding:6px"><div style="font-size:14px;font-weight:700;color:#16a34a">'+r.hadir+'</div><div style="font-size:9px;color:var(--text-muted)">Hadir</div></div>';
- html += '<div style="text-align:center;background:#fef3c7;border-radius:6px;padding:6px"><div style="font-size:14px;font-weight:700;color:#d97706">'+r.telat+'</div><div style="font-size:9px;color:var(--text-muted)">Telat</div></div>';
- html += '<div style="text-align:center;background:#fee2e2;border-radius:6px;padding:6px"><div style="font-size:14px;font-weight:700;color:#dc2626">'+r.absen+'</div><div style="font-size:9px;color:var(--text-muted)">Absen</div></div>';
- html += '<div style="text-align:center;background:#ede9fe;border-radius:6px;padding:6px"><div style="font-size:14px;font-weight:700;color:#7c3aed">'+(r.lemburMinggu+r.lemburLibur)+'</div><div style="font-size:9px;color:var(--text-muted)">Lembur</div></div>';
- html += '</div>';
- if (netDenda > 0) html += '<div style="display:flex;justify-content:space-between;font-size:11px;color:#dc2626;padding:4px 0;border-top:1px solid var(--gray-border)"><span> Estimasi Denda</span><span style="font-weight:700">- Rp '+netDenda.toLocaleString('id-ID')+'</span></div>';
- if (netReward > 0) html += '<div style="display:flex;justify-content:space-between;font-size:11px;color:#16a34a;padding:4px 0;border-top:1px solid var(--gray-border)"><span>Estimasi Penghargaan</span><span style="font-weight:700">+ Rp '+netReward.toLocaleString('id-ID')+'</span></div>';
- html += '<button id="'+btnId+'" class="btn btn-sm btn-primary" style="margin-top:10px;width:100%;border-radius:9px" onclick="toggleOwnerRekapDetail(\''+userId+'\',\''+bulanKey+'\',\''+detailId+'\',\''+btnId+'\')">Lihat Detail</button>';
- html += '<div id="'+detailId+'" style="display:none"></div>';
- html += '</div>';
- });
-
- el.innerHTML = html;
- filterOwnerRekap();
- }, function() {
- el.innerHTML = '<div class="empty-state">Gagal memuat data</div>';
- });
-}
-
 var _attendanceMatrixCache = {};
+var _attendanceRecapCache = {};
+
 var _attendanceMatrixCanEdit = false;
 
 function attendanceMonthKey(dateObj) {
@@ -2623,7 +2536,9 @@ function clearAttendanceMatrixCache(userId, bulanKey) {
  Object.keys(_attendanceMatrixCache).forEach(function(key) {
  if (key === 'all:' + bulanKey || key === String(userId) + ':' + bulanKey) delete _attendanceMatrixCache[key];
  });
+ delete _attendanceRecapCache[bulanKey];
  cacheClear('getAbsensiMatrix' + JSON.stringify([bulanKey]));
+ cacheClear('getRekapBulananSemua' + JSON.stringify([bulanKey]));
  if (userId) cacheClear('getAbsensiMatrixUser' + JSON.stringify([userId, bulanKey]));
 }
 
@@ -2660,7 +2575,7 @@ function loadAttendanceMatrix(force) {
  if (summary) summary.innerHTML = '';
  var cacheKey = (_attendanceMatrixCanEdit ? 'all' : currentUser.id) + ':' + bulanKey;
  if (!force && _attendanceMatrixCache[cacheKey]) {
- renderAttendanceMatrix(_attendanceMatrixCache[cacheKey]);
+ renderAttendanceMatrixWithRecap(_attendanceMatrixCache[cacheKey], bulanKey);
  return;
  }
  el.innerHTML = skelCards(5);
@@ -2674,9 +2589,48 @@ function loadAttendanceMatrix(force) {
  return;
  }
  _attendanceMatrixCache[cacheKey] = res;
- renderAttendanceMatrix(res);
+ renderAttendanceMatrixWithRecap(res, bulanKey);
  }, function() {
  el.innerHTML = '<div class="empty-state">Koneksi gagal saat memuat catatan</div>';
+ });
+}
+
+function buildAttendanceRecapMap(res) {
+ var map = {};
+ ((res && res.data) || []).forEach(function(r) {
+ var userId = r.id || r.userId || r.user_id || r.ID || '';
+ if (userId) map[String(userId)] = r;
+ });
+ return map;
+}
+
+function renderAttendanceMatrixWithRecap(matrixRes, bulanKey) {
+ if (!_attendanceMatrixCanEdit) {
+ renderAttendanceMatrix(matrixRes);
+ return;
+ }
+ var cached = _attendanceRecapCache[bulanKey];
+ if (cached) {
+ matrixRes.rekapByUser = cached;
+ matrixRes.rekapLoading = false;
+ renderAttendanceMatrix(matrixRes);
+ return;
+ }
+ matrixRes.rekapByUser = {};
+ matrixRes.rekapLoading = true;
+ renderAttendanceMatrix(matrixRes);
+ gasCall('getRekapBulananSemua', [bulanKey], function(res) {
+ _attendanceRecapCache[bulanKey] = buildAttendanceRecapMap(res);
+ matrixRes.rekapByUser = _attendanceRecapCache[bulanKey];
+ matrixRes.rekapLoading = false;
+ var active = document.querySelector('.screen.active');
+ var sel = document.getElementById('att-matrix-bulan');
+ if (active && active.id === 's-catatan-kehadiran' && (!sel || sel.value === bulanKey)) {
+ renderAttendanceMatrix(matrixRes);
+ }
+ }, function() {
+ matrixRes.rekapLoading = false;
+ renderAttendanceMatrix(matrixRes);
  });
 }
 
@@ -2756,11 +2710,45 @@ function renderAttendanceMatrix(res) {
  return '<div class="card att-user-card" data-search="'+(u.nama+' '+u.bagian+' '+u.jabatan).toLowerCase()+'">'+
  '<div class="att-user-head"><div><b>'+u.nama+'</b><p>'+u.jabatan+' · '+u.bagian+'</p></div><span>'+u.id+'</span></div>'+
  '<div class="att-grid">'+days+'</div>'+
+ renderAttendanceUserRecap(u, res)+
  '</div>';
  }).join('');
  if (_attendanceMatrixCanEdit) html += renderAttendanceLegend();
  el.innerHTML = html;
  filterAttendanceMatrix();
+}
+
+function renderAttendanceUserRecap(u, res) {
+ if (!_attendanceMatrixCanEdit) return '';
+ if (res.rekapLoading) return '<div class="att-recap att-recap-muted">Memuat ringkasan rekap...</div>';
+ var r = res.rekapByUser && res.rekapByUser[String(u.id)];
+ if (!r) return '<div class="att-recap att-recap-muted">Rekap bulanan belum tersedia.</div>';
+ var hadir = parseInt(r.hadir || 0, 10) || 0;
+ var telat = parseInt(r.telat || 0, 10) || 0;
+ var absen = parseInt(r.absen || 0, 10) || 0;
+ var lembur = (parseInt(r.lemburPulang || 0, 10) || 0) + (parseInt(r.lemburMinggu || 0, 10) || 0) + (parseInt(r.lemburLibur || 0, 10) || 0);
+ var denda = parseInt(r.totalDenda || 0, 10) || 0;
+ var reward = (parseInt(r.totalReward || 0, 10) || 0) + (parseInt(r.bonusKerajinan || 0, 10) || 0);
+ var skor = parseInt(r.skor || r.finalScore || 0, 10) || 0;
+ var userId = r.id || r.userId || r.user_id || r.ID || u.id || '';
+ var safeId = String(userId || u.nama || '').replace(/[^a-zA-Z0-9_-]/g, '');
+ var bulanKey = res.bulan || '';
+ var safeMonth = String(bulanKey).replace(/[^a-zA-Z0-9_-]/g, '');
+ var detailId = 'att-rekap-detail-' + safeId + '-' + safeMonth;
+ var btnId = 'att-rekap-btn-' + safeId + '-' + safeMonth;
+ return '<div class="att-recap">'+
+ '<div class="att-recap-head"><div><b>'+cleanDisplayText(r.nama || u.nama || '')+'</b><p>'+cleanDisplayText(r.jabatan || u.jabatan || '')+' &middot; '+cleanDisplayText(r.bagian || u.bagian || '')+'</p></div><span>'+skor+'/100</span></div>'+
+ '<div class="att-recap-grid">'+
+ '<div class="att-recap-metric att-recap-green"><b>'+hadir+'</b><span>Hadir</span></div>'+
+ '<div class="att-recap-metric att-recap-yellow"><b>'+telat+'</b><span>Telat</span></div>'+
+ '<div class="att-recap-metric att-recap-red"><b>'+absen+'</b><span>Absen</span></div>'+
+ '<div class="att-recap-metric att-recap-purple"><b>'+lembur+'</b><span>Lembur</span></div>'+
+ '</div>'+
+ '<div class="att-recap-row att-recap-denda"><span>Estimasi Denda</span><b>- Rp '+denda.toLocaleString('id-ID')+'</b></div>'+
+ '<div class="att-recap-row att-recap-reward"><span>Estimasi Penghargaan</span><b>+ Rp '+reward.toLocaleString('id-ID')+'</b></div>'+
+ '<button id="'+btnId+'" class="btn btn-sm btn-primary att-recap-btn" onclick="toggleOwnerRekapDetail(\''+esc(userId)+'\',\''+esc(bulanKey)+'\',\''+detailId+'\',\''+btnId+'\')">Lihat Detail</button>'+
+ '<div id="'+detailId+'" class="att-recap-detail" style="display:none"></div>'+
+ '</div>';
 }
 
 function renderAttendanceLegend() {
