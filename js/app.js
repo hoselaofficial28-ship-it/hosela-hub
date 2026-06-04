@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbxDAHTGFbjG2RMjIPqUmdLbPO3TqKFfpPuEw9p5sdc4tEJXy6zsyyzhQ6pO65Pben4ywQ/exec';
-var APP_VERSION = '20260604a';
+var APP_VERSION = '20260604b';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -772,21 +772,21 @@ function loadHome(forceRefresh) {
  if (u.bagian === 'Owner' || u.bagian === 'Finance')
  menus.push({id:'s-kalender', icon:'calendar', bg:'#fee2e2', label:'Kalender Libur', sub:'Atur hari libur'});
  if (u.bagian === 'Owner' || u.bagian === 'Finance')
- menus.push({id:'s-setting-gaji', icon:'money', bg:'#e0f2fe', label:'Setting Gaji', sub:'Update gaji karyawan'});
+ menus.push({id:'s-setting-gaji', icon:'money', bg:'#e0f2fe', label:'Pengaturan Gaji', sub:'Ubah gaji karyawan'});
  if (u.bagian === 'Finance') {
- menus.push({id:'s-kelola-izin', icon:'check', bg:'#d1fae5', label:'Kelola Izin', sub:'Approve pengajuan'});
+ menus.push({id:'s-kelola-izin', icon:'check', bg:'#d1fae5', label:'Kelola Izin', sub:'Setujui pengajuan'});
  menus.push({id:'s-kpi-check', icon:'clipboard', bg:'#fef3c7', label:'KPI Checklist', sub:'Update KPI kamu'});
- menus.push({id:'s-sanksi-manual', icon:'scale', bg:'#fce7f3', label:'Reward & Penalty', sub:'Denda & reward manual'});
+ menus.push({id:'s-sanksi-manual', icon:'scale', bg:'#fce7f3', label:'Penghargaan & Denda', sub:'Denda dan penghargaan manual'});
  menus.push({id:'s-rekap-bulanan', icon:'chart', bg:'#e0f2fe', label:'Rekap Bulanan', sub:'Ringkasan semua karyawan'});
- menus.push({id:'s-payroll', icon:'card', bg:'#ede9fe', label:'Payroll', sub:'Preview & publish slip'});
+ menus.push({id:'s-payroll', icon:'card', bg:'#ede9fe', label:'Penggajian', sub:'Pratinjau dan terbitkan slip'});
  }
  if (u.bagian === 'Owner') {
  menus.push({id:'s-tambah-pengumuman', icon:'edit', bg:'#f0fdf4', label:'Buat Pengumuman', sub:'Info baru'});
  menus.push({id:'s-manage-users', icon:'users', bg:'#fef3c7', label:'Kelola Tim', sub:'Aktif / Nonaktif'});
  menus.push({id:'s-laporan-absensi', icon:'chart', bg:'#e0f2fe', label:'Laporan Absensi', sub:'Rekap kehadiran'});
- menus.push({id:'s-sanksi-manual', icon:'scale', bg:'#fce7f3', label:'Reward & Penalty', sub:'Denda & reward manual'});
+ menus.push({id:'s-sanksi-manual', icon:'scale', bg:'#fce7f3', label:'Penghargaan & Denda', sub:'Denda dan penghargaan manual'});
  menus.push({id:'s-rekap-bulanan', icon:'chart', bg:'#d1fae5', label:'Rekap Bulanan', sub:'Ringkasan semua karyawan'});
- menus.push({id:'s-payroll', icon:'card', bg:'#ede9fe', label:'Payroll', sub:'Review gaji tim'});
+ menus.push({id:'s-payroll', icon:'card', bg:'#ede9fe', label:'Penggajian', sub:'Tinjau gaji tim'});
  }
  menus.push({id:'s-ganti-pin', icon:'lock', bg:'#f1f5f9', label:'Ganti Sandi', sub:'Ubah PIN login kamu'});
  var prevBtn = document.querySelector('.preview-btn');
@@ -822,12 +822,12 @@ function loadHome(forceRefresh) {
  var cards = rwdList.map(function(r, i) {
  return '<div style="min-width:100%;padding:0 2px">'+
  '<div class="reward-card" style="margin:0">'+
- '<div class="reward-label"> BINTANG BULAN INI · '+r.bulan+'</div>'+
+ '<div class="reward-label">BINTANG BULAN INI &middot; '+cleanDisplayText(r.bulan)+'</div>'+
  '<div class="reward-avatar-big">'+initials(r.nama)+'</div>'+
- '<div class="reward-name">'+r.nama+'</div>'+
- '<div class="reward-sub">'+r.bagian+'</div>'+
- '<div class="reward-alasan">"'+r.alasan+'"</div>'+
- '<div class="reward-pesan"> '+r.pesan+'</div>'+
+ '<div class="reward-name">'+cleanDisplayText(r.nama)+'</div>'+
+ '<div class="reward-sub">'+cleanDisplayText(r.bagian)+'</div>'+
+ '<div class="reward-alasan">"'+cleanDisplayText(r.alasan)+'"</div>'+
+ '<div class="reward-pesan">'+cleanDisplayText(r.pesan)+'</div>'+
  '</div></div>';
  }).join('');
  var dots = rwdList.length > 1
@@ -1099,9 +1099,9 @@ function openDetail(userId, nama, jabatan, bagian) {
  dendaItems.push(' '+cleanAbsensiText(d.keterangan)+' → Rp '+d.nilai.toLocaleString('id-ID'));
  });
  }
- // Penalty Manual dari detailByBulan (deduplicate)
+ // Denda manual dari detailByBulan (deduplicate)
  if (b.detailDendaManual && b.detailDendaManual.length > 0) {
- dendaItems.push('— Penalty Manual —');
+ dendaItems.push('Denda Manual');
  b.detailDendaManual.forEach(function(d){
  var prefix = formatTglJam(d.tanggal, d.jam);
  dendaItems.push(' '+prefix+cleanAbsensiText(d.keterangan)+' → Rp '+d.nilai.toLocaleString('id-ID'));
@@ -1109,7 +1109,7 @@ function openDetail(userId, nama, jabatan, bagian) {
  }
  if (b.totalDenda > 0) html += dropdown(' Estimasi Denda Bulan Ini', '#fee2e2', '#991b1b', dendaItems, b.totalDenda);
 
- // Reward dropdown — lembur + reward manual
+ // Penghargaan dropdown - lembur + penghargaan manual
  var rewardItems = [];
  if (b.detailLemburPulang && b.detailLemburPulang.length > 0) {
  rewardItems.push('— Lembur Pulang —');
@@ -1124,7 +1124,7 @@ function openDetail(userId, nama, jabatan, bagian) {
  b.detailLemburLibur.forEach(function(d){ rewardItems.push(cleanAbsensiText(d.keterangan)+' → Rp '+d.nilai.toLocaleString('id-ID')); });
  }
  if (b.detailRewardManual && b.detailRewardManual.length > 0) {
- rewardItems.push('— Reward Manual —');
+ rewardItems.push('Penghargaan Manual');
  b.detailRewardManual.forEach(function(d){
  var prefix = formatTglJam(d.tanggal, d.jam);
  rewardItems.push(' '+prefix+cleanAbsensiText(d.keterangan)+' → Rp '+d.nilai.toLocaleString('id-ID'));
@@ -1132,7 +1132,7 @@ function openDetail(userId, nama, jabatan, bagian) {
  }
  if (b.bonusKerajinan > 0) rewardItems.push(' Bonus Kerajinan → Rp '+b.bonusKerajinan.toLocaleString('id-ID'));
  var totalReward = (b.totalRewardLembur||0) + (b.bonusKerajinan||0);
- if (totalReward > 0) html += dropdown(' Estimasi Reward Bulan Ini', '#d1fae5', '#065f46', rewardItems, totalReward);
+ if (totalReward > 0) html += dropdown('Estimasi Penghargaan Bulan Ini', '#d1fae5', '#065f46', rewardItems, totalReward);
 
  // Absen dropdown — HANYA dari detailByBulan
  var absenItems = [];
@@ -1267,7 +1267,7 @@ function renderAbsensiDetailHtml(res, bulanKey, scopeId) {
  var html = '<div style="margin-top:8px;background:'+bgColor+';border-radius:8px;overflow:hidden">';
  html += '<div onclick="toggleDropdown(\''+id+'\')" style="padding:10px 12px;display:flex;justify-content:space-between;align-items:center;cursor:pointer">';
  html += '<span style="font-size:12px;color:'+textColor+';font-weight:600">'+label+'</span>';
- html += '<span id="'+id+'-arr" style="font-size:11px;color:'+textColor+'">'+totalStr+' â–¼</span></div>';
+ html += '<span id="'+id+'-arr" style="font-size:11px;color:'+textColor+'">'+totalStr+' ▼</span></div>';
  html += '<div id="'+id+'" style="display:none;padding:0 12px 10px;border-top:1px solid rgba(0,0,0,0.05)">';
  if (!items.length) html += '<div style="font-size:11px;color:'+textColor+';opacity:.7;padding-top:8px">Tidak ada</div>';
  else items.forEach(function(item){ html += '<div style="font-size:11px;color:'+textColor+';padding-top:6px">&bull; '+item+'</div>'; });
@@ -1295,7 +1295,7 @@ function renderAbsensiDetailHtml(res, bulanKey, scopeId) {
  if (b.detailPotonganAbsen) b.detailPotonganAbsen.forEach(function(d){ dendaItems.push('Potongan Absen: '+detailLine(d, true)); });
  if (b.detailDendaSP) b.detailDendaSP.forEach(function(d){ dendaItems.push('SP: '+detailLine(d, true)); });
  if (b.detailDendaManual && b.detailDendaManual.length) {
- dendaItems.push('Penalty Manual');
+ dendaItems.push('Denda Manual');
  b.detailDendaManual.forEach(function(d){ dendaItems.push(formatTglJam(d.tanggal, d.jam)+detailLine(d, true)); });
  }
  if (b.totalDenda > 0) html += dropdown('Estimasi Denda Bulan Ini', '#fee2e2', '#991b1b', dendaItems, b.totalDenda);
@@ -1305,12 +1305,12 @@ function renderAbsensiDetailHtml(res, bulanKey, scopeId) {
  if (b.detailLemburMinggu) b.detailLemburMinggu.forEach(function(d){ rewardItems.push('Lembur Minggu: '+detailLine(d, true)); });
  if (b.detailLemburLibur) b.detailLemburLibur.forEach(function(d){ rewardItems.push('Lembur Hari Libur: '+detailLine(d, true)); });
  if (b.detailRewardManual && b.detailRewardManual.length) {
- rewardItems.push('Reward Manual');
+ rewardItems.push('Penghargaan Manual');
  b.detailRewardManual.forEach(function(d){ rewardItems.push(formatTglJam(d.tanggal, d.jam)+detailLine(d, true)); });
  }
  if (b.bonusKerajinan > 0) rewardItems.push('Bonus Kerajinan &rarr; Rp '+money(b.bonusKerajinan));
  var totalReward = (b.totalRewardLembur || 0) + (b.bonusKerajinan || 0);
- if (totalReward > 0) html += dropdown('Estimasi Reward Bulan Ini', '#d1fae5', '#065f46', rewardItems, totalReward);
+ if (totalReward > 0) html += dropdown('Estimasi Penghargaan Bulan Ini', '#d1fae5', '#065f46', rewardItems, totalReward);
 
  var absenItems = [];
  if (b.detailAbsen && b.detailAbsen.length) b.detailAbsen.forEach(function(d){ absenItems.push(cleanAbsensiText(d.keterangan)); });
@@ -1788,7 +1788,7 @@ function loadPapanPeringkat() {
  var stars = '';
  for (var si = 0; si < 5; si++) stars += '<span style="color:'+(si<d.bintang?'#c9971f':'#e2e8f0')+';font-size:14px">★</span>';
  var isSelf = d.id === currentUser.id;
- var apresiasiHtml = isSelf ? '<div style="font-size:11px;color:var(--blue);font-weight:600;margin-top:3px">'+d.apresiasi+'</div>' : '';
+ var apresiasiHtml = isSelf ? '<div style="font-size:11px;color:var(--blue);font-weight:600;margin-top:3px">'+cleanDisplayText(d.apresiasi)+'</div>' : '';
  return '<div class="rank-card"'+(isSelf?' style="border:2px solid var(--blue);background:#f0f7ff"':'')+'>'+
  '<div class="rank-num '+rankClass+'">'+rankIcon+'</div>'+
  '<div class="avatar" style="background:'+AVT_BG[i%AVT_BG.length]+';color:'+AVT_TXT[i%AVT_TXT.length]+'">'+initials(d.nama)+'</div>'+
@@ -2237,7 +2237,7 @@ function loadSanksiManual() {
  hist.innerHTML = data.map(function(s) {
  var isDenda = s.tipe === 'DENDA_MANUAL';
  var color = isDenda ? '#dc2626' : '#065f46';
- var label = isDenda ? ' Penalty' : ' Reward';
+ var label = isDenda ? 'Denda' : 'Penghargaan';
  return '<div style="border:1px solid var(--gray-border);border-radius:8px;padding:10px;margin-bottom:8px;border-left:3px solid '+(isDenda?'#dc2626':'#22c55e')+'">'+
  '<div style="display:flex;justify-content:space-between;align-items:flex-start">'+
  '<div><div style="font-size:11px;font-weight:700;color:'+color+'">'+label+' · '+s.nama+'</div>'+
@@ -2268,7 +2268,7 @@ function submitSanksiManual() {
  document.getElementById('sanksi-nominal').value = '';
  document.getElementById('sanksi-keterangan').value = '';
  document.getElementById('sanksi-user').value = '';
- showToast((tipe==='DENDA_MANUAL'?' Penalty':' Reward')+' berhasil diterapkan ');
+ showToast((tipe==='DENDA_MANUAL'?'Denda':'Penghargaan')+' berhasil diterapkan');
  loadSanksiManual();
  } else { showToast('Gagal. Coba lagi.'); }
  }, function(){ btn.textContent = 'Terapkan'; btn.disabled = false; showToast('Koneksi gagal'); });
@@ -2573,7 +2573,7 @@ function loadRekapBulanan() {
  html += '<div class="card" style="padding:10px;text-align:center"><div style="font-size:20px;font-weight:800;color:var(--green)">'+totalHadir+'</div><div style="font-size:11px;color:var(--text-muted)">Total Hadir</div></div>';
  html += '<div class="card" style="padding:10px;text-align:center"><div style="font-size:20px;font-weight:800;color:var(--red)">'+totalAbsen+'</div><div style="font-size:11px;color:var(--text-muted)">Total Absen</div></div>';
  html += '<div class="card" style="padding:10px;text-align:center"><div style="font-size:14px;font-weight:800;color:#dc2626">Rp '+totalDenda.toLocaleString('id-ID')+'</div><div style="font-size:11px;color:var(--text-muted)">Total Denda</div></div>';
- html += '<div class="card" style="padding:10px;text-align:center"><div style="font-size:14px;font-weight:800;color:#16a34a">Rp '+totalReward.toLocaleString('id-ID')+'</div><div style="font-size:11px;color:var(--text-muted)">Total Reward</div></div>';
+ html += '<div class="card" style="padding:10px;text-align:center"><div style="font-size:14px;font-weight:800;color:#16a34a">Rp '+totalReward.toLocaleString('id-ID')+'</div><div style="font-size:11px;color:var(--text-muted)">Total Penghargaan</div></div>';
  html += '</div>';
 
  // Tabel per karyawan
@@ -2597,7 +2597,7 @@ function loadRekapBulanan() {
  html += '<div style="text-align:center;background:#ede9fe;border-radius:6px;padding:6px"><div style="font-size:14px;font-weight:700;color:#7c3aed">'+(r.lemburMinggu+r.lemburLibur)+'</div><div style="font-size:9px;color:var(--text-muted)">Lembur</div></div>';
  html += '</div>';
  if (netDenda > 0) html += '<div style="display:flex;justify-content:space-between;font-size:11px;color:#dc2626;padding:4px 0;border-top:1px solid var(--gray-border)"><span> Estimasi Denda</span><span style="font-weight:700">- Rp '+netDenda.toLocaleString('id-ID')+'</span></div>';
- if (netReward > 0) html += '<div style="display:flex;justify-content:space-between;font-size:11px;color:#16a34a;padding:4px 0;border-top:1px solid var(--gray-border)"><span> Estimasi Reward</span><span style="font-weight:700">+ Rp '+netReward.toLocaleString('id-ID')+'</span></div>';
+ if (netReward > 0) html += '<div style="display:flex;justify-content:space-between;font-size:11px;color:#16a34a;padding:4px 0;border-top:1px solid var(--gray-border)"><span>Estimasi Penghargaan</span><span style="font-weight:700">+ Rp '+netReward.toLocaleString('id-ID')+'</span></div>';
  html += '<button id="'+btnId+'" class="btn btn-sm btn-primary" style="margin-top:10px;width:100%;border-radius:9px" onclick="toggleOwnerRekapDetail(\''+userId+'\',\''+bulanKey+'\',\''+detailId+'\',\''+btnId+'\')">Lihat Detail</button>';
  html += '<div id="'+detailId+'" style="display:none"></div>';
  html += '</div>';
@@ -2691,7 +2691,7 @@ function renderAttendanceMatrix(res) {
  '<div class="card"><b>'+users.length+'</b><span>Karyawan</span></div>'+
  '<div class="card"><b>'+((res.totalMasuk||0)+(res.totalPulang||0))+'</b><span>Total Tap</span></div>'+
  '</div>'+
- (_attendanceMatrixCanEdit ? '<div class="attendance-action-row"><button class="btn btn-gold attendance-import-btn" onclick="importAttendanceUploadToApp()">Import Fingerprint</button><button class="btn btn-primary attendance-process-btn" onclick="processAttendanceAppRecap()">Proses ke Rekap Resmi</button></div>' : '');
+ (_attendanceMatrixCanEdit ? '<div class="attendance-action-row"><button class="btn btn-gold attendance-import-btn" onclick="importAttendanceUploadToApp()">Impor Fingerprint</button><button class="btn btn-primary attendance-process-btn" onclick="processAttendanceAppRecap()">Proses ke Rekap Resmi</button></div>' : '');
  }
  if (!users.length) {
  el.innerHTML = '<div class="empty-state"><div class="empty-icon"></div>Belum ada data absensi bulan ini</div>';
@@ -2839,13 +2839,13 @@ function importAttendanceUploadToApp() {
  var btn = document.querySelector('.attendance-import-btn');
  if (btn) { btn.textContent = 'Mengimpor...'; btn.disabled = true; }
  gasCall('importAbsensiUploadToApp', [bulanKey, currentUser ? currentUser.nama : ''], function(res) {
- if (btn) { btn.textContent = 'Import Fingerprint'; btn.disabled = false; }
+ if (btn) { btn.textContent = 'Impor Fingerprint'; btn.disabled = false; }
  if (!res || !res.success) { showToast((res && res.msg) || 'Import gagal'); return; }
  clearAttendanceMatrixCache(null, bulanKey);
  showToast(res.msg || 'Import fingerprint selesai');
  loadAttendanceMatrix(true);
  }, function() {
- if (btn) { btn.textContent = 'Import Fingerprint'; btn.disabled = false; }
+ if (btn) { btn.textContent = 'Impor Fingerprint'; btn.disabled = false; }
  showToast('Koneksi gagal saat import fingerprint');
  });
 }
@@ -2879,9 +2879,27 @@ function formatTglShort(tglStr) {
  if (parts.length >= 3) return parseInt(parts[2])+' '+m[parseInt(parts[1])-1];
  return tglStr;
 }
-function cleanAbsensiText(text) {
+function cleanDisplayText(text) {
  return String(text || '')
+  .replace(new RegExp(['\u00c3\u00a2\u00e2\u201a\u00ac\u00e2\u20ac\u009d','\u00c3\u00a2\u00e2\u201a\u00ac\u00e2\u20ac\u0153','\u00e2\u20ac\u201d','\u00e2\u20ac\u201c'].join('|'), 'g'), ' - ')
+  .replace(new RegExp(['\u00c3\u201a\u00c2\u00b7','\u00c2\u00b7'].join('|'), 'g'), ' · ')
+  .replace(new RegExp(['\u00c3\u00b0\u00c5\u00b8\u00c2\u008f\u00e2\u20ac\u00a0','\u00c3\u00b0\u00c5\u00b8\u00c2\u00a5\u00e2\u20ac\u00a1','\u00c3\u00b0\u00c5\u00b8\u00e2\u20ac\u2122\u00c2\u00aa','\u00c3\u00b0\u00c5\u00b8\u00e2\u20ac\u0153\u00cb\u2020','\u00c3\u00b0\u00c5\u00b8\u00e2\u20ac\u009d\u00e2\u20ac\u009d'].join('|'), 'g'), '')
+  .replace(new RegExp(['\u00f0\u0178\u008f\u2020','\u00f0\u0178\u00a5\u2021','\u00f0\u0178\u2019\u00aa','\u00f0\u0178\u201c\u02c6','\u00f0\u0178\u201d\u201d'].join('|'), 'g'), '')
+  .replace(/\u00e2\u2013\u00bc/g, '▼')
+  .replace(/\s+/g, ' ')
+  .trim();
+}
+function cleanAbsensiText(text) {
+ return cleanDisplayText(text)
   .replace(/\[[A-Z_]*SYNC\]\s*/gi, '')
+  .replace(/\bLEMBUR_PULANG\b/g, 'Lembur pulang')
+  .replace(/\bLEMBUR_MINGGU\b/g, 'Lembur hari Minggu')
+  .replace(/\bLEMBUR_LIBUR\b/g, 'Lembur hari libur')
+  .replace(/\bDENDA_MANUAL\b/g, 'Denda manual')
+  .replace(/\bREWARD_MANUAL\b/g, 'Penghargaan manual')
+  .replace(/\bPOTONGAN_ABSEN\b/g, 'Potongan absen')
+  .replace(/\bDENDA_SP\b/g, 'Denda SP')
+  .replace(/\bDENDA_ANOMALI\b/g, 'Denda tap anomali')
   .replace(/\s+/g, ' ')
   .trim();
 }

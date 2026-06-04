@@ -4,14 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Hosela Hub</title>
-<link rel="stylesheet" href="css/style.css?v=20260604a">
+<link rel="stylesheet" href="css/style.css?v=20260604b">
 
 
 
 
 
 
-<link rel="manifest" href="manifest.webmanifest?v=20260604a">
+<link rel="manifest" href="manifest.webmanifest?v=20260604b">
 <meta name="theme-color" content="#1557d8">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -365,7 +365,7 @@
  <div class="content" id="laporan-list"><div class="empty-state"><div class="empty-icon"></div>Memuat...</div></div>
 </div>
 
-<script src="js/app.js?v=20260604a"></script>
+<script src="js/app.js?v=20260604b"></script>
 </div><!-- /app-wrap -->
 
 <!-- KPI CHECK -->
@@ -564,11 +564,11 @@
  </div>
 </div>
 
-<!-- REWARD & PENALTY MANUAL (Finance/Owner) -->
+<!-- PENGHARGAAN & DENDA MANUAL (Finance/Owner) -->
 <div class="screen" id="s-sanksi-manual">
  <div class="statusbar"></div>
  <div class="header">
- <div class="header-row"><button class="back-btn" onclick="goTo('s-home')">‹</button><div><h1>Reward & Penalty</h1><p>Denda & reward manual</p></div></div>
+ <div class="header-row"><button class="back-btn" onclick="goTo('s-home')">‹</button><div><h1>Penghargaan & Denda</h1><p>Denda dan penghargaan manual</p></div></div>
  <div class="gold-line"></div>
  </div>
  <div class="content">
@@ -581,8 +581,8 @@
  <div class="form-group">
  <label class="form-label">Tipe</label>
  <select class="form-input" id="sanksi-tipe">
- <option value="DENDA_MANUAL"> Penalty (Denda)</option>
- <option value="REWARD_MANUAL"> Reward</option>
+ <option value="DENDA_MANUAL">Denda</option>
+ <option value="REWARD_MANUAL">Penghargaan</option>
  </select>
  </div>
  <div class="form-group">
@@ -591,12 +591,12 @@
  </div>
  <div class="form-group">
  <label class="form-label">Keterangan</label>
- <textarea class="form-input" id="sanksi-keterangan" rows="2" placeholder="Alasan penalty/reward..."></textarea>
+ <textarea class="form-input" id="sanksi-keterangan" rows="2" placeholder="Alasan denda atau penghargaan..."></textarea>
  </div>
  <button class="btn btn-primary" onclick="submitSanksiManual()">Terapkan</button>
  </div>
  <div class="card" style="margin-top:10px">
- <div class="card-title"><div class="card-dot"></div>Riwayat Reward & Penalty</div>
+ <div class="card-title"><div class="card-dot"></div>Riwayat Penghargaan & Denda</div>
  <div id="sanksi-history"><div class="empty-state">Memuat...</div></div>
  </div>
  </div>
@@ -640,7 +640,7 @@
 <div class="screen" id="s-setting-gaji">
  <div class="statusbar"></div>
  <div class="header">
- <div class="header-row"><button class="back-btn" onclick="goTo('s-home')">‹</button><div><h1>Setting Gaji</h1><p>Update gaji bulanan karyawan</p></div></div>
+ <div class="header-row"><button class="back-btn" onclick="goTo('s-home')">‹</button><div><h1>Pengaturan Gaji</h1><p>Ubah gaji bulanan karyawan</p></div></div>
  <div class="gold-line"></div>
  </div>
  <div class="content">
@@ -651,7 +651,7 @@
 <div class="screen" id="s-payroll">
  <div class="statusbar"></div>
  <div class="header">
- <div class="header-row"><button class="back-btn" onclick="goTo('s-home')">‹</button><div><h1>Payroll</h1><p>Preview gaji sebelum publish slip</p></div></div>
+ <div class="header-row"><button class="back-btn" onclick="goTo('s-home')">‹</button><div><h1>Penggajian</h1><p>Pratinjau gaji sebelum menerbitkan slip</p></div></div>
  <div class="gold-line"></div>
  </div>
  <div class="content">
@@ -675,9 +675,9 @@
 </div>
 
 <!-- PHONE PREVIEW -->
-<button class="preview-btn" onclick="togglePreview()"> Preview HP</button>
+<button class="preview-btn" onclick="togglePreview()"> Pratinjau HP</button>
 
-<script src="js/payroll.js?v=20260604a"></script>
-<script src="js/preview.js?v=20260604a"></script>
+<script src="js/payroll.js?v=20260604b"></script>
+<script src="js/preview.js?v=20260604b"></script>
 </body>
 </html>

@@ -29,7 +29,7 @@ function fillPayrollMonthSelect() {
 function loadPayroll() {
  if (!currentUser || (currentUser.bagian !== 'Finance' && currentUser.bagian !== 'Owner')) {
  goTo('s-home');
- showToast('Payroll hanya untuk Finance dan Owner');
+ showToast('Penggajian hanya untuk Finance dan Owner');
  return;
  }
  fillPayrollMonthSelect();
@@ -199,7 +199,7 @@ function renderPayrollSetupState(bulanKey) {
  if (!el) return;
  el.innerHTML =
  '<div class="card" style="padding:16px">' +
- '<div class="card-title"><div class="card-dot"></div>Payroll belum aktif</div>' +
+ '<div class="card-title"><div class="card-dot"></div>Penggajian belum aktif</div>' +
  '<div style="font-size:12px;color:var(--text-muted);line-height:1.6;margin-bottom:12px">' +
  'Struktur halaman payroll sudah siap. Tahap berikutnya adalah menambahkan sheet PAYROLL dan endpoint GAS agar preview gaji periode '+bulanKey+' bisa dihitung dari rekap absensi.' +
  '</div>' +
@@ -226,13 +226,13 @@ function renderPayrollPreview(res, bulanKey) {
  var total = data.reduce(function(sum, r){ return sum + (parseInt(r.totalGaji || r.total || 0, 10) || 0); }, 0);
  var actionHtml = '';
  if (status === 'PREVIEW') {
- actionHtml = '<button class="btn btn-sm btn-primary" onclick="createPayrollDraftUI(&quot;'+bulanKey+'&quot;)">Buat Draft</button>';
+ actionHtml = '<button class="btn btn-sm btn-primary" onclick="createPayrollDraftUI(&quot;'+bulanKey+'&quot;)">Buat Draf</button>';
  } else if (status === 'DRAFT') {
  actionHtml = '<button class="btn btn-sm btn-primary" onclick="confirmPayrollUI(&quot;'+(res.id || '')+'&quot;)">Konfirmasi</button>';
  } else if (status === 'CONFIRMED') {
- actionHtml = '<button class="btn btn-sm btn-gold" onclick="publishPayrollUI(&quot;'+(res.id || '')+'&quot;)">Publish Slip</button>';
+ actionHtml = '<button class="btn btn-sm btn-gold" onclick="publishPayrollUI(&quot;'+(res.id || '')+'&quot;)">Terbitkan Slip</button>';
  } else {
- actionHtml = '<span class="badge badge-green">Published</span>';
+ actionHtml = '<span class="badge badge-green">Diterbitkan</span>';
  }
  var html =
  '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">' +
@@ -240,12 +240,12 @@ function renderPayrollPreview(res, bulanKey) {
  '<div class="card" style="padding:10px;text-align:center"><div style="font-size:14px;font-weight:800;color:var(--green)">Rp '+total.toLocaleString('id-ID')+'</div><div style="font-size:11px;color:var(--text-muted)">Estimasi Total</div></div>' +
  '</div>' +
  '<div class="card" style="padding:12px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center">' +
- '<div><div style="font-size:13px;font-weight:800;color:var(--text-dark)">Payroll '+bulanKey+'</div><div style="font-size:11px;color:var(--text-muted)">Status: '+status+'</div></div>' +
+ '<div><div style="font-size:13px;font-weight:800;color:var(--text-dark)">Penggajian '+bulanKey+'</div><div style="font-size:11px;color:var(--text-muted)">Status: '+payrollStatusLabel(status)+'</div></div>' +
  actionHtml +
  '</div>';
 
  if (!data.length) {
- html += '<div class="empty-state"><div class="empty-icon"></div>Belum ada data payroll untuk periode ini</div>';
+ html += '<div class="empty-state"><div class="empty-icon"></div>Belum ada data penggajian untuk periode ini</div>';
  } else {
  data.forEach(function(r, idx) {
  var detailId = 'payroll-detail-' + idx + '-' + String(r.userId || r.id || '').replace(/[^a-zA-Z0-9_-]/g, '');
@@ -272,9 +272,19 @@ function renderPayrollMiniBreakdown(r) {
  var denda = parseInt(r.totalDenda || 0, 10) || 0;
  return '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:10px">' +
  '<div style="background:#f8fafc;border-radius:7px;padding:7px;text-align:center"><div style="font-size:11px;font-weight:800;color:var(--text-dark)">Rp '+pokok.toLocaleString('id-ID')+'</div><div style="font-size:9px;color:var(--text-muted)">Pokok</div></div>' +
- '<div style="background:#f0fdf4;border-radius:7px;padding:7px;text-align:center"><div style="font-size:11px;font-weight:800;color:#16a34a">+Rp '+reward.toLocaleString('id-ID')+'</div><div style="font-size:9px;color:var(--text-muted)">Reward</div></div>' +
+ '<div style="background:#f0fdf4;border-radius:7px;padding:7px;text-align:center"><div style="font-size:11px;font-weight:800;color:#16a34a">+Rp '+reward.toLocaleString('id-ID')+'</div><div style="font-size:9px;color:var(--text-muted)">Penghargaan</div></div>' +
  '<div style="background:#fff7f7;border-radius:7px;padding:7px;text-align:center"><div style="font-size:11px;font-weight:800;color:#dc2626">-Rp '+denda.toLocaleString('id-ID')+'</div><div style="font-size:9px;color:var(--text-muted)">Denda</div></div>' +
  '</div>';
+}
+
+function payrollStatusLabel(status) {
+ var map = {
+ PREVIEW: 'Pratinjau',
+ DRAFT: 'Draf',
+ CONFIRMED: 'Dikonfirmasi',
+ PUBLISHED: 'Diterbitkan'
+ };
+ return map[String(status || '').toUpperCase()] || status || '-';
 }
 
 function togglePayrollDetail(payrollDetailId, targetId) {
@@ -314,11 +324,11 @@ function renderPayrollDetailBox(res) {
  html += payrollMetric('Lembur', ((d.lemburPulang || 0) + (d.lemburMinggu || 0) + (d.lemburLibur || 0)) + 'x', '#eff6ff', '#1d4ed8');
  html += '</div>';
  html += payrollAmountRow('Gaji Pokok', d.gajiPokok, 'plus');
- html += payrollAmountRow('Reward', d.totalReward, 'plus');
+ html += payrollAmountRow('Penghargaan', d.totalReward, 'plus');
  html += payrollAmountRow('Bonus Kerajinan', d.bonusKerajinan, 'plus');
  html += payrollAmountRow('Denda', d.totalDenda, 'minus');
- if (d.adjustmentPlus) html += payrollAmountRow('Adjustment Tambahan', d.adjustmentPlus, 'plus');
- if (d.adjustmentMinus) html += payrollAmountRow('Adjustment Potongan', d.adjustmentMinus, 'minus');
+ if (d.adjustmentPlus) html += payrollAmountRow('Penyesuaian Tambahan', d.adjustmentPlus, 'plus');
+ if (d.adjustmentMinus) html += payrollAmountRow('Penyesuaian Potongan', d.adjustmentMinus, 'minus');
  html += '<div style="display:flex;justify-content:space-between;font-size:13px;font-weight:900;color:var(--text-dark);padding-top:8px;border-top:1px solid var(--gray-border);margin-top:6px"><span>Total Diterima</span><span>Rp '+(parseInt(d.totalGaji || 0, 10) || 0).toLocaleString('id-ID')+'</span></div>';
  if (currentUser && (currentUser.bagian === 'Finance' || currentUser.bagian === 'Owner') && d.statusSlip !== 'PUBLISHED') {
  html += renderPayrollAdjustmentForm(d);
@@ -330,13 +340,13 @@ function renderPayrollDetailBox(res) {
 
 function renderPayrollAdjustmentForm(d) {
  return '<div style="margin-top:12px;background:#f8fafc;border:1px solid var(--gray-border);border-radius:8px;padding:10px">' +
- '<div style="font-size:11px;font-weight:800;color:var(--text-dark);margin-bottom:8px">Adjustment Finance</div>' +
+ '<div style="font-size:11px;font-weight:800;color:var(--text-dark);margin-bottom:8px">Penyesuaian Finance</div>' +
  '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">' +
  '<div><label class="form-label">Tambahan</label><input class="form-input" type="number" id="adj-plus-'+d.id+'" value="'+(parseInt(d.adjustmentPlus || 0, 10) || 0)+'" placeholder="0"></div>' +
  '<div><label class="form-label">Potongan</label><input class="form-input" type="number" id="adj-minus-'+d.id+'" value="'+(parseInt(d.adjustmentMinus || 0, 10) || 0)+'" placeholder="0"></div>' +
  '</div>' +
- '<textarea class="form-input" id="adj-note-'+d.id+'" style="height:58px;margin-bottom:8px" placeholder="Catatan adjustment">'+(d.catatanAdjustment || '')+'</textarea>' +
- '<button class="btn btn-sm btn-primary" style="width:100%" onclick="savePayrollAdjustment(&quot;'+d.id+'&quot;)">Simpan Adjustment</button>' +
+ '<textarea class="form-input" id="adj-note-'+d.id+'" style="height:58px;margin-bottom:8px" placeholder="Catatan penyesuaian">'+(d.catatanAdjustment || '')+'</textarea>' +
+ '<button class="btn btn-sm btn-primary" style="width:100%" onclick="savePayrollAdjustment(&quot;'+d.id+'&quot;)">Simpan Penyesuaian</button>' +
  '</div>';
 }
 
@@ -354,7 +364,7 @@ function savePayrollAdjustment(payrollDetailId) {
  }
  _payrollDetailCache[payrollDetailId] = res;
  Object.keys(_payrollPreviewCache).forEach(function(k){ delete _payrollPreviewCache[k]; });
- showToast('Adjustment disimpan');
+ showToast('Penyesuaian disimpan');
  var boxes = document.querySelectorAll('[id^="payroll-detail-"]');
  boxes.forEach(function(box) {
  if (box.style.display === 'block' && box.innerHTML.indexOf('adj-plus-' + payrollDetailId) !== -1) {
@@ -387,11 +397,28 @@ function renderPayrollItems(items) {
  var tipe = String(it.tipe || '');
  var color = n < 0 || tipe.indexOf('DENDA') !== -1 || tipe.indexOf('POTONGAN') !== -1 ? '#dc2626' : '#065f46';
  html += '<div style="border:1px solid var(--gray-border);border-radius:8px;padding:8px;margin-bottom:6px;background:#fff">';
- html += '<div style="display:flex;justify-content:space-between;gap:8px"><div style="font-size:11px;font-weight:800;color:var(--text-dark)">'+it.tipe+'</div><div style="font-size:11px;font-weight:900;color:'+color+'">Rp '+Math.abs(n).toLocaleString('id-ID')+'</div></div>';
+ html += '<div style="display:flex;justify-content:space-between;gap:8px"><div style="font-size:11px;font-weight:800;color:var(--text-dark)">'+payrollItemLabel(tipe)+'</div><div style="font-size:11px;font-weight:900;color:'+color+'">Rp '+Math.abs(n).toLocaleString('id-ID')+'</div></div>';
  html += '<div style="font-size:10px;color:var(--text-muted);line-height:1.5;margin-top:3px">'+(it.tanggal || '')+' '+(it.keterangan || '')+'</div>';
  html += '</div>';
  });
  return html;
+}
+
+function payrollItemLabel(tipe) {
+ var map = {
+ DENDA_SP: 'Denda SP',
+ DENDA_MANUAL: 'Denda manual',
+ DENDA_ANOMALI: 'Denda tap anomali',
+ REWARD_MANUAL: 'Penghargaan manual',
+ LEMBUR_PULANG: 'Lembur pulang',
+ LEMBUR_MINGGU: 'Lembur hari Minggu',
+ LEMBUR_LIBUR: 'Lembur hari libur',
+ POTONGAN_ABSEN: 'Potongan absen',
+ BONUS_KERAJINAN: 'Bonus kerajinan',
+ ADJUSTMENT_PLUS: 'Penyesuaian tambahan',
+ ADJUSTMENT_MINUS: 'Penyesuaian potongan'
+ };
+ return map[tipe] || tipe;
 }
 
 function createPayrollDraftUI(bulanKey) {
@@ -401,20 +428,20 @@ function createPayrollDraftUI(bulanKey) {
  gasCall('createPayrollDraft', [bulanKey, currentUser.nama], function(res) {
  _payrollPreviewCache[bulanKey] = res;
  renderPayrollPreview(res, bulanKey);
- showToast('Draft payroll dibuat');
+ showToast('Draf penggajian dibuat');
  }, function() {
  renderPayrollSetupState(bulanKey);
- showToast('Gagal membuat draft payroll');
+ showToast('Gagal membuat draf penggajian');
  });
 }
 
 function confirmPayrollUI(payrollRunId) {
  if (!payrollRunId || !currentUser) return;
- if (!confirm('Konfirmasi payroll ini? Slip belum dipublish sampai tombol Publish Slip ditekan.')) return;
+ if (!confirm('Konfirmasi penggajian ini? Slip belum diterbitkan sampai tombol Terbitkan Slip ditekan.')) return;
  gasCall('confirmPayroll', [payrollRunId, currentUser.nama], function(res) {
  if (res && res.bulan) _payrollPreviewCache[res.bulan] = res;
  renderPayrollPreview(res, res.bulan);
- showToast('Payroll dikonfirmasi');
+ showToast('Penggajian dikonfirmasi');
  }, function() {
  showToast('Gagal konfirmasi payroll');
  });
@@ -422,7 +449,7 @@ function confirmPayrollUI(payrollRunId) {
 
 function publishPayrollUI(payrollRunId) {
  if (!payrollRunId || !currentUser) return;
- if (!confirm('Publish slip gaji ke semua karyawan untuk payroll ini?')) return;
+ if (!confirm('Terbitkan slip gaji ke semua karyawan untuk penggajian ini?')) return;
  gasCall('publishPayroll', [payrollRunId, currentUser.nama], function(res) {
  if (res && res.bulan) _payrollPreviewCache[res.bulan] = res;
  renderPayrollPreview(res, res.bulan);
