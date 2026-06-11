@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbxDAHTGFbjG2RMjIPqUmdLbPO3TqKFfpPuEw9p5sdc4tEJXy6zsyyzhQ6pO65Pben4ywQ/exec';
-var APP_VERSION = '20260604d';
+var APP_VERSION = '20260611a';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -2212,7 +2212,35 @@ function doLogout() {
 }
 
 // ─── REWARD & PENALTY MANUAL ─────────────────────
+function fillSanksiMonthSelect() {
+ var sel = document.getElementById('sanksi-bulan');
+ if (!sel) return;
+ var selected = sel.value || attendanceMonthKey(new Date());
+ sel.innerHTML = '';
+ var now = new Date();
+ var names = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+ for (var i = 0; i < 8; i++) {
+ var d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+ var key = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+ var opt = document.createElement('option');
+ opt.value = key;
+ opt.textContent = names[d.getMonth()] + ' ' + d.getFullYear();
+ sel.appendChild(opt);
+ }
+ if ([].some.call(sel.options, function(o){ return o.value === selected; })) sel.value = selected;
+}
+
+function labelBulanKey(bulanKey) {
+ var parts = String(bulanKey || '').split('-');
+ var y = parseInt(parts[0], 10);
+ var m = parseInt(parts[1], 10);
+ var names = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+ if (!y || !m || m < 1 || m > 12) return bulanKey || '-';
+ return names[m - 1] + ' ' + y;
+}
+
 function loadSanksiManual() {
+ fillSanksiMonthSelect();
  // Load karyawan list
  var sel = document.getElementById('sanksi-user');
  sel.innerHTML = '<option value="">Pilih karyawan...</option>';
@@ -2237,7 +2265,7 @@ function loadSanksiManual() {
  return '<div style="border:1px solid var(--gray-border);border-radius:8px;padding:10px;margin-bottom:8px;border-left:3px solid '+(isDenda?'#dc2626':'#22c55e')+'">'+
  '<div style="display:flex;justify-content:space-between;align-items:flex-start">'+
  '<div><div style="font-size:11px;font-weight:700;color:'+color+'">'+label+' · '+s.nama+'</div>'+
- '<div style="font-size:10px;color:var(--text-muted)">'+s.tgl+'</div>'+
+ '<div style="font-size:10px;color:var(--text-muted)">'+s.tgl+' &middot; Berlaku: '+labelBulanKey(s.bulan || '')+'</div>'+
  '<div style="font-size:11px;color:var(--text-dark);margin-top:2px">'+s.keterangan+'</div></div>'+
  '<div style="text-align:right;flex-shrink:0;margin-left:8px">'+
  '<div style="font-size:13px;font-weight:800;color:'+color+'">'+(isDenda?'-':'+')+'Rp '+parseInt(s.nominal).toLocaleString('id-ID')+'</div>'+
@@ -2251,20 +2279,22 @@ function submitSanksiManual() {
  var userId = document.getElementById('sanksi-user').value;
  var tipe = document.getElementById('sanksi-tipe').value;
  var nominal = document.getElementById('sanksi-nominal').value;
+ var bulanKey = document.getElementById('sanksi-bulan') ? document.getElementById('sanksi-bulan').value : attendanceMonthKey(new Date());
  var ket = document.getElementById('sanksi-keterangan').value.trim();
  if (!userId) { showToast('Pilih karyawan dulu'); return; }
+ if (!/^\d{4}-\d{2}$/.test(String(bulanKey || ''))) { showToast('Pilih bulan berlaku dulu'); return; }
  if (!nominal || parseInt(nominal) <= 0) { showToast('Nominal harus lebih dari 0'); return; }
  if (!ket) { showToast('Keterangan wajib diisi'); return; }
  var btn = event.target;
  btn.textContent = ' Memproses...'; btn.disabled = true;
- // Real-time: tidak ada tanggal manual — backend pakai timestamp sekarang
- gasCall('addSanksiManual', [currentUser.nama, userId, tipe, nominal, ket], function(r) {
+ // Backend menyimpan tanggal transaksi ke bulan berlaku yang dipilih.
+ gasCall('addSanksiManual', [currentUser.nama, userId, tipe, nominal, ket, bulanKey], function(r) {
  btn.textContent = 'Terapkan'; btn.disabled = false;
  if (r.success) {
  document.getElementById('sanksi-nominal').value = '';
  document.getElementById('sanksi-keterangan').value = '';
  document.getElementById('sanksi-user').value = '';
- showToast((tipe==='DENDA_MANUAL'?'Denda':'Penghargaan')+' berhasil diterapkan');
+ showToast((tipe==='DENDA_MANUAL'?'Denda':'Penghargaan')+' '+labelBulanKey(bulanKey)+' berhasil diterapkan');
  loadSanksiManual();
  } else { showToast('Gagal. Coba lagi.'); }
  }, function(){ btn.textContent = 'Terapkan'; btn.disabled = false; showToast('Koneksi gagal'); });
