@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbxDAHTGFbjG2RMjIPqUmdLbPO3TqKFfpPuEw9p5sdc4tEJXy6zsyyzhQ6pO65Pben4ywQ/exec';
-var APP_VERSION = '20260612h';
+var APP_VERSION = '20260612i';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -2578,9 +2578,13 @@ function renderAttendanceMatrix(res) {
 
 function renderAttendanceUserRecap(u, res) {
  if (!_attendanceMatrixCanEdit) {
- if (res.employeeRecapLoading) return '<div class="att-recap att-recap-muted">Memuat rekap kehadiran...</div>';
- if (!res.employeeAbsensiRekap) return '<div class="att-recap att-recap-muted">Rekap kehadiran belum tersedia.</div>';
+ var employeeLiveRecap = buildAttendanceMatrixRecap(u, res);
+ if (res.employeeRecapLoading && !employeeLiveRecap.hasData) return '<div class="att-recap att-recap-muted">Memuat rekap kehadiran...</div>';
+ if (res.employeeAbsensiRekap && hasAbsensiRecapMonth(res.employeeAbsensiRekap, res.bulan)) {
  return '<div class="att-recap">'+renderAbsensiDetailHtml(res.employeeAbsensiRekap, res.bulan, 'att-personal-rekap')+'</div>';
+ }
+ if (employeeLiveRecap.hasData) return renderAttendanceLivePersonalRecap(u, res, employeeLiveRecap);
+ return '<div class="att-recap att-recap-muted">Rekap '+labelBulanKey(res.bulan || '')+' belum tersedia.</div>';
  }
  var liveRecap = buildAttendanceMatrixRecap(u, res);
  if (res.rekapLoading && !liveRecap.hasData) return '<div class="att-recap att-recap-muted">Memuat ringkasan rekap...</div>';
@@ -2618,6 +2622,24 @@ function renderAttendanceUserRecap(u, res) {
  '<div class="att-recap-row att-recap-reward"><span>Estimasi Penghargaan</span><b>+ Rp '+reward.toLocaleString('id-ID')+'</b></div>'+
  '<button id="'+btnId+'" class="btn btn-sm btn-primary att-recap-btn" onclick="toggleOwnerRekapDetail(\''+esc(userId)+'\',\''+esc(bulanKey)+'\',\''+detailId+'\',\''+btnId+'\')">Lihat Detail</button>'+
  '<div id="'+detailId+'" class="att-recap-detail" style="display:none"></div>'+
+ '</div>';
+}
+
+function hasAbsensiRecapMonth(absensiRes, bulanKey) {
+ var requestedMonth = String(bulanKey || '');
+ if (!requestedMonth || !absensiRes || !absensiRes.data || !absensiRes.data.length) return false;
+ return absensiRes.data.some(function(x){ return String(x.bulan || '') === requestedMonth; });
+}
+
+function renderAttendanceLivePersonalRecap(u, res, liveRecap) {
+ return '<div class="att-recap">'+
+ '<div class="att-recap-head"><div><b>'+cleanDisplayText(u.nama || '')+'</b><p>'+cleanDisplayText(u.jabatan || '')+' &middot; '+cleanDisplayText(u.bagian || '')+'</p></div></div>'+
+ '<div class="att-recap-grid">'+
+ '<div class="att-recap-metric att-recap-green"><b>'+liveRecap.hadir+'</b><span>Hadir</span></div>'+
+ '<div class="att-recap-metric att-recap-yellow"><b>'+liveRecap.telat+'</b><span>Telat</span></div>'+
+ '<div class="att-recap-metric att-recap-red"><b>'+liveRecap.absen+'</b><span>Absen</span></div>'+
+ '<div class="att-recap-metric att-recap-purple"><b>'+liveRecap.lembur+'</b><span>Lembur</span></div>'+
+ '</div>'+
  '</div>';
 }
 
