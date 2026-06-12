@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbxDAHTGFbjG2RMjIPqUmdLbPO3TqKFfpPuEw9p5sdc4tEJXy6zsyyzhQ6pO65Pben4ywQ/exec';
-var APP_VERSION = '20260612f';
+var APP_VERSION = '20260612g';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -2526,18 +2526,19 @@ function renderAttendanceMatrix(res) {
  var item = (u.days && u.days[d]) || {};
  var masuk = item.masuk || '';
  var pulang = item.pulang || '';
+ var hasTap = !!(masuk || pulang);
  var statusClass = '';
  var statusSymbol = '&middot;';
  var statusTitle = 'Belum ada data';
- if (item.anomali) {
+ if (item.anomali && !hasTap) {
  statusClass = ' anomaly';
  statusSymbol = '!';
  statusTitle = 'Tap anomali';
- } else if (item.rejected) {
+ } else if (item.rejected && !hasTap) {
  statusClass = ' rejected';
  statusSymbol = '&times;';
  statusTitle = 'Ditolak';
- } else if (item.absen) {
+ } else if (item.absen && !hasTap) {
  statusClass = ' absent';
  statusSymbol = 'A';
  statusTitle = 'Absen';
