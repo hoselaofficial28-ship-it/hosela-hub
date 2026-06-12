@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbxDAHTGFbjG2RMjIPqUmdLbPO3TqKFfpPuEw9p5sdc4tEJXy6zsyyzhQ6pO65Pben4ywQ/exec';
-var APP_VERSION = '20260612e';
+var APP_VERSION = '20260612f';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -1041,11 +1041,17 @@ function toggleDropdown(id) {
 }
 
 function renderAbsensiDetailHtml(res, bulanKey, scopeId) {
+ var requestedMonth = String(bulanKey || '');
  if (!res || !res.data || !res.data.length) {
- return '<div class="empty-state" style="padding:12px">Belum ada data kehadiran</div>';
+ return '<div class="att-recap att-recap-muted">Rekap '+(requestedMonth ? labelBulanKey(requestedMonth) : 'kehadiran')+' belum tersedia.</div>';
  }
  var bulanList = res.data;
- var b = bulanList.find(function(x){ return x.bulan === bulanKey; }) || bulanList.find(function(x){ return x.bulan === res.bulanIni; }) || bulanList[0];
+ var b = requestedMonth
+ ? bulanList.find(function(x){ return x.bulan === requestedMonth; })
+ : (bulanList.find(function(x){ return x.bulan === res.bulanIni; }) || bulanList[0]);
+ if (requestedMonth && !b) {
+ return '<div class="att-recap att-recap-muted">Rekap '+labelBulanKey(requestedMonth)+' belum tersedia.</div>';
+ }
  var mingguList = b.mingguList || [];
  var dropId = 0;
  scopeId = scopeId || ('abs-' + Date.now());
