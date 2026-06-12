@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbxDAHTGFbjG2RMjIPqUmdLbPO3TqKFfpPuEw9p5sdc4tEJXy6zsyyzhQ6pO65Pben4ywQ/exec';
-var APP_VERSION = '20260612i';
+var APP_VERSION = '20260612j';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -2337,16 +2337,25 @@ function toggleOwnerRekapDetail(userId, bulanKey, targetId, btnId) {
 
  var cacheKey = userId;
  if (_ownerAbsensiCache[cacheKey]) {
+ if (hasAbsensiRecapMonth(_ownerAbsensiCache[cacheKey], bulanKey)) {
  target.innerHTML = renderAbsensiDetailHtml(_ownerAbsensiCache[cacheKey], bulanKey, targetId);
+ } else {
+ target.innerHTML = renderAttendanceLiveDetailForUser(userId, bulanKey, targetId);
+ }
  return;
  }
 
  target.innerHTML = skelCards(2);
  gasCall('getAbsensiRekap', [userId], function(res) {
  _ownerAbsensiCache[cacheKey] = res;
+ if (hasAbsensiRecapMonth(res, bulanKey)) {
  target.innerHTML = renderAbsensiDetailHtml(res, bulanKey, targetId);
+ } else {
+ target.innerHTML = renderAttendanceLiveDetailForUser(userId, bulanKey, targetId);
+ }
  }, function() {
- target.innerHTML = '<div class="empty-state" style="padding:12px">Gagal memuat detail absensi</div>';
+ var liveHtml = renderAttendanceLiveDetailForUser(userId, bulanKey, targetId);
+ target.innerHTML = liveHtml || '<div class="empty-state" style="padding:12px">Gagal memuat detail absensi</div>';
  });
 }
 
@@ -2632,6 +2641,12 @@ function hasAbsensiRecapMonth(absensiRes, bulanKey) {
 }
 
 function renderAttendanceLivePersonalRecap(u, res, liveRecap) {
+ var userId = u.id || (currentUser && currentUser.id) || '';
+ var bulanKey = res.bulan || '';
+ var safeId = String(userId || u.nama || '').replace(/[^a-zA-Z0-9_-]/g, '');
+ var safeMonth = String(bulanKey).replace(/[^a-zA-Z0-9_-]/g, '');
+ var detailId = 'att-live-detail-' + safeId + '-' + safeMonth;
+ var btnId = 'att-live-btn-' + safeId + '-' + safeMonth;
  return '<div class="att-recap">'+
  '<div class="att-recap-head"><div><b>'+cleanDisplayText(u.nama || '')+'</b><p>'+cleanDisplayText(u.jabatan || '')+' &middot; '+cleanDisplayText(u.bagian || '')+'</p></div></div>'+
  '<div class="att-recap-grid">'+
@@ -2640,7 +2655,90 @@ function renderAttendanceLivePersonalRecap(u, res, liveRecap) {
  '<div class="att-recap-metric att-recap-red"><b>'+liveRecap.absen+'</b><span>Absen</span></div>'+
  '<div class="att-recap-metric att-recap-purple"><b>'+liveRecap.lembur+'</b><span>Lembur</span></div>'+
  '</div>'+
+ '<button id="'+btnId+'" class="btn btn-sm btn-primary att-recap-btn" onclick="toggleLiveAttendanceDetail(\''+esc(userId)+'\',\''+esc(bulanKey)+'\',\''+detailId+'\',\''+btnId+'\')">Lihat Detail</button>'+
+ '<div id="'+detailId+'" class="att-recap-detail" style="display:none"></div>'+
  '</div>';
+}
+
+function toggleLiveAttendanceDetail(userId, bulanKey, targetId, btnId) {
+ var target = document.getElementById(targetId);
+ var btn = document.getElementById(btnId);
+ if (!target || !btn) return;
+ if (target.style.display === 'block') {
+ target.style.display = 'none';
+ btn.textContent = 'Lihat Detail';
+ return;
+ }
+ target.style.display = 'block';
+ btn.textContent = 'Tutup Detail';
+ target.innerHTML = renderAttendanceLiveDetailForUser(userId, bulanKey, targetId);
+}
+
+function getAttendanceMatrixUserFromCache(userId, bulanKey) {
+ userId = String(userId || '');
+ bulanKey = String(bulanKey || '');
+ var cacheKeys = ['all:' + bulanKey, userId + ':' + bulanKey];
+ for (var k = 0; k < cacheKeys.length; k++) {
+ var matrix = _attendanceMatrixCache[cacheKeys[k]];
+ var users = (matrix && matrix.users) || [];
+ for (var i = 0; i < users.length; i++) {
+ if (String(users[i].id || '') === userId) return { user: users[i], matrix: matrix };
+ }
+ }
+ return null;
+}
+
+function renderAttendanceLiveDetailForUser(userId, bulanKey, scopeId) {
+ var found = getAttendanceMatrixUserFromCache(userId, bulanKey);
+ if (!found) return '<div class="att-recap att-recap-muted">Detail '+labelBulanKey(bulanKey)+' belum tersedia.</div>';
+ return renderAttendanceLiveDetailHtml(found.user, found.matrix, scopeId);
+}
+
+function renderAttendanceLiveDetailHtml(u, res, scopeId) {
+ var monthParts = String((res && res.bulan) || '').split('-');
+ var year = parseInt(monthParts[0], 10);
+ var month = parseInt(monthParts[1], 10);
+ var totalDays = parseInt((res && res.days) || 0, 10) || 0;
+ if (!year || !month || !totalDays || !u) return '<div class="att-recap att-recap-muted">Detail belum tersedia.</div>';
+ var recap = buildAttendanceMatrixRecap(u, res);
+ var rows = [];
+ function rowStatus(item, dateObj) {
+ var masuk = item.masuk || '';
+ var pulang = item.pulang || '';
+ var hasTap = !!(masuk || pulang);
+ if (item.anomali && !hasTap) return ['Tap anomali', '#f59e0b'];
+ if (item.rejected && !hasTap) return ['Ditolak', '#64748b'];
+ if (item.absen && !hasTap) return ['Absen', '#ef4444'];
+ if (item.lembur) return ['Lembur', '#7c3aed'];
+ if (masuk && pulang) return [item.telat ? 'Telat' : 'Hadir lengkap', item.telat ? '#f59e0b' : '#16a34a'];
+ if (masuk) return ['Belum pulang', '#0e4fa3'];
+ if (pulang) return ['Tanpa masuk', '#f59e0b'];
+ return ['', ''];
+ }
+ for (var d = 1; d <= totalDays; d++) {
+ var item = (u.days && u.days[d]) || {};
+ var dateObj = new Date(year, month - 1, d);
+ var status = rowStatus(item, dateObj);
+ if (!status[0]) continue;
+ rows.push({ day:d, masuk:item.masuk || '-', pulang:item.pulang || '-', label:status[0], color:status[1] });
+ }
+ if (!rows.length) return '<div class="att-recap att-recap-muted">Belum ada detail untuk '+labelBulanKey(res.bulan || '')+'.</div>';
+ var html = '<div style="background:var(--blue-light);border-radius:10px;padding:14px;margin:10px 0 12px">';
+ html += '<div style="font-size:13px;font-weight:700;color:var(--blue);margin-bottom:10px">&#128197; '+labelBulanKey(res.bulan || '')+'</div>';
+ html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">';
+ html += '<div style="background:#fff;border-radius:8px;padding:8px;text-align:center"><div style="font-size:20px;font-weight:800;color:#22c55e">'+recap.hadir+'</div><div style="font-size:10px;color:var(--text-muted)">Hari Hadir</div></div>';
+ html += '<div style="background:#fff;border-radius:8px;padding:8px;text-align:center"><div style="font-size:20px;font-weight:800;color:#ef4444">'+recap.absen+'</div><div style="font-size:10px;color:var(--text-muted)">Hari Absen</div></div>';
+ html += '<div style="background:#fff;border-radius:8px;padding:8px;text-align:center"><div style="font-size:20px;font-weight:800;color:#f59e0b">'+recap.telat+'</div><div style="font-size:10px;color:var(--text-muted)">Kali Telat</div></div>';
+ html += '<div style="background:#fff;border-radius:8px;padding:8px;text-align:center"><div style="font-size:20px;font-weight:800;color:var(--blue)">'+recap.lembur+'</div><div style="font-size:10px;color:var(--text-muted)">Lembur</div></div>';
+ html += '</div></div>';
+ html += '<div style="font-size:11px;font-weight:700;color:var(--text-muted);margin-bottom:6px;letter-spacing:.05em">DETAIL HARIAN</div>';
+ html += rows.map(function(r) {
+ return '<div style="display:flex;justify-content:space-between;align-items:center;border:1px solid var(--gray-border);border-radius:8px;padding:9px 10px;margin-bottom:6px;background:#fff">'+
+ '<div><div style="font-size:12px;font-weight:700;color:var(--text-dark)">Tanggal '+r.day+'</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px">Masuk '+r.masuk.substring(0,5)+' &middot; Pulang '+r.pulang.substring(0,5)+'</div></div>'+
+ '<span style="font-size:10px;background:'+r.color+'22;color:'+r.color+';padding:3px 8px;border-radius:999px;font-weight:800">'+r.label+'</span>'+
+ '</div>';
+ }).join('');
+ return html;
 }
 
 function buildAttendanceMatrixRecap(u, res) {
