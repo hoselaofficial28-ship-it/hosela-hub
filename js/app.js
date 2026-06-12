@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbxDAHTGFbjG2RMjIPqUmdLbPO3TqKFfpPuEw9p5sdc4tEJXy6zsyyzhQ6pO65Pben4ywQ/exec';
-var APP_VERSION = '20260612b';
+var APP_VERSION = '20260612c';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -233,6 +233,8 @@ function invalidateReadCacheAfterMutation(action) {
   addIde: ['getIde'],
   addLibur: ['getKalenderLibur','getAbsensiRekap','getRekapBulananSemua','getPayrollPreview'],
   nonaktifkanUser: ['getAllUsers','getStaffByBagian','getRekapBulananSemua'],
+  updateUserSalary: ['getAllUsers','getAbsensiRekap','getRekapBulananSemua','getPayrollPreview','getPayrollDetail','getPayrollEmployeeSlip','getPayrollEmployeeSlipDetail'],
+  deactivateSalaryUser: ['getAllUsers','getStaffByBagian','getRekapBulananSemua','getPayrollPreview','getHomeData'],
   submitKPILaporan: ['getKPILaporan','getPapanPeringkat','getHomeData'],
   submitIzin: ['getIzinKaryawan','getIzinPending','getIzinPendingCount','getHomeData','getNotifikasi'],
   approveIzin: ['getIzinKaryawan','getIzinPending','getIzinPendingCount','getAbsensiRekap','getRekapBulananSemua','getHomeData','getNotifikasi'],

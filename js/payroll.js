@@ -3,6 +3,8 @@ var _payrollDetailCache = {};
 var _slipDetailCache = {};
 var _salaryUsersCache = [];
 var _salaryUserMap = {};
+var _salaryUsersMonth = '';
+var _salarySelectedMonth = '';
 
 function getDefaultPayrollMonth() {
  var now = new Date();
@@ -24,6 +26,40 @@ function fillPayrollMonthSelect() {
  sel.appendChild(opt);
  }
  sel.value = getDefaultPayrollMonth();
+}
+
+function getSalarySelectedMonth() {
+ if (_salarySelectedMonth) return _salarySelectedMonth;
+ _salarySelectedMonth = getDefaultPayrollMonth();
+ return _salarySelectedMonth;
+}
+
+function salaryMonthLabel(key) {
+ if (typeof labelBulanKey === 'function') return labelBulanKey(key);
+ var parts = String(key || '').split('-');
+ var y = parseInt(parts[0], 10);
+ var m = parseInt(parts[1], 10);
+ var names = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+ if (!y || !m || m < 1 || m > 12) return key || '-';
+ return names[m - 1] + ' ' + y;
+}
+
+function buildSalaryMonthOptions(selected) {
+ var now = new Date();
+ var html = '';
+ for (var i = -1; i <= 12; i++) {
+ var d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+ var key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+ html += '<option value="'+key+'"'+(key === selected ? ' selected' : '')+'>'+salaryMonthLabel(key)+'</option>';
+ }
+ return html;
+}
+
+function changeSalaryMonth(value) {
+ _salarySelectedMonth = value || getDefaultPayrollMonth();
+ _salaryUsersCache = [];
+ _salaryUsersMonth = '';
+ loadSalarySettings(true);
 }
 
 function loadPayroll() {
@@ -77,51 +113,67 @@ function loadSalarySettings(force) {
  }
  var el = document.getElementById('salary-settings-content');
  if (!el) return;
- if (!force && _salaryUsersCache.length) {
- renderSalaryUsers(_salaryUsersCache);
+ var bulanKey = getSalarySelectedMonth();
+ if (!force && _salaryUsersCache.length && _salaryUsersMonth === bulanKey) {
+ renderSalaryUsers(_salaryUsersCache, bulanKey);
  return;
  }
  el.innerHTML = skelCards(4);
- gasCall('getSalaryUsers', [currentUser.id], function(res) {
+ gasCall('getSalaryUsers', [currentUser.id, bulanKey], function(res) {
  if (!res || res.error || res.success === false) {
  el.innerHTML = '<div class="empty-state"><div class="empty-icon"></div>'+(salaryEsc((res && (res.msg || res.error)) || 'Gagal memuat data gaji'))+'</div>';
  return;
  }
  _salaryUsersCache = res.data || [];
- renderSalaryUsers(_salaryUsersCache);
+ _salaryUsersMonth = res.bulan || bulanKey;
+ renderSalaryUsers(_salaryUsersCache, _salaryUsersMonth);
  }, function() {
  el.innerHTML = '<div class="empty-state"><div class="empty-icon"></div>Gagal memuat data gaji</div>';
  });
 }
 
-function renderSalaryUsers(rows) {
+function renderSalaryUsers(rows, bulanKey) {
  var el = document.getElementById('salary-settings-content');
  if (!el) return;
  _salaryUserMap = {};
+ bulanKey = bulanKey || getSalarySelectedMonth();
  if (!rows.length) {
- el.innerHTML = '<div class="empty-state"><div class="empty-icon"></div>Belum ada karyawan aktif</div>';
+ el.innerHTML =
+ '<div class="card" style="padding:12px;margin-bottom:10px">'+
+ '<label class="form-label">Bulan Gaji Berlaku</label>'+
+ '<select class="form-input" onchange="changeSalaryMonth(this.value)">'+buildSalaryMonthOptions(bulanKey)+'</select>'+
+ '</div>'+
+ '<div class="empty-state"><div class="empty-icon"></div>Belum ada karyawan aktif</div>';
  return;
  }
- var total = rows.reduce(function(s, r){ return s + (parseInt(r.gajiBulanan || 0, 10) || 0); }, 0);
+ var total = rows.reduce(function(s, r){ return s + (parseInt(r.gajiBulanBerlaku || r.gajiBulanan || 0, 10) || 0); }, 0);
  var html =
+ '<div class="card" style="padding:12px;margin-bottom:10px">'+
+ '<label class="form-label">Bulan Gaji Berlaku</label>'+
+ '<select class="form-input" onchange="changeSalaryMonth(this.value)">'+buildSalaryMonthOptions(bulanKey)+'</select>'+
+ '<div style="font-size:11px;color:var(--text-muted);line-height:1.5;margin-top:8px">Gaji yang disimpan akan dipakai untuk perhitungan '+salaryMonthLabel(bulanKey)+' dan bulan setelahnya sampai ada perubahan baru.</div>'+
+ '</div>' +
  '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">' +
  '<div class="card" style="padding:10px;text-align:center"><div style="font-size:18px;font-weight:900;color:var(--blue)">'+rows.length+'</div><div style="font-size:11px;color:var(--text-muted)">Karyawan</div></div>' +
- '<div class="card" style="padding:10px;text-align:center"><div style="font-size:14px;font-weight:900;color:var(--green)">Rp '+total.toLocaleString('id-ID')+'</div><div style="font-size:11px;color:var(--text-muted)">Total gaji</div></div>' +
+ '<div class="card" style="padding:10px;text-align:center"><div style="font-size:14px;font-weight:900;color:var(--green)">Rp '+total.toLocaleString('id-ID')+'</div><div style="font-size:11px;color:var(--text-muted)">Total '+salaryMonthLabel(bulanKey)+'</div></div>' +
  '</div>' +
  '<button class="btn btn-sm btn-primary" style="width:100%;margin-bottom:10px" onclick="loadSalarySettings(true)">Refresh Data</button>';
  rows.forEach(function(r) {
  var id = String(r.id || '');
  var safeId = id.replace(/[^a-zA-Z0-9_-]/g, '');
+ var effectiveSalary = parseInt(r.gajiBulanBerlaku || r.gajiBulanan || 0, 10) || 0;
+ var activeSalary = parseInt(r.gajiBulanan || 0, 10) || 0;
  _salaryUserMap[id] = r;
  html += '<div class="card salary-user-card" data-search="'+salaryEsc((r.nama+' '+r.bagian+' '+r.jabatan).toLowerCase())+'" style="padding:12px;margin-bottom:8px">' +
  '<div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;margin-bottom:10px">' +
- '<div><div style="font-size:13px;font-weight:900;color:var(--text-dark)">'+salaryEsc(r.nama)+'</div><div style="font-size:11px;color:var(--text-muted)">'+salaryEsc(r.jabatan || '-')+' · '+salaryEsc(r.bagian || '-')+'</div></div>' +
+ '<div><div style="font-size:13px;font-weight:900;color:var(--text-dark)">'+salaryEsc(r.nama)+'</div><div style="font-size:11px;color:var(--text-muted)">'+salaryEsc(r.jabatan || '-')+' &middot; '+salaryEsc(r.bagian || '-')+'</div></div>' +
  '<span class="badge '+(r.status === 'AKTIF' ? 'badge-green' : 'badge-gray')+'">'+salaryEsc(r.status || '-')+'</span>' +
  '</div>' +
- '<label class="form-label">Gaji Bulanan</label>' +
- '<input class="form-input" type="number" min="0" inputmode="numeric" id="salary-'+safeId+'" value="'+(parseInt(r.gajiBulanan || 0, 10) || 0)+'" style="margin-bottom:8px">' +
+ '<label class="form-label">Gaji untuk '+salaryMonthLabel(bulanKey)+'</label>' +
+ '<input class="form-input" type="number" min="0" inputmode="numeric" id="salary-'+safeId+'" value="'+effectiveSalary+'" style="margin-bottom:8px">' +
+ '<input class="form-input" type="text" id="salary-note-'+safeId+'" placeholder="Catatan perubahan gaji (opsional)" style="margin-bottom:8px">' +
  '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">' +
- '<div style="font-size:11px;color:var(--text-muted)">Saat ini: <b>Rp '+(parseInt(r.gajiBulanan || 0, 10) || 0).toLocaleString('id-ID')+'</b></div>' +
+ '<div style="font-size:11px;color:var(--text-muted)">Gaji aktif: <b>Rp '+activeSalary.toLocaleString('id-ID')+'</b><br>Untuk bulan ini: <b>Rp '+effectiveSalary.toLocaleString('id-ID')+'</b></div>' +
  '<div style="display:flex;gap:6px">' +
  '<button class="btn btn-sm btn-danger" onclick="deleteSalaryUser(&quot;'+salaryEsc(id)+'&quot;, this)">Hapus</button>' +
  '<button class="btn btn-sm btn-gold" onclick="saveSalaryUser(&quot;'+salaryEsc(id)+'&quot;, this)">Simpan</button>' +
@@ -131,7 +183,6 @@ function renderSalaryUsers(rows) {
  });
  el.innerHTML = html;
 }
-
 function filterSalaryUsers() {
  var input = document.getElementById('salary-search');
  var q = input ? input.value.trim().toLowerCase() : '';
@@ -148,26 +199,29 @@ function saveSalaryUser(userId, btn) {
  }
  var safeId = String(userId).replace(/[^a-zA-Z0-9_-]/g, '');
  var input = document.getElementById('salary-' + safeId);
+ var noteInput = document.getElementById('salary-note-' + safeId);
  var salary = parseInt(input ? input.value : 0, 10) || 0;
+ var bulanKey = getSalarySelectedMonth();
+ var note = noteInput ? noteInput.value.trim() : '';
  if (salary <= 0) { showToast('Gaji harus lebih dari 0'); return; }
  if (btn) { btn.disabled = true; btn.textContent = 'Menyimpan...'; }
- gasCall('updateUserSalary', [currentUser.id, userId, salary], function(res) {
+ gasCall('updateUserSalary', [currentUser.id, userId, salary, bulanKey, note], function(res) {
  if (!res || res.error || res.success === false) {
  showToast((res && (res.msg || res.error)) || 'Gagal simpan gaji');
  if (btn) { btn.disabled = false; btn.textContent = 'Simpan'; }
  return;
  }
  _salaryUsersCache = [];
+ _salaryUsersMonth = '';
  Object.keys(_payrollPreviewCache).forEach(function(k){ delete _payrollPreviewCache[k]; });
  Object.keys(_payrollDetailCache).forEach(function(k){ delete _payrollDetailCache[k]; });
- showToast('Gaji berhasil diperbarui');
+ showToast('Gaji '+salaryMonthLabel(bulanKey)+' berhasil diperbarui');
  loadSalarySettings(true);
  }, function() {
  showToast('Gagal simpan gaji');
  if (btn) { btn.disabled = false; btn.textContent = 'Simpan'; }
  });
 }
-
 function deleteSalaryUser(userId, btn) {
  if (!currentUser || (currentUser.bagian !== 'Finance' && currentUser.bagian !== 'Owner')) {
  showToast('Akses ditolak');
