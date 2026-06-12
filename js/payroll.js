@@ -400,7 +400,7 @@ function renderPayrollAdjustmentForm(d) {
  '<div><label class="form-label">Potongan</label><input class="form-input" type="number" id="adj-minus-'+d.id+'" value="'+(parseInt(d.adjustmentMinus || 0, 10) || 0)+'" placeholder="0"></div>' +
  '</div>' +
  '<textarea class="form-input" id="adj-note-'+d.id+'" style="height:58px;margin-bottom:8px" placeholder="Catatan penyesuaian">'+(d.catatanAdjustment || '')+'</textarea>' +
- '<button class="btn btn-sm btn-primary" style="width:100%" onclick="savePayrollAdjustment(&quot;'+d.id+'&quot;)">Simpan Penyesuaian</button>' +
+ '<button class="btn btn-sm btn-primary" id="adj-save-'+d.id+'" style="width:100%" onclick="savePayrollAdjustment(&quot;'+d.id+'&quot;)">Simpan Penyesuaian</button>' +
  '</div>';
 }
 
@@ -408,16 +408,21 @@ function savePayrollAdjustment(payrollDetailId) {
  var plusEl = document.getElementById('adj-plus-' + payrollDetailId);
  var minusEl = document.getElementById('adj-minus-' + payrollDetailId);
  var noteEl = document.getElementById('adj-note-' + payrollDetailId);
+ var saveBtn = document.getElementById('adj-save-' + payrollDetailId);
  var plus = plusEl ? plusEl.value : 0;
  var minus = minusEl ? minusEl.value : 0;
  var note = noteEl ? noteEl.value.trim() : '';
+ if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'Menyimpan...'; }
  gasCall('updatePayrollAdjustment', [payrollDetailId, plus, minus, note], function(res) {
  if (!res || res.success === false) {
  showToast((res && res.msg) || 'Gagal simpan adjustment');
+ if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Simpan Penyesuaian'; }
  return;
  }
  _payrollDetailCache[payrollDetailId] = res;
  Object.keys(_payrollPreviewCache).forEach(function(k){ delete _payrollPreviewCache[k]; });
+ cacheClearAction('getPayrollPreview');
+ cacheClearAction('getPayrollDetail');
  showToast('Penyesuaian disimpan');
  var boxes = document.querySelectorAll('[id^="payroll-detail-"]');
  boxes.forEach(function(box) {
@@ -428,6 +433,7 @@ function savePayrollAdjustment(payrollDetailId) {
  loadPayrollPreview();
  }, function() {
  showToast('Gagal simpan adjustment');
+ if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Simpan Penyesuaian'; }
  });
 }
 
