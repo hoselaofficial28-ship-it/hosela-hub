@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbxDAHTGFbjG2RMjIPqUmdLbPO3TqKFfpPuEw9p5sdc4tEJXy6zsyyzhQ6pO65Pben4ywQ/exec';
-var APP_VERSION = '20260612g';
+var APP_VERSION = '20260612h';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -2582,13 +2582,21 @@ function renderAttendanceUserRecap(u, res) {
  if (!res.employeeAbsensiRekap) return '<div class="att-recap att-recap-muted">Rekap kehadiran belum tersedia.</div>';
  return '<div class="att-recap">'+renderAbsensiDetailHtml(res.employeeAbsensiRekap, res.bulan, 'att-personal-rekap')+'</div>';
  }
- if (res.rekapLoading) return '<div class="att-recap att-recap-muted">Memuat ringkasan rekap...</div>';
+ var liveRecap = buildAttendanceMatrixRecap(u, res);
+ if (res.rekapLoading && !liveRecap.hasData) return '<div class="att-recap att-recap-muted">Memuat ringkasan rekap...</div>';
  var r = res.rekapByUser && res.rekapByUser[String(u.id)];
- if (!r) return '<div class="att-recap att-recap-muted">Rekap bulanan belum tersedia.</div>';
+ if (!r && !liveRecap.hasData) return '<div class="att-recap att-recap-muted">Rekap bulanan belum tersedia.</div>';
+ if (!r) r = { nama: u.nama, jabatan: u.jabatan, bagian: u.bagian };
  var hadir = parseInt(r.hadir || 0, 10) || 0;
  var telat = parseInt(r.telat || 0, 10) || 0;
  var absen = parseInt(r.absen || 0, 10) || 0;
  var lembur = (parseInt(r.lemburPulang || 0, 10) || 0) + (parseInt(r.lemburMinggu || 0, 10) || 0) + (parseInt(r.lemburLibur || 0, 10) || 0);
+ if (liveRecap.hasData) {
+ hadir = Math.max(hadir, liveRecap.hadir);
+ telat = Math.max(telat, liveRecap.telat);
+ absen = Math.max(absen, liveRecap.absen);
+ lembur = Math.max(lembur, liveRecap.lembur);
+ }
  var denda = parseInt(r.totalDenda || 0, 10) || 0;
  var reward = (parseInt(r.totalReward || 0, 10) || 0) + (parseInt(r.bonusKerajinan || 0, 10) || 0);
  var skor = parseInt(r.skor || r.finalScore || 0, 10) || 0;
@@ -2611,6 +2619,37 @@ function renderAttendanceUserRecap(u, res) {
  '<button id="'+btnId+'" class="btn btn-sm btn-primary att-recap-btn" onclick="toggleOwnerRekapDetail(\''+esc(userId)+'\',\''+esc(bulanKey)+'\',\''+detailId+'\',\''+btnId+'\')">Lihat Detail</button>'+
  '<div id="'+detailId+'" class="att-recap-detail" style="display:none"></div>'+
  '</div>';
+}
+
+function buildAttendanceMatrixRecap(u, res) {
+ var out = { hadir: 0, telat: 0, absen: 0, lembur: 0, hasData: false };
+ var monthParts = String(res.bulan || '').split('-');
+ var year = parseInt(monthParts[0], 10);
+ var month = parseInt(monthParts[1], 10);
+ var totalDays = parseInt(res.days || 0, 10) || 0;
+ if (!year || !month || !totalDays || !u || !u.days) return out;
+ for (var d = 1; d <= totalDays; d++) {
+ var item = u.days[d] || {};
+ var masuk = item.masuk || '';
+ var pulang = item.pulang || '';
+ var hasTap = !!(masuk || pulang);
+ var isSunday = new Date(year, month - 1, d).getDay() === 0;
+ if (item.absen && !hasTap) {
+ out.absen++;
+ out.hasData = true;
+ continue;
+ }
+ if (item.lembur) {
+ out.lembur++;
+ out.hasData = true;
+ }
+ if (masuk && !isSunday) {
+ out.hadir++;
+ out.hasData = true;
+ if (item.telat) out.telat++;
+ }
+ }
+ return out;
 }
 
 function renderAttendanceLegend() {
