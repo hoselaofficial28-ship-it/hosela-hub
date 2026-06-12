@@ -485,7 +485,16 @@ function createPayrollDraftUI(bulanKey) {
  if (!currentUser) return;
  var el = document.getElementById('payroll-content');
  if (el) el.innerHTML = skelCards(3);
+ cacheClearAction('getPayrollPreview');
+ cacheClearAction('getPayrollDetail');
  gasCall('createPayrollDraft', [bulanKey, currentUser.nama], function(res) {
+ if (!res || res.error || res.success === false || !res.id || String(res.status || '').toUpperCase() === 'PREVIEW') {
+ renderPayrollSetupState(bulanKey);
+ showToast((res && (res.msg || res.error)) || 'Draf belum berhasil dibuat');
+ return;
+ }
+ cacheClearAction('getPayrollPreview');
+ cacheClearAction('getPayrollDetail');
  _payrollPreviewCache[bulanKey] = res;
  renderPayrollPreview(res, bulanKey);
  showToast('Draf penggajian dibuat');
