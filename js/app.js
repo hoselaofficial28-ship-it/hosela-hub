@@ -1400,6 +1400,37 @@ function tendang(userId, nama) {
  function(){ showToast('Gagal. Coba lagi.'); });
 }
 
+function submitTambahKaryawan() {
+ var nama = (document.getElementById('tk-nama').value || '').trim();
+ var bagian = (document.getElementById('tk-bagian').value || '').trim();
+ var jabatan = (document.getElementById('tk-jabatan').value || '').trim();
+ var email = (document.getElementById('tk-email').value || '').trim();
+ var errEl = document.getElementById('tk-error');
+ var btn = document.getElementById('tk-btn');
+ errEl.textContent = '';
+ if (!nama) { errEl.textContent = 'Nama wajib diisi'; return; }
+ if (!bagian) { errEl.textContent = 'Bagian wajib diisi'; return; }
+ if (!jabatan) { errEl.textContent = 'Jabatan wajib diisi'; return; }
+ btn.disabled = true; btn.textContent = 'Mendaftarkan...';
+ gasCall('addKaryawanBaru', [nama, bagian, jabatan, email], function(res) {
+  btn.disabled = false; btn.textContent = 'Daftarkan Karyawan';
+  if (res && res.success) {
+   document.getElementById('tk-nama').value = '';
+   document.getElementById('tk-bagian').value = '';
+   document.getElementById('tk-jabatan').value = '';
+   document.getElementById('tk-email').value = '';
+   cacheClear('getAllUsers' + JSON.stringify([]));
+   showToast(nama + ' berhasil didaftarkan! Password: hosela');
+   goTo('s-manage-users');
+  } else {
+   errEl.textContent = (res && res.msg) ? res.msg : 'Gagal mendaftarkan. Coba lagi.';
+  }
+ }, function() {
+  btn.disabled = false; btn.textContent = 'Daftarkan Karyawan';
+  errEl.textContent = 'Koneksi gagal. Coba lagi.';
+ });
+}
+
 function prosesAbsensi() {
  var btn = document.getElementById('proses-btn');
  var resultEl = document.getElementById('upload-result');
