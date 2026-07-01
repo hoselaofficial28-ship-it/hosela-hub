@@ -970,17 +970,15 @@ body.phone-mode #app-wrap #s-home.screen.active{
 @media (min-width:700px){
   body:not(.phone-mode){
     background:#dde3ed;
-    display:flex;
-    justify-content:center;
-    align-items:flex-start;
   }
   body:not(.phone-mode) #app-wrap{
     width:540px;
-    flex-shrink:0;
+    margin:0 auto;
     min-height:100vh;
     box-shadow:0 0 0 1px rgba(16,24,40,.07),0 8px 48px rgba(0,0,0,.14);
     position:relative;
     overflow:hidden;
+    background:#fff;
   }
   body:not(.phone-mode) .screen.active{
     height:100vh;
