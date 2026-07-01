@@ -970,47 +970,11 @@ body.phone-mode #app-wrap #s-home.screen.active{
 @media (min-width:700px){
   body:not(.phone-mode){
     background:#dde3ed;
-    overflow-x:hidden;
   }
   body:not(.phone-mode) #app-wrap{
-    width:540px;
-    margin-left:calc(50vw - 270px);
+    max-width:480px;
+    margin:0 auto;
     min-height:100vh;
-    background:#fff;
-    box-shadow:0 0 0 1px rgba(16,24,40,.08),0 4px 40px rgba(0,0,0,.14);
-    position:relative;
-  }
-  body:not(.phone-mode) .screen.active{
-    height:100vh;
-    display:flex;
-    flex-direction:column;
-    overflow:hidden;
-  }
-  body:not(.phone-mode) .content{
-    flex:1;
-    overflow-y:auto;
-    min-height:0;
-  }
-  body:not(.phone-mode) .screen.active>.navbar{
-    position:sticky;
-    bottom:0;
-    flex-shrink:0;
-    z-index:50;
-  }
-  body:not(.phone-mode) #s-home.screen.active{
-    height:100vh;
-    overflow:hidden;
-    display:flex;
-    flex-direction:column;
-  }
-  body:not(.phone-mode) #s-home .content{
-    flex:1;
-    overflow-y:auto;
-    min-height:0;
-  }
-  body:not(.phone-mode) .preview-btn{
-    position:fixed;
-    bottom:80px;
-    left:calc(50vw + 270px - 140px);
+    box-shadow:0 0 0 1px rgba(16,24,40,.06),0 4px 24px rgba(0,0,0,.1);
   }
 }
