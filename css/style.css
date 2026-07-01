@@ -980,32 +980,33 @@ body.phone-mode #app-wrap #s-home.screen.active{
     background:#fff;
     box-shadow:0 0 0 1px rgba(16,24,40,.06),0 4px 24px rgba(0,0,0,.1);
   }
-  /* Screen: tinggi natural, tidak dikunci 100vh */
+  /* Screen: flex column min 100vh, tidak dikunci height */
   body:not(.phone-mode) .screen{
     min-height:0;
   }
   body:not(.phone-mode) .screen.active{
-    display:block !important;
+    display:flex !important;
+    flex-direction:column !important;
     height:auto !important;
     min-height:100vh;
     overflow:visible !important;
   }
-  /* Content: scroll via body — override semua aturan spesifik termasuk ID */
+  /* Content: flex:1 agar isi ruang kosong, scroll via body */
   body:not(.phone-mode) .screen.active .content,
   body:not(.phone-mode) .content{
+    flex:1 !important;
     overflow-y:visible !important;
     overflow-x:visible !important;
-    min-height:0;
-    padding-bottom:80px !important;
-    flex:none !important;
     height:auto !important;
+    padding-bottom:20px !important;
   }
-  /* Navbar sticky — reset left/right agar tidak full-width */
+  /* Navbar: sticky di bawah viewport, reset left/right */
   body:not(.phone-mode) .screen.active>.navbar{
     position:sticky !important;
     bottom:0;
     left:auto !important;
     right:auto !important;
+    flex-shrink:0;
     z-index:100;
   }
 }
