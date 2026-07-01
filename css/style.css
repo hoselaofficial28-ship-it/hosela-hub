@@ -968,13 +968,48 @@ body.phone-mode #app-wrap #s-home.screen.active{
   padding-bottom:calc(150px + env(safe-area-inset-bottom,0px));
 }
 @media (min-width:700px){
+  /* Desktop: body scroll normal, bukan mobile fixed */
   body:not(.phone-mode){
     background:#dde3ed;
+    overflow-y:auto;
+    overflow-x:hidden;
   }
   body:not(.phone-mode) #app-wrap{
     max-width:480px;
     margin:0 auto;
-    min-height:100vh;
+    background:#fff;
     box-shadow:0 0 0 1px rgba(16,24,40,.06),0 4px 24px rgba(0,0,0,.1);
+  }
+  /* Screen: tinggi natural, tidak dikunci 100vh */
+  body:not(.phone-mode) .screen{
+    min-height:0;
+  }
+  body:not(.phone-mode) .screen.active{
+    display:block;
+    height:auto;
+    min-height:100vh;
+    overflow:visible;
+  }
+  /* Content: scroll via body, bukan internal scroll */
+  body:not(.phone-mode) .content{
+    overflow-y:visible;
+    min-height:0;
+    padding-bottom:80px;
+  }
+  /* Home screen */
+  body:not(.phone-mode) #s-home.screen.active{
+    display:block;
+    height:auto;
+    min-height:100vh;
+    overflow:visible;
+  }
+  body:not(.phone-mode) #s-home .content{
+    overflow:visible;
+  }
+  /* Navbar sticky di bawah viewport */
+  body:not(.phone-mode) .screen.active>.navbar{
+    position:sticky;
+    bottom:0;
+    z-index:100;
   }
 }
