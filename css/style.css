@@ -970,16 +970,15 @@ body.phone-mode #app-wrap #s-home.screen.active{
 @media (min-width:700px){
   body:not(.phone-mode){
     background:#dde3ed;
+    overflow-x:hidden;
   }
   body:not(.phone-mode) #app-wrap{
-    position:fixed;
-    left:50%;
-    transform:translateX(-50%);
     width:540px;
-    height:100vh;
-    overflow:hidden;
-    box-shadow:0 0 0 1px rgba(16,24,40,.07),0 8px 48px rgba(0,0,0,.14);
+    margin-left:calc(50vw - 270px);
+    min-height:100vh;
     background:#fff;
+    box-shadow:0 0 0 1px rgba(16,24,40,.08),0 4px 40px rgba(0,0,0,.14);
+    position:relative;
   }
   body:not(.phone-mode) .screen.active{
     height:100vh;
@@ -996,9 +995,22 @@ body.phone-mode #app-wrap #s-home.screen.active{
     position:sticky;
     bottom:0;
     flex-shrink:0;
+    z-index:50;
+  }
+  body:not(.phone-mode) #s-home.screen.active{
+    height:100vh;
+    overflow:hidden;
+    display:flex;
+    flex-direction:column;
+  }
+  body:not(.phone-mode) #s-home .content{
+    flex:1;
+    overflow-y:auto;
+    min-height:0;
   }
   body:not(.phone-mode) .preview-btn{
     position:fixed;
-    left:calc(50% + 270px - 130px);
+    bottom:80px;
+    left:calc(50vw + 270px - 140px);
   }
 }
