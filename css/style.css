@@ -972,12 +972,13 @@ body.phone-mode #app-wrap #s-home.screen.active{
     background:#dde3ed;
   }
   body:not(.phone-mode) #app-wrap{
+    position:fixed;
+    left:50%;
+    transform:translateX(-50%);
     width:540px;
-    margin:0 auto;
-    min-height:100vh;
-    box-shadow:0 0 0 1px rgba(16,24,40,.07),0 8px 48px rgba(0,0,0,.14);
-    position:relative;
+    height:100vh;
     overflow:hidden;
+    box-shadow:0 0 0 1px rgba(16,24,40,.07),0 8px 48px rgba(0,0,0,.14);
     background:#fff;
   }
   body:not(.phone-mode) .screen.active{
@@ -998,6 +999,6 @@ body.phone-mode #app-wrap #s-home.screen.active{
   }
   body:not(.phone-mode) .preview-btn{
     position:fixed;
-    right:calc(50% - 270px - 56px);
+    left:calc(50% + 270px - 130px);
   }
 }
