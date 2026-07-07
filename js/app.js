@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbxDAHTGFbjG2RMjIPqUmdLbPO3TqKFfpPuEw9p5sdc4tEJXy6zsyyzhQ6pO65Pben4ywQ/exec';
-var APP_VERSION = '20260707b';
+var APP_VERSION = '20260707c';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -2165,7 +2165,8 @@ function loadReviewTelat(force) {
  var safeId = id.replace(/[^a-zA-Z0-9_-]/g, '');
  var pending = r.statusReview === 'MENUNGGU';
  var suggestedHour = Math.max(1, Math.ceil((parseInt(r.menitTelat || 0, 10) || 0) / 60));
- return '<div style="border:1px solid var(--gray-border);border-radius:8px;padding:12px;margin-bottom:10px;background:#fff">'+
+ var searchText = [r.nama, r.userId, r.tanggal, r.bulan, r.statusReview, r.alasan, r.catatan].join(' ').toLowerCase();
+ return '<div class="review-telat-card" data-search="'+esc(searchText)+'" style="border:1px solid var(--gray-border);border-radius:8px;padding:12px;margin-bottom:10px;background:#fff">'+
  '<div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start">'+
  '<div><div style="font-size:14px;font-weight:800;color:var(--text-dark)">'+cleanDisplayText(r.nama || '-')+'</div>'+
  '<div style="font-size:11px;color:var(--text-muted);margin-top:2px">'+(r.tanggal || '-')+' &middot; '+labelBulanKey(r.bulan || '')+' &middot; Masuk '+String(r.jamMasuk || '-').substring(0,5)+' dari jadwal '+String(r.jadwalMasuk || '-').substring(0,5)+'</div></div>'+
@@ -2187,9 +2188,31 @@ function loadReviewTelat(force) {
  '</div>' : '<div style="font-size:11px;color:var(--text-muted);margin-top:8px">'+cleanDisplayText(r.alasan || '')+(r.catatan ? ' &middot; '+cleanDisplayText(r.catatan) : '')+'</div>')+
  '</div>';
  }).join('');
+ filterReviewTelatList();
  }, function() {
  list.innerHTML = '<div class="empty-state">Gagal memuat review telat</div>';
  });
+}
+
+function filterReviewTelatList() {
+ var input = document.getElementById('izin-telat-search');
+ var list = document.getElementById('review-telat-list');
+ var q = input ? input.value.toLowerCase().trim() : '';
+ var visible = 0;
+ document.querySelectorAll('.review-telat-card').forEach(function(card) {
+ var match = !q || (card.getAttribute('data-search') || '').indexOf(q) !== -1;
+ card.style.display = match ? 'block' : 'none';
+ if (match) visible++;
+ });
+ var empty = document.getElementById('review-telat-empty-filter');
+ if (!empty && list) {
+ empty = document.createElement('div');
+ empty.id = 'review-telat-empty-filter';
+ empty.className = 'empty-state';
+ empty.textContent = 'Tidak ada data yang cocok dengan pencarian.';
+ list.appendChild(empty);
+ }
+ if (empty) empty.style.display = q && visible === 0 ? 'block' : 'none';
 }
 
 function fillReviewTelatMonthSelect() {
