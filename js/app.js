@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbxDAHTGFbjG2RMjIPqUmdLbPO3TqKFfpPuEw9p5sdc4tEJXy6zsyyzhQ6pO65Pben4ywQ/exec';
-var APP_VERSION = '20260707a';
+var APP_VERSION = '20260707b';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -2148,11 +2148,14 @@ function batalkanSanksi(id) {
 function loadReviewTelat(force) {
  var list = document.getElementById('review-telat-list');
  if (!list) return;
+ fillReviewTelatMonthSelect();
  var statusSel = document.getElementById('izin-telat-status');
+ var bulanSel = document.getElementById('izin-telat-bulan');
  var status = statusSel ? statusSel.value : 'MENUNGGU';
- if (force) cacheClear('getIzinTelatReview' + JSON.stringify([status]));
+ var bulanKey = bulanSel ? bulanSel.value : 'ALL';
+ if (force) cacheClear('getIzinTelatReview' + JSON.stringify([status, bulanKey]));
  list.innerHTML = skelCards(3);
- gasCall('getIzinTelatReview', [status], function(data) {
+ gasCall('getIzinTelatReview', [status, bulanKey], function(data) {
  if (!data || !data.length) {
  list.innerHTML = '<div class="empty-state"><div class="empty-icon"></div>Tidak ada review telat</div>';
  return;
@@ -2165,7 +2168,7 @@ function loadReviewTelat(force) {
  return '<div style="border:1px solid var(--gray-border);border-radius:8px;padding:12px;margin-bottom:10px;background:#fff">'+
  '<div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start">'+
  '<div><div style="font-size:14px;font-weight:800;color:var(--text-dark)">'+cleanDisplayText(r.nama || '-')+'</div>'+
- '<div style="font-size:11px;color:var(--text-muted);margin-top:2px">'+(r.tanggal || '-')+' &middot; Masuk '+String(r.jamMasuk || '-').substring(0,5)+' dari jadwal '+String(r.jadwalMasuk || '-').substring(0,5)+'</div></div>'+
+ '<div style="font-size:11px;color:var(--text-muted);margin-top:2px">'+(r.tanggal || '-')+' &middot; '+labelBulanKey(r.bulan || '')+' &middot; Masuk '+String(r.jamMasuk || '-').substring(0,5)+' dari jadwal '+String(r.jadwalMasuk || '-').substring(0,5)+'</div></div>'+
  '<span style="font-size:10px;border-radius:999px;padding:3px 8px;font-weight:800;background:'+(pending?'#fff7ed':'#e0f2fe')+';color:'+(pending?'#c2410c':'#0e4fa3')+'">'+cleanDisplayText(r.statusReview || 'MENUNGGU').replace(/_/g,' ')+'</span>'+
  '</div>'+
  '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px">'+
@@ -2176,6 +2179,7 @@ function loadReviewTelat(force) {
  '</div>'+
  (pending ? '<div style="margin-top:10px">'+
  '<div class="form-group" style="margin-bottom:8px"><label class="form-label">Keputusan</label><select class="form-input" id="izin-telat-jenis-'+safeId+'"><option value="NORMAL">Telat Normal</option><option value="IZIN_KHUSUS">Izin Telat Khusus</option><option value="BEBAS">Bebas Potongan</option></select></div>'+
+ '<div class="form-group" style="margin-bottom:8px"><label class="form-label">Sifat Telat</label><select class="form-input" id="izin-telat-sifat-'+safeId+'"><option value="Disiplin normal">Disiplin normal</option><option value="Kecelakaan / musibah perjalanan">Kecelakaan / musibah perjalanan</option><option value="Kendala perjalanan">Kendala perjalanan</option><option value="Kesehatan mendadak">Kesehatan mendadak</option><option value="Urusan keluarga darurat">Urusan keluarga darurat</option><option value="Lainnya">Lainnya</option></select></div>'+
  '<div class="form-group" style="margin-bottom:8px"><label class="form-label">Durasi Izin Khusus (jam)</label><input class="form-input" type="number" min="0" step="0.5" id="izin-telat-durasi-'+safeId+'" value="'+suggestedHour+'"></div>'+
  '<div class="form-group" style="margin-bottom:8px"><label class="form-label">Alasan</label><input class="form-input" id="izin-telat-alasan-'+safeId+'" placeholder="Contoh: kecelakaan motor"></div>'+
  '<div class="form-group" style="margin-bottom:8px"><label class="form-label">Catatan Finance/Owner</label><textarea class="form-input" rows="2" id="izin-telat-catatan-'+safeId+'" placeholder="Catatan keputusan..."></textarea></div>'+
@@ -2188,14 +2192,35 @@ function loadReviewTelat(force) {
  });
 }
 
+function fillReviewTelatMonthSelect() {
+ var sel = document.getElementById('izin-telat-bulan');
+ if (!sel || sel.getAttribute('data-ready') === '1') return;
+ var names = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+ sel.innerHTML = '<option value="ALL">Semua Bulan</option>';
+ var now = new Date();
+ for (var i = 0; i < 24; i++) {
+ var d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+ var key = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+ var opt = document.createElement('option');
+ opt.value = key;
+ opt.textContent = names[d.getMonth()] + ' ' + d.getFullYear();
+ sel.appendChild(opt);
+ }
+ sel.value = 'ALL';
+ sel.setAttribute('data-ready', '1');
+}
+
 function submitReviewTelat(id, safeId) {
  var jenis = document.getElementById('izin-telat-jenis-' + safeId).value;
  var durasi = document.getElementById('izin-telat-durasi-' + safeId).value || 0;
+ var sifatEl = document.getElementById('izin-telat-sifat-' + safeId);
+ var sifat = sifatEl ? sifatEl.value : '';
  var alasan = document.getElementById('izin-telat-alasan-' + safeId).value.trim();
  var catatan = document.getElementById('izin-telat-catatan-' + safeId).value.trim();
  if (jenis === 'IZIN_KHUSUS' && (!durasi || parseFloat(durasi) <= 0)) { showToast('Durasi izin khusus wajib diisi'); return; }
- if (jenis !== 'NORMAL' && !alasan) { showToast('Alasan wajib diisi'); return; }
- gasCall('reviewIzinTelat', [id, jenis, durasi, alasan, catatan, currentUser ? currentUser.nama : 'Finance'], function(r) {
+ if (jenis !== 'NORMAL' && !alasan && sifat === 'Lainnya') { showToast('Alasan wajib diisi'); return; }
+ var alasanFinal = sifat ? (sifat + (alasan ? ': ' + alasan : '')) : alasan;
+ gasCall('reviewIzinTelat', [id, jenis, durasi, alasanFinal, catatan, currentUser ? currentUser.nama : 'Finance'], function(r) {
  if (r && r.success) {
  showToast('Keputusan telat disimpan');
  loadReviewTelat(true);
