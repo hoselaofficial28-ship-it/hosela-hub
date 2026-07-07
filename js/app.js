@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbxDAHTGFbjG2RMjIPqUmdLbPO3TqKFfpPuEw9p5sdc4tEJXy6zsyyzhQ6pO65Pben4ywQ/exec';
-var APP_VERSION = '20260612j';
+var APP_VERSION = '20260707a';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -187,7 +187,7 @@ var CACHEABLE = [
  'getNotifikasi','getIzinKaryawan','getIzinPendingCount','getSanksiManual','getPayrollEmployeeSlip',
  'getAbsensiMatrix','getAbsensiMatrixUser','getAllAbsensiRekap','getKPITemplate','getIzinPending',
  'getAnomaliPending','getPengaturan','getAbsensiCameraToday','getPayrollDetail',
- 'getPayrollEmployeeSlipDetail'
+ 'getPayrollEmployeeSlipDetail','getIzinTelatReview'
 ];
 
 var CACHE_TTL_BY_ACTION = {
@@ -217,6 +217,7 @@ var CACHE_TTL_BY_ACTION = {
  getKPILaporan: 5 * 60 * 1000,
  getPapanPeringkat: 10 * 60 * 1000,
  getSanksiManual: 2 * 60 * 1000,
+ getIzinTelatReview: 60 * 1000,
  getPayrollPreview: 5 * 60 * 1000,
  getPayrollDetail: 5 * 60 * 1000,
  getPayrollEmployeeSlip: 5 * 60 * 1000,
@@ -244,6 +245,7 @@ function invalidateReadCacheAfterMutation(action) {
   konfirmasiAnomali: ['getAnomaliPending','getAbsensiMatrix','getAbsensiMatrixUser','getAbsensiRekap','getRekapBulananSemua','getHomeData','getNotifikasi'],
   addSanksiManual: ['getSanksiManual','getAbsensiRekap','getRekapBulananSemua','getPayrollPreview'],
   batalSanksiManual: ['getSanksiManual','getAbsensiRekap','getRekapBulananSemua','getPayrollPreview'],
+  reviewIzinTelat: ['getIzinTelatReview','getAbsensiRekap','getRekapBulananSemua','getPayrollPreview','getPayrollDetail','getAbsensiMatrix','getAbsensiMatrixUser','getHomeData','getNotifikasi'],
   updatePayrollAdjustment: ['getPayrollPreview','getPayrollDetail','getPayrollEmployeeSlip','getPayrollEmployeeSlipDetail'],
   gantiPIN: ['getHomeData'],
   updateEmail: ['getHomeData','getAllUsers'],
@@ -597,6 +599,7 @@ function goTo(id) {
  if (id === 's-izin') loadIzin();
  if (id === 's-absensi-camera') loadAbsensiCamera();
  if (id === 's-sanksi-manual') loadSanksiManual();
+ if (id === 's-review-telat') loadReviewTelat();
  if (id === 's-catatan-kehadiran') loadAttendanceMatrix();
  if (id === 's-setting-gaji') loadSalarySettings();
  if (id === 's-payroll') loadPayroll();
@@ -780,6 +783,7 @@ function loadHome(forceRefresh) {
  menus.push({id:'s-kelola-izin', icon:'check', bg:'#d1fae5', label:'Kelola Izin', sub:'Setujui pengajuan'});
  menus.push({id:'s-kpi-check', icon:'clipboard', bg:'#fef3c7', label:'KPI Checklist', sub:'Update KPI kamu'});
  menus.push({id:'s-sanksi-manual', icon:'scale', bg:'#fce7f3', label:'Penghargaan & Denda', sub:'Denda dan penghargaan manual'});
+ menus.push({id:'s-review-telat', icon:'check', bg:'#fff7ed', label:'Review Telat', sub:'Toleransi izin telat'});
  menus.push({id:'s-payroll', icon:'card', bg:'#ede9fe', label:'Penggajian', sub:'Pratinjau dan terbitkan slip'});
  }
  if (u.bagian === 'Owner') {
@@ -787,6 +791,7 @@ function loadHome(forceRefresh) {
  menus.push({id:'s-manage-users', icon:'users', bg:'#fef3c7', label:'Kelola Tim', sub:'Aktif / Nonaktif'});
  menus.push({id:'s-laporan-absensi', icon:'chart', bg:'#e0f2fe', label:'Laporan Absensi', sub:'Rekap kehadiran'});
  menus.push({id:'s-sanksi-manual', icon:'scale', bg:'#fce7f3', label:'Penghargaan & Denda', sub:'Denda dan penghargaan manual'});
+ menus.push({id:'s-review-telat', icon:'check', bg:'#fff7ed', label:'Review Telat', sub:'Toleransi izin telat'});
  menus.push({id:'s-payroll', icon:'card', bg:'#ede9fe', label:'Penggajian', sub:'Tinjau gaji tim'});
  }
  menus.push({id:'s-ganti-pin', icon:'lock', bg:'#f1f5f9', label:'Ganti Sandi', sub:'Ubah PIN login kamu'});
@@ -1162,7 +1167,7 @@ function startHomeClock() {
 
 function menuCategory(m) {
  if (['s-absensi-camera','s-catatan-kehadiran','s-izin','s-slip-gaji'].indexOf(m.id) !== -1) return 'Kehadiran & Personal';
- if (['s-kelola-izin','s-payroll','s-setting-gaji','s-sanksi-manual','s-laporan-absensi','s-kalender'].indexOf(m.id) !== -1) return 'Finance & Owner';
+ if (['s-kelola-izin','s-payroll','s-setting-gaji','s-sanksi-manual','s-review-telat','s-laporan-absensi','s-kalender'].indexOf(m.id) !== -1) return 'Finance & Owner';
  if (['s-jobdesk','s-kpi-check','s-papan-peringkat','s-peraturan'].indexOf(m.id) !== -1) return 'Kerja & Produktivitas';
  if (['s-pengumuman','s-ide','s-notifikasi','s-tambah-pengumuman'].indexOf(m.id) !== -1) return 'Komunikasi Tim';
  return 'Akun';
@@ -2140,6 +2145,66 @@ function batalkanSanksi(id) {
 
 // ─── REKAP BULANAN ───────────────────────────────
 // Absensi kamera disimpan terpisah dulu agar tidak mengubah rekap fingerprint lama.
+function loadReviewTelat(force) {
+ var list = document.getElementById('review-telat-list');
+ if (!list) return;
+ var statusSel = document.getElementById('izin-telat-status');
+ var status = statusSel ? statusSel.value : 'MENUNGGU';
+ if (force) cacheClear('getIzinTelatReview' + JSON.stringify([status]));
+ list.innerHTML = skelCards(3);
+ gasCall('getIzinTelatReview', [status], function(data) {
+ if (!data || !data.length) {
+ list.innerHTML = '<div class="empty-state"><div class="empty-icon"></div>Tidak ada review telat</div>';
+ return;
+ }
+ list.innerHTML = data.map(function(r) {
+ var id = String(r.id || '');
+ var safeId = id.replace(/[^a-zA-Z0-9_-]/g, '');
+ var pending = r.statusReview === 'MENUNGGU';
+ var suggestedHour = Math.max(1, Math.ceil((parseInt(r.menitTelat || 0, 10) || 0) / 60));
+ return '<div style="border:1px solid var(--gray-border);border-radius:8px;padding:12px;margin-bottom:10px;background:#fff">'+
+ '<div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start">'+
+ '<div><div style="font-size:14px;font-weight:800;color:var(--text-dark)">'+cleanDisplayText(r.nama || '-')+'</div>'+
+ '<div style="font-size:11px;color:var(--text-muted);margin-top:2px">'+(r.tanggal || '-')+' &middot; Masuk '+String(r.jamMasuk || '-').substring(0,5)+' dari jadwal '+String(r.jadwalMasuk || '-').substring(0,5)+'</div></div>'+
+ '<span style="font-size:10px;border-radius:999px;padding:3px 8px;font-weight:800;background:'+(pending?'#fff7ed':'#e0f2fe')+';color:'+(pending?'#c2410c':'#0e4fa3')+'">'+cleanDisplayText(r.statusReview || 'MENUNGGU').replace(/_/g,' ')+'</span>'+
+ '</div>'+
+ '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px">'+
+ '<div style="background:#f8fafc;border-radius:8px;padding:8px;text-align:center"><b style="font-size:16px;color:#f59e0b">'+(r.menitTelat || 0)+'</b><div style="font-size:10px;color:var(--text-muted)">Menit Telat</div></div>'+
+ '<div style="background:#fff7f7;border-radius:8px;padding:8px;text-align:center"><b style="font-size:16px;color:#dc2626">Rp '+parseInt(r.dendaNormal || 0, 10).toLocaleString('id-ID')+'</b><div style="font-size:10px;color:var(--text-muted)">Denda Normal</div></div>'+
+ '<div style="background:#f0fdf4;border-radius:8px;padding:8px;text-align:center"><b style="font-size:16px;color:#16a34a">Rp '+parseInt(r.tarifPerJam || 0, 10).toLocaleString('id-ID')+'</b><div style="font-size:10px;color:var(--text-muted)">Tarif per Jam</div></div>'+
+ '<div style="background:#eef2ff;border-radius:8px;padding:8px;text-align:center"><b style="font-size:16px;color:#0e4fa3">Rp '+parseInt(r.potonganFinal || 0, 10).toLocaleString('id-ID')+'</b><div style="font-size:10px;color:var(--text-muted)">Potongan Final</div></div>'+
+ '</div>'+
+ (pending ? '<div style="margin-top:10px">'+
+ '<div class="form-group" style="margin-bottom:8px"><label class="form-label">Keputusan</label><select class="form-input" id="izin-telat-jenis-'+safeId+'"><option value="NORMAL">Telat Normal</option><option value="IZIN_KHUSUS">Izin Telat Khusus</option><option value="BEBAS">Bebas Potongan</option></select></div>'+
+ '<div class="form-group" style="margin-bottom:8px"><label class="form-label">Durasi Izin Khusus (jam)</label><input class="form-input" type="number" min="0" step="0.5" id="izin-telat-durasi-'+safeId+'" value="'+suggestedHour+'"></div>'+
+ '<div class="form-group" style="margin-bottom:8px"><label class="form-label">Alasan</label><input class="form-input" id="izin-telat-alasan-'+safeId+'" placeholder="Contoh: kecelakaan motor"></div>'+
+ '<div class="form-group" style="margin-bottom:8px"><label class="form-label">Catatan Finance/Owner</label><textarea class="form-input" rows="2" id="izin-telat-catatan-'+safeId+'" placeholder="Catatan keputusan..."></textarea></div>'+
+ '<button class="btn btn-primary" style="width:100%" onclick="submitReviewTelat(\''+id+'\',\''+safeId+'\')">Simpan Keputusan</button>'+
+ '</div>' : '<div style="font-size:11px;color:var(--text-muted);margin-top:8px">'+cleanDisplayText(r.alasan || '')+(r.catatan ? ' &middot; '+cleanDisplayText(r.catatan) : '')+'</div>')+
+ '</div>';
+ }).join('');
+ }, function() {
+ list.innerHTML = '<div class="empty-state">Gagal memuat review telat</div>';
+ });
+}
+
+function submitReviewTelat(id, safeId) {
+ var jenis = document.getElementById('izin-telat-jenis-' + safeId).value;
+ var durasi = document.getElementById('izin-telat-durasi-' + safeId).value || 0;
+ var alasan = document.getElementById('izin-telat-alasan-' + safeId).value.trim();
+ var catatan = document.getElementById('izin-telat-catatan-' + safeId).value.trim();
+ if (jenis === 'IZIN_KHUSUS' && (!durasi || parseFloat(durasi) <= 0)) { showToast('Durasi izin khusus wajib diisi'); return; }
+ if (jenis !== 'NORMAL' && !alasan) { showToast('Alasan wajib diisi'); return; }
+ gasCall('reviewIzinTelat', [id, jenis, durasi, alasan, catatan, currentUser ? currentUser.nama : 'Finance'], function(r) {
+ if (r && r.success) {
+ showToast('Keputusan telat disimpan');
+ loadReviewTelat(true);
+ } else {
+ showToast((r && r.msg) || 'Gagal menyimpan keputusan');
+ }
+ }, function() { showToast('Koneksi gagal'); });
+}
+
 var _attendanceStream = null;
 var _attendancePhotoData = '';
 var _attendanceLocation = null;
