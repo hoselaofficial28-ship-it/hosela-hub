@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbxDAHTGFbjG2RMjIPqUmdLbPO3TqKFfpPuEw9p5sdc4tEJXy6zsyyzhQ6pO65Pben4ywQ/exec';
-var APP_VERSION = '20260707d';
+var APP_VERSION = '20260710a';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -183,7 +183,7 @@ function clearLoginSession() {
 var CACHEABLE = [
  'getHomeData','getJobdeskList','getStaffByBagian','getJobdeskByBagian','getJobdeskByJabatan',
  'getUserKPI','getKalenderLibur','getAllUsers','getPengumuman','getIde','getAbsensiRekap',
- 'getRekapBulananSemua','getPayrollPreview','getPapanPeringkat','getPeraturan','getKPILaporan',
+ 'getRekapBulananSemua','getPayrollPreview','getPapanPeringkat','getKPILaporan',
  'getNotifikasi','getIzinKaryawan','getIzinPendingCount','getSanksiManual','getPayrollEmployeeSlip',
  'getAbsensiMatrix','getAbsensiMatrixUser','getAllAbsensiRekap','getKPITemplate','getIzinPending',
  'getAnomaliPending','getPengaturan','getAbsensiCameraToday','getPayrollDetail',
@@ -211,7 +211,6 @@ var CACHE_TTL_BY_ACTION = {
  getPengumuman: 5 * 60 * 1000,
  getIde: 5 * 60 * 1000,
  getKalenderLibur: 30 * 60 * 1000,
- getPeraturan: 30 * 60 * 1000,
  getPengaturan: 30 * 60 * 1000,
  getKPITemplate: 30 * 60 * 1000,
  getKPILaporan: 5 * 60 * 1000,
@@ -2667,6 +2666,18 @@ function renderAttendanceMatrix(res) {
  var firstDay = new Date(year, month - 1, 1).getDay();
  var leadingBlank = (firstDay + 6) % 7; // Monday-first calendar
  var dayNames = ['Sen','Sel','Rab','Kam','Jum','Sab','Min'];
+ function attendanceDayStatus(item, masuk, pulang) {
+ var hasTap = !!(masuk || pulang);
+ if (item.anomali && !hasTap) return { cls:' anomaly', symbol:'!', title:'Tap anomali' };
+ if (item.rejected && !hasTap) return { cls:' rejected', symbol:'&times;', title:'Ditolak' };
+ if (item.absen && !hasTap) return { cls:' absent', symbol:'A', title:'Absen' };
+ if (item.telat) return { cls:' filled late', symbol:'!', title:item.lembur ? 'Telat dan lembur' : 'Telat' };
+ if (item.lembur) return { cls:' filled overtime', symbol:'+', title:'Lembur' };
+ if (masuk && pulang) return { cls:' filled complete', symbol:'&#10003;', title:'Lengkap' };
+ if (masuk) return { cls:' filled partial', symbol:'&hellip;', title:'Belum pulang' };
+ if (pulang) return { cls:' filled partial', symbol:'?', title:'Tanpa masuk' };
+ return { cls:'', symbol:'&middot;', title:'Belum ada data' };
+ }
  var html = users.map(function(u) {
  var days = '';
  dayNames.forEach(function(name) {
@@ -2680,38 +2691,10 @@ function renderAttendanceMatrix(res) {
  var masuk = item.masuk || '';
  var pulang = item.pulang || '';
  var hasTap = !!(masuk || pulang);
- var statusClass = '';
- var statusSymbol = '&middot;';
- var statusTitle = 'Belum ada data';
- if (item.anomali && !hasTap) {
- statusClass = ' anomaly';
- statusSymbol = '!';
- statusTitle = 'Tap anomali';
- } else if (item.rejected && !hasTap) {
- statusClass = ' rejected';
- statusSymbol = '&times;';
- statusTitle = 'Ditolak';
- } else if (item.absen && !hasTap) {
- statusClass = ' absent';
- statusSymbol = 'A';
- statusTitle = 'Absen';
- } else if (item.lembur) {
- statusClass = ' filled overtime';
- statusSymbol = '+';
- statusTitle = 'Lembur';
- } else if (masuk && pulang) {
- statusClass = item.telat ? ' filled late' : ' filled complete';
- statusSymbol = item.telat ? '!' : '&#10003;';
- statusTitle = item.telat ? 'Telat' : 'Lengkap';
- } else if (masuk) {
- statusClass = ' filled partial';
- statusSymbol = '&hellip;';
- statusTitle = 'Belum pulang';
- } else if (pulang) {
- statusClass = ' filled partial';
- statusSymbol = '?';
- statusTitle = 'Tanpa masuk';
- }
+ var status = attendanceDayStatus(item, masuk, pulang);
+ var statusClass = status.cls;
+ var statusSymbol = status.symbol;
+ var statusTitle = status.title;
  var dateObj = new Date(year, month - 1, d);
  if (dateObj.getDay() === 0) statusClass += ' sunday';
  var click = _attendanceMatrixCanEdit ? ' onclick="openAttendanceEdit(&quot;'+u.id+'&quot;,&quot;'+esc(u.nama)+'&quot;,&quot;'+res.bulan+'&quot;,'+d+',&quot;'+esc(masuk)+'&quot;,&quot;'+esc(pulang)+'&quot;)"' : '';
