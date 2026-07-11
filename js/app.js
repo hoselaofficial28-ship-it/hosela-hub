@@ -1270,14 +1270,9 @@ function closeHomeCategory(fromHistory) {
 }
 
 function refreshHomeData() {
- if (!currentUser) return;
  var btn = document.querySelector('.home-refresh-btn');
  if (btn) btn.classList.add('loading');
- cacheClear('getHomeData' + JSON.stringify([currentUser.id, currentUser.bagian]));
- _homeLoaded = false;
- loadHome(true);
- setTimeout(function(){ if (btn) btn.classList.remove('loading'); }, 900);
- showToast('Data diperbarui');
+ window.location.reload();
 }
 
 function showBulanPicker() {
