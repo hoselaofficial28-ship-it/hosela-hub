@@ -672,32 +672,37 @@ function gantiAkun() {
 }
 
 function submitDaftarAkun() {
- var nama = (document.getElementById('daftar-nama').value || '').trim();
+ var nama   = (document.getElementById('daftar-nama').value || '').trim();
  var bagian = (document.getElementById('daftar-bagian').value || '').trim();
- var jabatan = (document.getElementById('daftar-jabatan').value || '').trim();
- var noHP = (document.getElementById('daftar-nohp').value || '').trim();
- var errEl = document.getElementById('daftar-error');
- var btn = document.getElementById('daftar-btn');
- errEl.textContent = '';
- errEl.style.color = '#dc2626';
- if (!nama) { errEl.textContent = 'Nama lengkap wajib diisi'; return; }
+ var jabatan= (document.getElementById('daftar-jabatan').value || '').trim();
+ var sandi  = (document.getElementById('daftar-sandi').value || '').trim();
+ var sandi2 = (document.getElementById('daftar-sandi2').value || '').trim();
+ var noHP   = (document.getElementById('daftar-nohp').value || '').trim();
+ var errEl  = document.getElementById('daftar-error');
+ var btn    = document.getElementById('daftar-btn');
+ errEl.textContent = ''; errEl.style.color = '#dc2626';
+ if (!nama)   { errEl.textContent = 'Nama lengkap wajib diisi'; return; }
  if (!bagian) { errEl.textContent = 'Silakan pilih bagian'; return; }
- if (!jabatan) { errEl.textContent = 'Jabatan wajib diisi'; return; }
+ if (!jabatan){ errEl.textContent = 'Jabatan wajib diisi'; return; }
+ if (!sandi || sandi.length < 4) { errEl.textContent = 'Kata sandi minimal 4 karakter'; return; }
+ if (sandi !== sandi2) { errEl.textContent = 'Konfirmasi kata sandi tidak cocok'; return; }
  btn.disabled = true;
  document.getElementById('daftar-spinner').style.display = 'flex';
- gasCall('daftarAkun', [nama, bagian, jabatan, noHP], function(r) {
+ gasCall('daftarAkun', [nama, bagian, jabatan, noHP, sandi], function(r) {
   btn.disabled = false;
   document.getElementById('daftar-spinner').style.display = 'none';
-  if (r.success) {
+  if (r && r.success) {
    errEl.style.color = '#16a34a';
-   errEl.textContent = r.msg || 'Pendaftaran berhasil dikirim!';
+   errEl.textContent = r.msg || 'Akun berhasil dibuat!';
    document.getElementById('daftar-nama').value = '';
    document.getElementById('daftar-bagian').value = '';
    document.getElementById('daftar-jabatan').value = '';
+   document.getElementById('daftar-sandi').value = '';
+   document.getElementById('daftar-sandi2').value = '';
    document.getElementById('daftar-nohp').value = '';
-   setTimeout(function() { goTo('s-login'); errEl.textContent = ''; }, 3000);
+   setTimeout(function() { goTo('s-login'); errEl.textContent = ''; }, 2500);
   } else {
-   errEl.textContent = r.msg || 'Pendaftaran gagal, coba lagi.';
+   errEl.textContent = (r && r.msg) ? r.msg : 'Pendaftaran gagal, coba lagi.';
   }
  }, function() {
   btn.disabled = false;
