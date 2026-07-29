@@ -695,7 +695,7 @@ function submitDaftarAkun() {
    document.getElementById('daftar-bagian').value = '';
    document.getElementById('daftar-jabatan').value = '';
    document.getElementById('daftar-nohp').value = '';
-   setTimeout(function() { showScreen('s-login'); errEl.textContent = ''; }, 3000);
+   setTimeout(function() { goTo('s-login'); errEl.textContent = ''; }, 3000);
   } else {
    errEl.textContent = r.msg || 'Pendaftaran gagal, coba lagi.';
   }
