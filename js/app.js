@@ -605,6 +605,7 @@ function goTo(id) {
  if (id === 's-slip-gaji') loadSlipGaji();
  if (id === 's-kelola-izin') { loadKelolaIzin(); }
  if (id === 's-home') loadHome();
+ if (id === 's-daftar') loadDaftarOptions();
  } catch(routeErr) {
  console.error('Route error:', id, routeErr);
  showToast('Menu gagal dibuka. Coba lagi.');
@@ -671,26 +672,67 @@ function gantiAkun() {
  document.getElementById('login-username').focus();
 }
 
+var _daftarOptions = null;
+
+function loadDaftarOptions() {
+ var bagianEl = document.getElementById('daftar-bagian');
+ if (!bagianEl) return;
+ if (_daftarOptions) { populateDaftarBagian(_daftarOptions); return; }
+ bagianEl.innerHTML = '<option value="">Memuat pilihan...</option>';
+ gasCall('getDaftarOptions', [], function(r) {
+  if (r && r.success && r.data) {
+   _daftarOptions = r.data;
+   populateDaftarBagian(r.data);
+  } else {
+   bagianEl.innerHTML = '<option value="">Gagal memuat</option>';
+  }
+ }, function() {
+  bagianEl.innerHTML = '<option value="">Gagal memuat, coba lagi</option>';
+ });
+}
+
+function populateDaftarBagian(data) {
+ var el = document.getElementById('daftar-bagian');
+ if (!el) return;
+ var html = '<option value="">-- Pilih Bagian --</option>';
+ Object.keys(data).sort().forEach(function(bag) {
+  html += '<option value="' + bag + '">' + bag + '</option>';
+ });
+ el.innerHTML = html;
+}
+
+function onDaftarBagianChange() {
+ var bagian = document.getElementById('daftar-bagian').value;
+ var jabEl = document.getElementById('daftar-jabatan');
+ if (!bagian || !_daftarOptions || !_daftarOptions[bagian]) {
+  jabEl.innerHTML = '<option value="">-- Pilih Bagian dulu --</option>';
+  return;
+ }
+ var jabatanList = _daftarOptions[bagian];
+ var html = '<option value="">-- Pilih Jabatan --</option>';
+ jabatanList.forEach(function(j) {
+  html += '<option value="' + j + '">' + j + '</option>';
+ });
+ jabEl.innerHTML = html;
+}
+
 function submitDaftarAkun() {
- var nama   = (document.getElementById('daftar-nama').value || '').trim();
- var bagian = (document.getElementById('daftar-bagian').value || '').trim();
- var jabatan= (document.getElementById('daftar-jabatan').value || '').trim();
- var elSandi = document.getElementById('daftar-sandi');
- var elSandi2 = document.getElementById('daftar-sandi2');
- var sandi  = elSandi ? elSandi.value : '';
- var sandi2 = elSandi2 ? elSandi2.value : '';
- var noHP   = (document.getElementById('daftar-nohp').value || '').trim();
- var errEl  = document.getElementById('daftar-error');
- var btn    = document.getElementById('daftar-btn');
+ var nama    = (document.getElementById('daftar-nama').value || '').trim();
+ var bagian  = (document.getElementById('daftar-bagian').value || '').trim();
+ var jabatan = (document.getElementById('daftar-jabatan').value || '').trim();
+ var sandi   = document.getElementById('daftar-sandi').value || '';
+ var sandi2  = document.getElementById('daftar-sandi2').value || '';
+ var errEl   = document.getElementById('daftar-error');
+ var btn     = document.getElementById('daftar-btn');
  errEl.textContent = ''; errEl.style.color = '#dc2626';
  if (!nama)   { errEl.textContent = 'Nama lengkap wajib diisi'; return; }
  if (!bagian) { errEl.textContent = 'Silakan pilih bagian'; return; }
- if (!jabatan){ errEl.textContent = 'Jabatan wajib diisi'; return; }
- if (!sandi) { errEl.textContent = 'Kata sandi tidak boleh kosong'; return; }
+ if (!jabatan){ errEl.textContent = 'Silakan pilih jabatan'; return; }
+ if (!sandi)  { errEl.textContent = 'Kata sandi tidak boleh kosong'; return; }
  if (sandi !== sandi2) { errEl.textContent = 'Konfirmasi kata sandi tidak cocok'; return; }
  btn.disabled = true;
  document.getElementById('daftar-spinner').style.display = 'flex';
- gasCall('daftarAkun', [nama, bagian, jabatan, noHP, sandi], function(r) {
+ gasCall('daftarAkun', [nama, bagian, jabatan, sandi], function(r) {
   btn.disabled = false;
   document.getElementById('daftar-spinner').style.display = 'none';
   if (r && r.success) {
@@ -698,10 +740,9 @@ function submitDaftarAkun() {
    errEl.textContent = r.msg || 'Akun berhasil dibuat!';
    document.getElementById('daftar-nama').value = '';
    document.getElementById('daftar-bagian').value = '';
-   document.getElementById('daftar-jabatan').value = '';
+   document.getElementById('daftar-jabatan').innerHTML = '<option value="">-- Pilih Bagian dulu --</option>';
    document.getElementById('daftar-sandi').value = '';
    document.getElementById('daftar-sandi2').value = '';
-   document.getElementById('daftar-nohp').value = '';
    setTimeout(function() { goTo('s-login'); errEl.textContent = ''; }, 2500);
   } else {
    errEl.textContent = (r && r.msg) ? r.msg : 'Pendaftaran gagal, coba lagi.';
