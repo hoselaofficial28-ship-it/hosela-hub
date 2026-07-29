@@ -675,8 +675,10 @@ function submitDaftarAkun() {
  var nama   = (document.getElementById('daftar-nama').value || '').trim();
  var bagian = (document.getElementById('daftar-bagian').value || '').trim();
  var jabatan= (document.getElementById('daftar-jabatan').value || '').trim();
- var sandi  = (document.getElementById('daftar-sandi').value || '').trim();
- var sandi2 = (document.getElementById('daftar-sandi2').value || '').trim();
+ var elSandi = document.getElementById('daftar-sandi');
+ var elSandi2 = document.getElementById('daftar-sandi2');
+ var sandi  = elSandi ? elSandi.value : '';
+ var sandi2 = elSandi2 ? elSandi2.value : '';
  var noHP   = (document.getElementById('daftar-nohp').value || '').trim();
  var errEl  = document.getElementById('daftar-error');
  var btn    = document.getElementById('daftar-btn');
