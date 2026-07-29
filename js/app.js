@@ -671,6 +671,41 @@ function gantiAkun() {
  document.getElementById('login-username').focus();
 }
 
+function submitDaftarAkun() {
+ var nama = (document.getElementById('daftar-nama').value || '').trim();
+ var bagian = (document.getElementById('daftar-bagian').value || '').trim();
+ var jabatan = (document.getElementById('daftar-jabatan').value || '').trim();
+ var noHP = (document.getElementById('daftar-nohp').value || '').trim();
+ var errEl = document.getElementById('daftar-error');
+ var btn = document.getElementById('daftar-btn');
+ errEl.textContent = '';
+ errEl.style.color = '#dc2626';
+ if (!nama) { errEl.textContent = 'Nama lengkap wajib diisi'; return; }
+ if (!bagian) { errEl.textContent = 'Silakan pilih bagian'; return; }
+ if (!jabatan) { errEl.textContent = 'Jabatan wajib diisi'; return; }
+ btn.disabled = true;
+ document.getElementById('daftar-spinner').style.display = 'flex';
+ gasCall('daftarAkun', [nama, bagian, jabatan, noHP], function(r) {
+  btn.disabled = false;
+  document.getElementById('daftar-spinner').style.display = 'none';
+  if (r.success) {
+   errEl.style.color = '#16a34a';
+   errEl.textContent = r.msg || 'Pendaftaran berhasil dikirim!';
+   document.getElementById('daftar-nama').value = '';
+   document.getElementById('daftar-bagian').value = '';
+   document.getElementById('daftar-jabatan').value = '';
+   document.getElementById('daftar-nohp').value = '';
+   setTimeout(function() { showScreen('s-login'); errEl.textContent = ''; }, 3000);
+  } else {
+   errEl.textContent = r.msg || 'Pendaftaran gagal, coba lagi.';
+  }
+ }, function() {
+  btn.disabled = false;
+  document.getElementById('daftar-spinner').style.display = 'none';
+  errEl.textContent = 'Koneksi gagal. Periksa internet dan coba lagi.';
+ });
+}
+
 function doLogin() {
  var username = document.getElementById('login-username').value.trim();
  var password = document.getElementById('login-password').value;
@@ -1372,14 +1407,60 @@ function submitLibur() {
 function loadUsers() {
  var list = document.getElementById('users-list');
  list.innerHTML = '<div class="empty-state"><div class="empty-icon"></div>Memuat...</div>';
- gasCall('getAllUsers', [], function(data) {
- if (!data || !data.length) { list.innerHTML = '<div class="empty-state">Tidak ada data</div>'; return; }
- var aktif = data.filter(function(u){ return u.status === 'AKTIF'; });
- var nonaktif = data.filter(function(u){ return u.status !== 'AKTIF'; });
- list.innerHTML =
- (aktif.length ? '<div class="section-label">Aktif</div>' + aktif.map(userCard).join('') : '') +
- (nonaktif.length ? '<div class="section-label" style="margin-top:12px">Nonaktif</div>' + nonaktif.map(userCard).join('') : '');
- }, function(){ list.innerHTML = '<div class="empty-state">Gagal memuat</div>'; });
+ // Muat pendaftaran pending sekaligus
+ gasCall('getRegistrasiPending', [], function(res) {
+  var pending = (res && res.data) ? res.data : [];
+  var pendingHtml = '';
+  if (pending.length) {
+   pendingHtml = '<div class="section-label" style="background:#fff7ed;color:#92400e;border-radius:8px;padding:8px 12px;margin-bottom:8px">⏳ Menunggu Persetujuan ('+pending.length+')</div>' +
+   pending.map(function(p) {
+    return '<div class="list-item" style="cursor:default;background:#fffbeb;border:1px solid #fde68a;margin-bottom:6px;border-radius:10px">'+
+     '<div class="avatar" style="background:#fef3c7;color:#92400e">'+initials(p.nama)+'</div>'+
+     '<div class="list-info"><h4>'+cleanDisplayText(p.nama)+'</h4>'+
+     '<p>'+cleanDisplayText(p.jabatan)+' · '+cleanDisplayText(p.bagian)+(p.noHP?' · '+p.noHP:'')+'</p>'+
+     '<p style="color:#6b7280;font-size:11px">Daftar: '+p.tglDaftar+'</p></div>'+
+     '<div style="display:flex;flex-direction:column;gap:4px">'+
+     '<button class="btn btn-sm" style="background:#16a34a;color:#fff;border:none" onclick="approveRegistrasi(\''+p.id+'\',\''+esc(p.nama)+'\')">✓ Setujui</button>'+
+     '<button class="btn btn-sm btn-danger" onclick="tolakRegistrasi(\''+p.id+'\',\''+esc(p.nama)+'\')">✗ Tolak</button>'+
+     '</div></div>';
+   }).join('');
+  }
+  gasCall('getAllUsers', [], function(data) {
+   if (!data || !data.length) { list.innerHTML = pendingHtml || '<div class="empty-state">Tidak ada data</div>'; return; }
+   var aktif = data.filter(function(u){ return u.status === 'AKTIF'; });
+   var nonaktif = data.filter(function(u){ return u.status !== 'AKTIF'; });
+   list.innerHTML = pendingHtml +
+    (aktif.length ? '<div class="section-label">Aktif</div>' + aktif.map(userCard).join('') : '') +
+    (nonaktif.length ? '<div class="section-label" style="margin-top:12px">Nonaktif</div>' + nonaktif.map(userCard).join('') : '');
+  }, function(){ list.innerHTML = pendingHtml || '<div class="empty-state">Gagal memuat</div>'; });
+ }, function() {
+  // Kalau getRegistrasiPending gagal, tetap load users biasa
+  gasCall('getAllUsers', [], function(data) {
+   if (!data || !data.length) { list.innerHTML = '<div class="empty-state">Tidak ada data</div>'; return; }
+   var aktif = data.filter(function(u){ return u.status === 'AKTIF'; });
+   var nonaktif = data.filter(function(u){ return u.status !== 'AKTIF'; });
+   list.innerHTML =
+    (aktif.length ? '<div class="section-label">Aktif</div>' + aktif.map(userCard).join('') : '') +
+    (nonaktif.length ? '<div class="section-label" style="margin-top:12px">Nonaktif</div>' + nonaktif.map(userCard).join('') : '');
+  }, function(){ list.innerHTML = '<div class="empty-state">Gagal memuat</div>'; });
+ });
+}
+
+function approveRegistrasi(userId, nama) {
+ if (!confirm('Setujui pendaftaran ' + nama + '?\nMereka dapat login dengan kata sandi awal: hosela')) return;
+ gasCall('approveRegistrasi', [userId, currentUser.id], function(r) {
+  showToast(r.msg || 'Berhasil disetujui');
+  cacheClear('getAllUsers' + JSON.stringify([]));
+  loadUsers();
+ }, function(){ showToast('Gagal. Coba lagi.'); });
+}
+
+function tolakRegistrasi(userId, nama) {
+ if (!confirm('Tolak dan hapus pendaftaran ' + nama + '?')) return;
+ gasCall('tolakRegistrasi', [userId, currentUser.id], function(r) {
+  showToast(r.msg || 'Pendaftaran ditolak');
+  loadUsers();
+ }, function(){ showToast('Gagal. Coba lagi.'); });
 }
 
 function userCard(u, i) {
@@ -2276,12 +2357,22 @@ function getAttendanceLocation() {
  var watchId = null;
  var done = false;
  function acceptPosition(pos) {
- if (done || !pos || !pos.coords) return;
- done = true;
- if (watchId !== null) navigator.geolocation.clearWatch(watchId);
- _attendanceLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude, accuracy: pos.coords.accuracy || 0 };
- updateAttendanceLocationStatus('Lokasi terbaca. Akurasi sekitar '+Math.round(_attendanceLocation.accuracy)+' meter.', 'ok');
- syncAttendanceSubmitState();
+ if (!pos || !pos.coords) return;
+ var acc = pos.coords.accuracy || 999;
+ var newLoc = { lat: pos.coords.latitude, lng: pos.coords.longitude, accuracy: acc };
+ // Simpan jika lebih akurat dari pembacaan sebelumnya (atau belum ada)
+ if (!_attendanceLocation || acc < _attendanceLocation.accuracy) {
+   _attendanceLocation = newLoc;
+   var accLabel = acc <= 50 ? 'Sangat baik' : acc <= 150 ? 'Baik' : acc <= 300 ? 'Cukup' : 'Kurang baik';
+   var accState = acc <= 150 ? 'ok' : '';
+   updateAttendanceLocationStatus('Lokasi terbaca. Akurasi sekitar '+Math.round(acc)+' m ('+accLabel+').', accState);
+   syncAttendanceSubmitState();
+ }
+ // Hentikan update hanya jika akurasi sudah cukup baik (≤ 50m)
+ if (acc <= 50 && !done) {
+   done = true;
+   if (watchId !== null) { navigator.geolocation.clearWatch(watchId); watchId = null; }
+ }
  }
  function locationErrorMessage(err) {
  if (err && err.code === 1) return 'Akses lokasi ditolak. Buka izin lokasi Chrome dan pilih Izinkan.';

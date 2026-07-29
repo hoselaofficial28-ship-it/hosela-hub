@@ -4,14 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Hosela Hub</title>
-<link rel="stylesheet" href="css/style.css?v=20260710a">
+<link rel="stylesheet" href="css/style.css?v=20260729a">
 
 
 
 
 
 
-<link rel="manifest" href="manifest.webmanifest?v=20260710a">
+<link rel="manifest" href="manifest.webmanifest?v=20260729a">
 <meta name="theme-color" content="#1557d8">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -53,6 +53,56 @@
  </div>
  <button class="btn btn-primary" id="login-btn" onclick="doLogin()">Masuk</button>
  <div class="pin-error" id="pin-error"></div>
+ <div style="text-align:center;margin-top:14px">
+  <span style="font-size:13px;color:var(--text-muted)">Belum punya akun? </span>
+  <span style="font-size:13px;color:var(--blue);cursor:pointer;font-weight:600" onclick="showScreen('s-daftar')">Daftar di sini</span>
+ </div>
+ </div>
+</div>
+
+<!-- SCREEN DAFTAR AKUN -->
+<div class="screen" id="s-daftar">
+ <div class="statusbar"></div>
+ <div class="login-top">
+  <div class="login-logo"><img class="brand-logo-img" src="assets/logo.png" alt="Hosela Hub"></div>
+  <div class="login-title">Daftar Akun</div>
+  <div class="login-sub">Isi data diri untuk mendaftar</div>
+  <div class="gold-bar-center"></div>
+ </div>
+ <div class="login-body">
+  <div class="form-group">
+   <label class="form-label">Nama Lengkap <span style="color:#dc2626">*</span></label>
+   <input type="text" class="form-input" id="daftar-nama" placeholder="Nama lengkap kamu">
+  </div>
+  <div class="form-group">
+   <label class="form-label">Bagian <span style="color:#dc2626">*</span></label>
+   <select class="form-input" id="daftar-bagian">
+    <option value="">-- Pilih Bagian --</option>
+    <option value="Packing">Packing</option>
+    <option value="Gudang">Gudang</option>
+    <option value="Live">Live</option>
+    <option value="Ecommerce">Ecommerce</option>
+    <option value="Pengiriman">Pengiriman</option>
+    <option value="Admin">Admin</option>
+   </select>
+  </div>
+  <div class="form-group">
+   <label class="form-label">Jabatan <span style="color:#dc2626">*</span></label>
+   <input type="text" class="form-input" id="daftar-jabatan" placeholder="Contoh: Staff Packing, Kepala Gudang">
+  </div>
+  <div class="form-group">
+   <label class="form-label">No HP / WhatsApp</label>
+   <input type="tel" class="form-input" id="daftar-nohp" placeholder="08xxxxxxxxxx (opsional)">
+  </div>
+  <div id="daftar-spinner" style="display:none;justify-content:center;margin:8px 0">
+   <div style="width:28px;height:28px;border:3px solid rgba(14,79,163,0.2);border-top:3px solid #0e4fa3;border-radius:50%;animation:spin .7s linear infinite"></div>
+  </div>
+  <button class="btn btn-primary" id="daftar-btn" onclick="submitDaftarAkun()">Kirim Pendaftaran</button>
+  <div class="pin-error" id="daftar-error" style="text-align:center"></div>
+  <div style="text-align:center;margin-top:14px">
+   <span style="font-size:13px;color:var(--text-muted)">Sudah punya akun? </span>
+   <span style="font-size:13px;color:var(--blue);cursor:pointer;font-weight:600" onclick="showScreen('s-login')">Masuk</span>
+  </div>
  </div>
 </div>
 
@@ -382,7 +432,7 @@
  <div class="content" id="laporan-list"><div class="empty-state"><div class="empty-icon"></div>Memuat...</div></div>
 </div>
 
-<script src="js/app.js?v=20260710a"></script>
+<script src="js/app.js?v=20260729a"></script>
 </div><!-- /app-wrap -->
 
 <!-- KPI CHECK -->
@@ -705,7 +755,7 @@
 <!-- PHONE PREVIEW -->
 <button class="preview-btn" onclick="togglePreview()"> Pratinjau HP</button>
 
-<script src="js/payroll.js?v=20260710a"></script>
-<script src="js/preview.js?v=20260710a"></script>
+<script src="js/payroll.js?v=20260729a"></script>
+<script src="js/preview.js?v=20260729a"></script>
 </body>
 </html>
