@@ -686,7 +686,7 @@ function submitDaftarAkun() {
  if (!nama)   { errEl.textContent = 'Nama lengkap wajib diisi'; return; }
  if (!bagian) { errEl.textContent = 'Silakan pilih bagian'; return; }
  if (!jabatan){ errEl.textContent = 'Jabatan wajib diisi'; return; }
- if (!sandi || sandi.length < 4) { errEl.textContent = 'Kata sandi minimal 4 karakter'; return; }
+ if (!sandi) { errEl.textContent = 'Kata sandi tidak boleh kosong'; return; }
  if (sandi !== sandi2) { errEl.textContent = 'Konfirmasi kata sandi tidak cocok'; return; }
  btn.disabled = true;
  document.getElementById('daftar-spinner').style.display = 'flex';
