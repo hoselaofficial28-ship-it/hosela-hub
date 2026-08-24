@@ -232,6 +232,7 @@ function invalidateReadCacheAfterMutation(action) {
   addPengumuman: ['getHomeData','getPengumuman'],
   addIde: ['getIde'],
   addLibur: ['getKalenderLibur','getAbsensiRekap','getRekapBulananSemua','getPayrollPreview'],
+  hapusLibur: ['getKalenderLibur','getAbsensiRekap','getRekapBulananSemua','getPayrollPreview'],
   nonaktifkanUser: ['getAllUsers','getStaffByBagian','getRekapBulananSemua'],
   updateUserSalary: ['getAllUsers','getAbsensiRekap','getRekapBulananSemua','getPayrollPreview','getPayrollDetail','getPayrollEmployeeSlip','getPayrollEmployeeSlipDetail'],
   deactivateSalaryUser: ['getAllUsers','getStaffByBagian','getRekapBulananSemua','getPayrollPreview','getHomeData'],
@@ -1432,10 +1433,16 @@ function loadKalender() {
  gasCall('getKalenderLibur', [], function(data) {
  if (!data || !data.length) { list.innerHTML = '<div class="empty-state"><div class="empty-icon"></div>Belum ada hari libur</div>'; return; }
  list.innerHTML = data.map(function(l) {
+ var safeId = String(l.id || '').replace(/'/g, "\\'");
+ var safeNama = String(l.nama || '').replace(/'/g, "\\'");
+ var safeTgl = String(l.tanggal || '').replace(/'/g, "\\'");
  return '<div class="list-item" style="cursor:default">'+
  '<div class="list-icon" style="background:#fee2e2"></div>'+
  '<div class="list-info"><h4>'+l.nama+'</h4><p>'+l.tanggal+'</p></div>'+
- '<span class="badge badge-red">Difasilitasi</span></div>';
+ '<span class="badge badge-red" style="margin-right:6px">Difasilitasi</span>'+
+ '<button class="btn btn-sm btn-danger" style="padding:6px 10px;min-width:36px" title="Hapus" '+
+ 'onclick="hapusLibur(\''+safeId+'\',\''+safeNama+'\',\''+safeTgl+'\', this)">✕</button>'+
+ '</div>';
  }).join('');
  }, function(){});
 }
@@ -1443,13 +1450,60 @@ function loadKalender() {
 function submitLibur() {
  var tgl = document.getElementById('libur-tgl').value;
  var nama = document.getElementById('libur-nama').value.trim();
+ var btn = document.getElementById('btn-add-libur');
  if (!tgl || !nama) { showToast('Tanggal dan nama wajib diisi'); return; }
- gasCall('addLibur', [tgl, nama, currentUser.nama], function() {
- document.getElementById('libur-tgl').value = '';
- document.getElementById('libur-nama').value = '';
- showToast('Hari libur berhasil ditambahkan!');
- loadKalender();
- }, function(){ showToast('Gagal. Coba lagi.'); });
+ if (btn && btn.disabled) return; // sudah lagi proses, abaikan double click
+ if (btn) {
+  btn.disabled = true;
+  btn.dataset.originalText = btn.textContent;
+  btn.textContent = 'Menambahkan...';
+  btn.style.opacity = '0.6';
+  btn.style.cursor = 'not-allowed';
+ }
+ function resetBtn() {
+  if (!btn) return;
+  btn.disabled = false;
+  btn.textContent = btn.dataset.originalText || 'Tambah';
+  btn.style.opacity = '';
+  btn.style.cursor = '';
+ }
+ gasCall('addLibur', [tgl, nama, currentUser.nama], function(res) {
+  resetBtn();
+  if (res && res.success === false) {
+   showToast((res && res.msg) || 'Gagal menambah hari libur');
+   return;
+  }
+  document.getElementById('libur-tgl').value = '';
+  document.getElementById('libur-nama').value = '';
+  showToast('Hari libur berhasil ditambahkan!');
+  loadKalender();
+ }, function() {
+  resetBtn();
+  showToast('Gagal. Coba lagi.');
+ });
+}
+
+function hapusLibur(id, nama, tgl, btn) {
+ if (!id) { showToast('ID libur tidak valid'); return; }
+ if (!confirm('Hapus hari libur "'+nama+'" pada '+tgl+'?')) return;
+ if (btn) {
+  btn.disabled = true;
+  btn.textContent = '...';
+  btn.style.opacity = '0.6';
+ }
+ var actor = (currentUser && currentUser.nama) ? currentUser.nama : '';
+ gasCall('hapusLibur', [id, actor], function(res) {
+  if (!res || res.success === false) {
+   showToast((res && res.msg) || 'Gagal menghapus hari libur');
+   if (btn) { btn.disabled = false; btn.textContent = '✕'; btn.style.opacity = ''; }
+   return;
+  }
+  showToast('Hari libur berhasil dihapus');
+  loadKalender();
+ }, function() {
+  showToast('Gagal. Coba lagi.');
+  if (btn) { btn.disabled = false; btn.textContent = '✕'; btn.style.opacity = ''; }
+ });
 }
 
 function loadUsers() {
