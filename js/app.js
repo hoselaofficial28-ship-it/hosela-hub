@@ -1469,8 +1469,12 @@ function submitLibur() {
  }
  gasCall('addLibur', [tgl, nama, currentUser.nama], function(res) {
   resetBtn();
-  if (res && res.success === false) {
-   showToast((res && res.msg) || 'Gagal menambah hari libur');
+  if (!res || res.success === false || res.error) {
+   var errMsg = (res && (res.msg || res.error)) || 'Gagal menambah hari libur';
+   if (String(errMsg).indexOf('Unknown action') !== -1) {
+    errMsg = 'Backend Apps Script belum di-deploy versi baru. Buka Apps Script → Deploy → Manage deployments → New version.';
+   }
+   showToast(errMsg);
    return;
   }
   document.getElementById('libur-tgl').value = '';
@@ -1493,8 +1497,13 @@ function hapusLibur(id, nama, tgl, btn) {
  }
  var actor = (currentUser && currentUser.nama) ? currentUser.nama : '';
  gasCall('hapusLibur', [id, actor], function(res) {
-  if (!res || res.success === false) {
-   showToast((res && res.msg) || 'Gagal menghapus hari libur');
+  // Perlakukan error / success:false / respon kosong sebagai gagal
+  if (!res || res.success === false || res.error) {
+   var errMsg = (res && (res.msg || res.error)) || 'Gagal menghapus hari libur';
+   if (String(errMsg).indexOf('Unknown action') !== -1) {
+    errMsg = 'Backend Apps Script belum di-deploy versi baru. Buka Apps Script → Deploy → Manage deployments → New version.';
+   }
+   showToast(errMsg);
    if (btn) { btn.disabled = false; btn.textContent = '✕'; btn.style.opacity = ''; }
    return;
   }
