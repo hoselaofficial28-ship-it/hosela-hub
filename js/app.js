@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbxDAHTGFbjG2RMjIPqUmdLbPO3TqKFfpPuEw9p5sdc4tEJXy6zsyyzhQ6pO65Pben4ywQ/exec';
-var APP_VERSION = '20260910t';
+var APP_VERSION = '20260910u';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -3117,8 +3117,11 @@ function renderAttendanceMatrix(res) {
  renderAttendanceUserRecap(u, res)+
  '</div>';
  }).join('');
- if (_attendanceMatrixCanEdit) html += renderAttendanceLegend();
+ if (_attendanceMatrixCanEdit) {
+ el.innerHTML = '<div class="att-desktop-layout"><div class="att-desktop-main">'+html+'</div><aside class="att-desktop-side">'+renderAttendanceLegend()+'</aside></div>';
+ } else {
  el.innerHTML = html;
+ }
  filterAttendanceMatrix();
 }
 

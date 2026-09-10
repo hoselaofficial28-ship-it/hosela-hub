@@ -863,6 +863,9 @@ textarea.form-input{line-height:1.45}
 .att-recap-btn{width:100%;border-radius:9px;margin-top:10px}
 .att-recap-detail{margin-top:8px}
 
+.att-desktop-layout{display:block}
+.att-desktop-main,.att-desktop-side{min-width:0}
+
 #side-menu-overlay{
   z-index:9000!important;
 }
@@ -2773,6 +2776,32 @@ body.phone-mode #app-wrap #s-home.screen.active{
   body:not(.phone-mode) #s-home .content{
     grid-template-columns:minmax(0,1fr) 360px!important;
     gap:20px!important;
+  }
+  body:not(.phone-mode) #s-catatan-kehadiran #att-matrix-content{
+    max-width:none!important;
+  }
+  body:not(.phone-mode) #s-catatan-kehadiran .att-desktop-layout{
+    display:grid!important;
+    grid-template-columns:minmax(760px,1180px) minmax(300px,360px)!important;
+    gap:20px!important;
+    align-items:start!important;
+  }
+  body:not(.phone-mode) #s-catatan-kehadiran .att-desktop-side{
+    position:sticky!important;
+    top:0!important;
+    align-self:start!important;
+  }
+  body:not(.phone-mode) #s-catatan-kehadiran .att-legend-card{
+    margin-top:0!important;
+    border-radius:18px!important;
+    box-shadow:0 18px 50px rgba(31,94,255,.08)!important;
+  }
+  body:not(.phone-mode) #s-catatan-kehadiran .att-legend-list{
+    gap:10px!important;
+  }
+  body:not(.phone-mode) #s-catatan-kehadiran .att-legend-item{
+    min-height:56px!important;
+    padding:10px!important;
   }
   body:not(.phone-mode) .desktop-dashboard-hero{
     grid-column:1 / -1!important;
