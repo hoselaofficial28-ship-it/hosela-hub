@@ -1,8 +1,9 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbxDAHTGFbjG2RMjIPqUmdLbPO3TqKFfpPuEw9p5sdc4tEJXy6zsyyzhQ6pO65Pben4ywQ/exec';
-var APP_VERSION = '20260710a';
+var APP_VERSION = '20260910g';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
+var currentLang = localStorage.getItem('hh_lang') || 'id';
 var AVT_BG = ['#dbeafe','#d1fae5','#fef3c7','#ede9fe','#fce7f3','#fee2e2'];
 var AVT_TXT = ['#1d4ed8','#065f46','#92400e','#5b21b6','#9d174d','#991b1b'];
 
@@ -43,6 +44,184 @@ var ICONS = {
 function uiIcon(name, cls) {
  var path = ICONS[name] || ICONS.file;
  return '<svg class="svg-icon '+(cls||'')+'" viewBox="0 0 24 24" aria-hidden="true"><path d="'+path+'"></path></svg>';
+}
+
+var I18N = {
+ id: {
+  searchMenu:'Cari menu',
+  dashboard:'Dasbor',
+  jobdesk:'Jobdesk',
+  announcements:'Pengumuman',
+  ideas:'Ide Tim',
+  desktopHeroKicker:'Ringkasan Operasional',
+  desktopHeroTitle:'Hosela Dashboard',
+  desktopHeroSub:'Pantau absensi, KPI, payroll, pengumuman, dan aktivitas tim dalam satu layar kerja.',
+  metricAttendance:'Absensi',
+  metricAttendanceSub:'Riwayat tim',
+  metricKpi:'KPI',
+  metricKpiSub:'Checklist',
+  metricPayroll:'Payroll',
+  metricPayrollSub:'Slip gaji',
+  categoriesTitle:'Kategori Menu',
+  categoriesSub:'Pilih area kerja yang ingin dibuka',
+  backCategory:'Kembali ke kategori',
+  catAttendance:'Kehadiran & Personal',
+  catAttendanceSub:'Absensi, riwayat, izin, gaji',
+  catWork:'Kerja & Produktivitas',
+  catWorkSub:'Tugas, KPI, aturan kerja',
+  catComms:'Komunikasi Tim',
+  catCommsSub:'Info, ide, dan notifikasi',
+  catFinance:'Finance & Owner',
+  catFinanceSub:'Kontrol data dan payroll',
+  catAccount:'Akun',
+  catAccountSub:'Pengaturan akses'
+ },
+ en: {
+  searchMenu:'Search menu',
+  dashboard:'Dashboard',
+  jobdesk:'Jobdesk',
+  announcements:'Announcements',
+  ideas:'Team Ideas',
+  desktopHeroKicker:'Operations Summary',
+  desktopHeroTitle:'Hosela Dashboard',
+  desktopHeroSub:'Track attendance, KPI, payroll, announcements, and team activity in one workspace.',
+  metricAttendance:'Attendance',
+  metricAttendanceSub:'Team history',
+  metricKpi:'KPI',
+  metricKpiSub:'Checklist',
+  metricPayroll:'Payroll',
+  metricPayrollSub:'Payslips',
+  categoriesTitle:'Menu Categories',
+  categoriesSub:'Choose the work area to open',
+  backCategory:'Back to categories',
+  catAttendance:'Attendance & Personal',
+  catAttendanceSub:'Attendance, history, leave, payroll',
+  catWork:'Work & Productivity',
+  catWorkSub:'Tasks, KPI, work rules',
+  catComms:'Team Communication',
+  catCommsSub:'Updates, ideas, and notifications',
+  catFinance:'Finance & Owner',
+  catFinanceSub:'Data control and payroll',
+  catAccount:'Account',
+  catAccountSub:'Access settings'
+ },
+ zh: {
+  searchMenu:'搜索菜单',
+  dashboard:'仪表盘',
+  jobdesk:'岗位职责',
+  announcements:'公告',
+  ideas:'团队想法',
+  desktopHeroKicker:'运营摘要',
+  desktopHeroTitle:'Hosela 仪表盘',
+  desktopHeroSub:'在一个工作界面查看考勤、KPI、薪资、公告和团队动态。',
+  metricAttendance:'考勤',
+  metricAttendanceSub:'团队记录',
+  metricKpi:'KPI',
+  metricKpiSub:'检查清单',
+  metricPayroll:'薪资',
+  metricPayrollSub:'工资单',
+  categoriesTitle:'菜单分类',
+  categoriesSub:'选择要打开的工作区域',
+  backCategory:'返回分类',
+  catAttendance:'考勤与个人',
+  catAttendanceSub:'考勤、记录、请假、薪资',
+  catWork:'工作与效率',
+  catWorkSub:'任务、KPI、工作规则',
+  catComms:'团队沟通',
+  catCommsSub:'公告、想法和通知',
+  catFinance:'财务与老板',
+  catFinanceSub:'数据控制和薪资',
+  catAccount:'账户',
+  catAccountSub:'访问设置'
+ }
+};
+
+var MENU_I18N = {
+ 's-jobdesk': { en:['Jobdesk','Tasks & responsibilities'], zh:['岗位职责','任务与责任'] },
+ 's-pengumuman': { en:['Announcements','Owner updates'], zh:['公告','老板通知'] },
+ 's-ide': { en:['Team Ideas','Share your ideas'], zh:['团队想法','提交建议'] },
+ 's-papan-peringkat': { en:['Leaderboard','Team performance'], zh:['排行榜','团队表现'] },
+ 's-peraturan': { en:['Rules','Office regulations'], zh:['规章制度','办公室规则'] },
+ 's-notifikasi': { en:['Notifications','Alerts & updates'], zh:['通知','提醒与信息'] },
+ 's-absensi-camera': { en:['Camera Attendance','Photo & office location'], zh:['拍照考勤','照片与办公地点'] },
+ 's-catatan-kehadiran': { en:['Attendance Log','Check-in & check-out history'], zh:['考勤记录','上下班记录'] },
+ 's-izin': { en:['Leave / Sick','Submit absence request'], zh:['请假 / 病假','提交缺勤申请'] },
+ 's-slip-gaji': { en:['Payslip','Your salary history'], zh:['工资单','薪资记录'] },
+ 's-kalender': { en:['Holiday Calendar','Manage holidays'], zh:['假期日历','管理假期'] },
+ 's-setting-gaji': { en:['Salary Settings','Edit employee salary'], zh:['薪资设置','修改员工工资'] },
+ 's-kelola-izin': { en:['Leave Approval','Approve requests'], zh:['请假审批','批准申请'] },
+ 's-kpi-check': { en:['KPI Checklist','Update your KPI'], zh:['KPI清单','更新KPI'] },
+ 's-sanksi-manual': { en:['Rewards & Fines','Manual adjustments'], zh:['奖励与罚款','手动调整'] },
+ 's-review-telat': { en:['Late Review','Late tolerance'], zh:['迟到审核','迟到宽限'] },
+ 's-payroll': { en:['Payroll','Review and publish payslips'], zh:['薪资发放','审核并发布工资单'] },
+ 's-tambah-pengumuman': { en:['Create Announcement','New update'], zh:['新建公告','发布新信息'] },
+ 's-manage-users': { en:['Manage Team','Activate / deactivate'], zh:['团队管理','启用 / 停用'] },
+ 's-laporan-absensi': { en:['Attendance Report','Attendance recap'], zh:['考勤报告','考勤汇总'] },
+ 's-ganti-pin': { en:['Change Password','Update your login password'], zh:['修改密码','更新登录密码'] }
+};
+
+function tr(key) {
+ return (I18N[currentLang] && I18N[currentLang][key]) || I18N.id[key] || key;
+}
+
+function menuLabel(m) {
+ var hit = MENU_I18N[m.id] && MENU_I18N[m.id][currentLang];
+ return hit ? hit[0] : m.label;
+}
+
+function menuSub(m) {
+ var hit = MENU_I18N[m.id] && MENU_I18N[m.id][currentLang];
+ return hit ? hit[1] : m.sub;
+}
+
+function categoryLabel(cat) {
+ var key = {
+  'Kehadiran & Personal':'catAttendance',
+  'Kerja & Produktivitas':'catWork',
+  'Komunikasi Tim':'catComms',
+  'Finance & Owner':'catFinance',
+  'Akun':'catAccount'
+ }[cat];
+ return key ? tr(key) : cat;
+}
+
+function categoryDesc(cat) {
+ var key = {
+  'Kehadiran & Personal':'catAttendanceSub',
+  'Kerja & Produktivitas':'catWorkSub',
+  'Komunikasi Tim':'catCommsSub',
+  'Finance & Owner':'catFinanceSub',
+  'Akun':'catAccountSub'
+ }[cat];
+ return key ? tr(key) : '';
+}
+
+function applyLanguageText() {
+ document.querySelectorAll('[data-i18n]').forEach(function(el) {
+  var key = el.getAttribute('data-i18n');
+  el.textContent = tr(key);
+ });
+ var sel = document.getElementById('desktop-lang-select');
+ if (sel) sel.value = currentLang;
+ var input = document.getElementById('home-menu-search-input');
+ if (input) input.placeholder = tr('searchMenu');
+ var navText = [tr('dashboard'), tr('jobdesk'), tr('announcements'), tr('ideas')];
+ document.querySelectorAll('.navbar').forEach(function(navbar) {
+  navbar.querySelectorAll('.nav-label').forEach(function(el, index) {
+   if (navText[index]) el.textContent = navText[index];
+  });
+ });
+}
+
+function setAppLanguage(lang) {
+ currentLang = I18N[lang] ? lang : 'id';
+ try { localStorage.setItem('hh_lang', currentLang); } catch(e) {}
+ applyLanguageText();
+ var el = document.getElementById('home-menu');
+ if (el && window._homeMenuGroups) {
+  el.innerHTML = isDesktopLayout() ? renderHomeMenuSectionList() : renderHomeCategoryIndex();
+  applyLanguageText();
+ }
 }
 
 // Cache sistem — simpan data di memori supaya tidak fetch ulang
@@ -881,11 +1060,12 @@ function loadHome(forceRefresh) {
  var prevBtn = document.querySelector('.preview-btn');
  if (prevBtn) prevBtn.style.display = (!isTouchDevice && (u.bagian === 'Owner' || u.bagian === 'Finance')) ? 'flex' : 'none';
  document.getElementById('home-menu').innerHTML = renderHomeMenuSections(menus);
+ applyLanguageText();
  setTimeout(prefetchCommonData, 450);
 
  // Reward dilengkapi saat data Home tiba; jangan bikin halaman awal terasa tertahan.
  var rewardSection = document.getElementById('reward-section');
- if (rewardSection && !rewardSection.querySelector('.reward-card')) rewardSection.innerHTML = '';
+ if (rewardSection && !rewardSection.querySelector('.reward-card')) rewardSection.innerHTML = renderRewardLoading();
 
  // Spinner profile card hanya untuk karyawan biasa
  if (u.bagian !== 'Owner' && u.bagian !== 'Finance') {
@@ -1274,7 +1454,23 @@ function renderHomeMenuSections(menus) {
  window._homeMenuGroups = groups;
  window._homeMenuOrder = order.filter(function(cat){ return groups[cat] && groups[cat].length; });
  window._homeMenuDesc = desc;
- return renderHomeCategoryIndex();
+ _homeMenuLayoutDesktop = isDesktopLayout();
+ return _homeMenuLayoutDesktop ? renderHomeMenuSectionList() : renderHomeCategoryIndex();
+}
+
+function renderRewardLoading() {
+ return '<div class="reward-loading-card" aria-label="Memuat bintang bulan ini">'+
+ '<div class="reward-loading-orbit"><span></span><span></span><span></span></div>'+
+ '<div class="reward-loading-copy">'+
+ '<div class="reward-loading-label">Menghubungkan table reward</div>'+
+ '<div class="reward-loading-title">Menyiapkan Bintang Bulan Ini</div>'+
+ '<div class="reward-loading-bars"><i></i><i></i><i></i></div>'+
+ '</div>'+
+ '</div>';
+}
+
+function isDesktopLayout() {
+ return !!(window.matchMedia && window.matchMedia('(min-width: 900px)').matches && !document.body.classList.contains('phone-mode'));
 }
 
 function homeCategoryIcon(cat) {
@@ -1287,28 +1483,26 @@ function homeCategoryIcon(cat) {
 
 function renderHomeCategoryIndex() {
  var order = window._homeMenuOrder || [];
- var desc = window._homeMenuDesc || {};
  return '<section class="home-menu-section home-category-section">'+
- '<div class="home-section-head"><span></span><div><h2>Kategori Menu</h2><p>Pilih area kerja yang ingin dibuka</p></div></div>'+
+ '<div class="home-section-head"><span></span><div><h2>'+tr('categoriesTitle')+'</h2><p>'+tr('categoriesSub')+'</p></div></div>'+
  '<div class="home-category-grid">'+order.map(function(cat) {
  var count = ((window._homeMenuGroups || {})[cat] || []).length;
  return '<button class="home-category-card" onclick="openHomeCategory(&quot;'+cat+'&quot;)">'+
  '<div class="home-category-icon">'+uiIcon(homeCategoryIcon(cat))+'</div>'+
- '<b>'+cat+'</b><small>'+desc[cat]+'</small><em>'+count+' menu</em></button>';
+ '<b>'+categoryLabel(cat)+'</b><small>'+categoryDesc(cat)+'</small><em>'+count+' menu</em></button>';
  }).join('')+'</div></section>';
 }
 
 function renderHomeMenuSectionList() {
  var order = window._homeMenuOrder || [];
- var desc = window._homeMenuDesc || {};
  var groups = window._homeMenuGroups || {};
- var html = '<div class="home-menu-search"><span></span><input id="home-menu-search-input" placeholder="Cari menu..." oninput="filterHomeMenus()"></div>';
+ var html = '<div class="home-menu-search"><span></span><input id="home-menu-search-input" placeholder="'+tr('searchMenu')+'" oninput="filterHomeMenus()"></div>';
  html += order.map(function(cat) {
  var menus = groups[cat] || [];
  return '<section class="home-menu-section" data-menu-section="'+cat.toLowerCase()+'">'+
- '<div class="home-section-head"><span></span><div><h2>'+cat+'</h2><p>'+desc[cat]+'</p></div></div>'+
+ '<div class="home-section-head"><span></span><div><h2>'+categoryLabel(cat)+'</h2><p>'+categoryDesc(cat)+'</p></div></div>'+
  '<div class="home-menu-grid">'+menus.map(function(m) {
- return '<button class="menu-card" data-menu-search="'+(m.label+' '+m.sub+' '+cat).toLowerCase()+'" onclick="goTo(\''+m.id+'\')"><div class="menu-icon">'+uiIcon(m.icon)+'</div><h3>'+m.label+'</h3><p>'+m.sub+'</p></button>';
+ return '<button class="menu-card" data-menu-search="'+(menuLabel(m)+' '+menuSub(m)+' '+categoryLabel(cat)).toLowerCase()+'" onclick="goTo(\''+m.id+'\')"><div class="menu-icon">'+uiIcon(m.icon)+'</div><h3>'+menuLabel(m)+'</h3><p>'+menuSub(m)+'</p></button>';
  }).join('')+'</div></section>';
  }).join('');
  return html;
@@ -1331,27 +1525,41 @@ function filterHomeMenus() {
 function openHomeCategory(cat) {
  var groups = window._homeMenuGroups || {};
  var menus = groups[cat] || [];
- var desc = (window._homeMenuDesc || {})[cat] || '';
  var el = document.getElementById('home-menu');
  if (!el) return;
  _homeCategoryOpen = true;
  try { history.pushState({ screen: 's-home', category: cat }, '', '#home-category'); } catch(e) {}
  el.innerHTML = '<section class="home-menu-section home-menu-detail">'+
- '<button class="home-category-back" onclick="closeHomeCategory()">'+uiIcon('home')+' Kembali ke kategori</button>'+
- '<div class="home-section-head"><span></span><div><h2>'+cat+'</h2><p>'+desc+'</p></div></div>'+
+ '<button class="home-category-back" onclick="closeHomeCategory()">'+uiIcon('home')+' '+tr('backCategory')+'</button>'+
+ '<div class="home-section-head"><span></span><div><h2>'+categoryLabel(cat)+'</h2><p>'+categoryDesc(cat)+'</p></div></div>'+
  '<div class="home-menu-grid">'+menus.map(function(m) {
- return '<button class="menu-card" onclick="goTo(\''+m.id+'\')"><div class="menu-icon">'+uiIcon(m.icon)+'</div><h3>'+m.label+'</h3><p>'+m.sub+'</p></button>';
+ return '<button class="menu-card" onclick="goTo(\''+m.id+'\')"><div class="menu-icon">'+uiIcon(m.icon)+'</div><h3>'+menuLabel(m)+'</h3><p>'+menuSub(m)+'</p></button>';
  }).join('')+'</div></section>';
 }
 
 function closeHomeCategory(fromHistory) {
  var el = document.getElementById('home-menu');
  _homeCategoryOpen = false;
- if (el) el.innerHTML = renderHomeCategoryIndex();
+ if (el) el.innerHTML = isDesktopLayout() ? renderHomeMenuSectionList() : renderHomeCategoryIndex();
  if (!fromHistory) {
  try { history.replaceState({ screen: 's-home' }, '', '#s-home'); } catch(e) {}
  }
 }
+
+var _homeMenuLayoutDesktop = null;
+window.addEventListener('resize', function() {
+ var el = document.getElementById('home-menu');
+ if (!el || !window._homeMenuGroups) return;
+ var nowDesktop = isDesktopLayout();
+ if (_homeMenuLayoutDesktop === null) {
+ _homeMenuLayoutDesktop = nowDesktop;
+ return;
+ }
+ if (_homeMenuLayoutDesktop === nowDesktop) return;
+ _homeMenuLayoutDesktop = nowDesktop;
+ _homeCategoryOpen = false;
+ el.innerHTML = nowDesktop ? renderHomeMenuSectionList() : renderHomeCategoryIndex();
+});
 
 function refreshHomeData() {
  var btn = document.querySelector('.home-refresh-btn');

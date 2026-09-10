@@ -9,6 +9,7 @@ const ASSETS = [
   './js/payroll.js',
   './js/preview.js',
   './assets/logo.png',
+  './assets/logo-icon.svg',
   './assets/icon-512.png',
   './manifest.webmanifest'
 ];

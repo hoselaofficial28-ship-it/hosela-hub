@@ -4,14 +4,17 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Hosela Hub</title>
-<link rel="stylesheet" href="css/style.css?v=20260729d">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css?v=20260910l">
 
 
 
 
 
 
-<link rel="manifest" href="manifest.webmanifest?v=20260729d">
+<link rel="manifest" href="manifest.webmanifest?v=20260910g">
 <meta name="theme-color" content="#1557d8">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -21,7 +24,7 @@
 <body>
 <div id="app-wrap">
 <div id="loading">
- <div class="loading-logo"><img class="brand-logo-img" src="assets/logo.png" alt="Hosela Hub"></div>
+ <div class="loading-logo"><img class="brand-logo-img" src="assets/logo-icon.svg?v=2" alt="Hosela Hub"></div>
  <div class="loading-title">Hosela Hub</div>
  <div class="loading-sub">Portal Internal Tim</div>
  <div class="loading-bar"><div class="loading-progress"></div></div>
@@ -32,7 +35,7 @@
 <div class="screen" id="s-login">
  <div class="statusbar"></div>
  <div class="login-top">
- <div class="login-logo"><img class="brand-logo-img" src="assets/logo.png" alt="Hosela Hub"></div>
+ <div class="login-logo"><img class="brand-logo-img" src="assets/logo-icon.svg?v=2" alt="Hosela Hub"></div>
  <div class="login-title">Hosela Hub</div>
  <div class="login-sub">Attendance, payroll, dan operasional tim</div>
  <div class="gold-bar-center"></div>
@@ -64,7 +67,7 @@
 <div class="screen" id="s-daftar">
  <div class="statusbar"></div>
  <div class="login-top">
-  <div class="login-logo"><img class="brand-logo-img" src="assets/logo.png" alt="Hosela Hub"></div>
+  <div class="login-logo"><img class="brand-logo-img" src="assets/logo-icon.svg?v=2" alt="Hosela Hub"></div>
   <div class="login-title">Daftar Akun</div>
   <div class="login-sub">Isi data diri untuk mendaftar</div>
   <div class="gold-bar-center"></div>
@@ -141,6 +144,11 @@
  <button class="home-menu-btn" onclick="openSideMenu()" aria-label="Buka menu"></button>
  <div class="home-greeting">Selamat datang,</div>
  <div class="home-name" id="home-name">?</div>
+ <select class="desktop-lang-select" id="desktop-lang-select" onchange="setAppLanguage(this.value)" aria-label="Pilih bahasa">
+  <option value="id">Bahasa Indonesia</option>
+  <option value="en">English</option>
+  <option value="zh">中文</option>
+ </select>
  <div id="home-jabatan-badge"></div>
  <div id="home-quote" style="font-size:12px;color:rgba(255,255,255,0.75);font-weight:400;margin-top:8px;font-style:italic;line-height:1.5"></div>
  <div class="ann-banner" onclick="goTo('s-pengumuman')" id="home-ann-banner" style="display:none">
@@ -150,13 +158,25 @@
  </div>
  </div>
  <div class="content">
+ <section class="desktop-dashboard-hero">
+  <div>
+   <div class="desktop-hero-kicker" data-i18n="desktopHeroKicker">Ringkasan Operasional</div>
+   <h2 data-i18n="desktopHeroTitle">Hosela Dashboard</h2>
+   <p data-i18n="desktopHeroSub">Pantau absensi, KPI, payroll, pengumuman, dan aktivitas tim dalam satu layar kerja.</p>
+  </div>
+  <div class="desktop-hero-metrics">
+   <button type="button" onclick="goTo('s-catatan-kehadiran')"><span></span><b data-i18n="metricAttendance">Absensi</b><small data-i18n="metricAttendanceSub">Riwayat tim</small></button>
+   <button type="button" onclick="goTo('s-kpi-check')"><span></span><b data-i18n="metricKpi">KPI</b><small data-i18n="metricKpiSub">Checklist</small></button>
+   <button type="button" onclick="goTo('s-payroll')"><span></span><b data-i18n="metricPayroll">Payroll</b><small data-i18n="metricPayrollSub">Slip gaji</small></button>
+  </div>
+ </section>
  <div class="home-clock-card">
  <div class="home-clock-head">
  <div>
  <div class="home-clock-label">Waktu sekarang</div>
  <div class="home-clock-date" id="home-clock-date">?</div>
  </div>
- <div class="home-clock-logo"><img src="assets/logo.png" alt="Hosela Hub"></div>
+ <div class="home-clock-logo"><img src="assets/logo-icon.svg?v=2" alt="Hosela Hub"></div>
  </div>
  <div class="home-clock-time" id="home-clock-time">--:--:--</div>
  <button class="home-clock-action" onclick="goTo('s-absensi-camera')">
