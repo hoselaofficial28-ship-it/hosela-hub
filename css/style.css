@@ -2655,11 +2655,18 @@ body.phone-mode #app-wrap #s-home.screen.active{
     grid-row:1!important;
   }
   body:not(.phone-mode) .screen.active:not(:has(>.navbar)){
-    grid-template-columns:294px minmax(0,1fr)!important;
+    grid-template-columns:minmax(0,1fr)!important;
+    grid-template-rows:74px minmax(0,1fr)!important;
   }
   body:not(.phone-mode) .screen.active:not(:has(>.navbar))>.header,
   body:not(.phone-mode) .screen.active:not(:has(>.navbar))>.content{
-    grid-column:2!important;
+    grid-column:1!important;
+  }
+  body:not(.phone-mode) .screen.active:not(:has(>.navbar))>.header{
+    margin:13px 22px 0!important;
+  }
+  body:not(.phone-mode) .screen.active:not(:has(>.navbar))>.content{
+    padding:22px 22px 42px!important;
   }
   body:not(.phone-mode) #s-home .content{
     grid-template-columns:minmax(0,1fr) 360px!important;
