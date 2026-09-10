@@ -866,6 +866,14 @@ textarea.form-input{line-height:1.45}
 .att-desktop-layout{display:block}
 .att-desktop-main,.att-desktop-side{min-width:0}
 
+.menu-card,.home-category-card{
+  overflow:visible!important;
+}
+.menu-badge{
+  pointer-events:none;
+  isolation:isolate;
+}
+
 #side-menu-overlay{
   z-index:9000!important;
 }
@@ -2802,6 +2810,22 @@ body.phone-mode #app-wrap #s-home.screen.active{
   body:not(.phone-mode) #s-catatan-kehadiran .att-legend-item{
     min-height:56px!important;
     padding:10px!important;
+  }
+  body:not(.phone-mode) .menu-card,
+  body:not(.phone-mode) #home-menu .menu-card,
+  body:not(.phone-mode) .home-menu-grid .menu-card,
+  body:not(.phone-mode) .home-category-card{
+    overflow:visible!important;
+    position:relative!important;
+    z-index:0!important;
+  }
+  body:not(.phone-mode) .menu-card:hover,
+  body:not(.phone-mode) #home-menu .menu-card:hover{
+    z-index:4!important;
+  }
+  body:not(.phone-mode) .menu-badge{
+    z-index:30!important;
+    transform:translate(18%,-18%)!important;
   }
   body:not(.phone-mode) .desktop-dashboard-hero{
     grid-column:1 / -1!important;

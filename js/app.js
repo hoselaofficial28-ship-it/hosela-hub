@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbxDAHTGFbjG2RMjIPqUmdLbPO3TqKFfpPuEw9p5sdc4tEJXy6zsyyzhQ6pO65Pben4ywQ/exec';
-var APP_VERSION = '20260910u';
+var APP_VERSION = '20260910v';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -2327,7 +2327,7 @@ function _updateMenuBadge(menuLabel, count) {
  if (count > 0) {
  var badge = document.createElement('div');
  badge.className = 'menu-badge';
- badge.style.cssText = 'position:absolute;top:-4px;right:-4px;background:#dc2626;color:#fff;border-radius:50%;min-width:18px;height:18px;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 3px';
+ badge.style.cssText = 'position:absolute;top:-8px;right:-8px;z-index:30;background:#dc2626;color:#fff;border:2px solid #fff;border-radius:999px;min-width:22px;height:22px;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;padding:0 5px;box-shadow:0 8px 18px rgba(220,38,38,.28)';
  badge.textContent = count > 9 ? '9+' : count;
  card.style.position = 'relative';
  card.appendChild(badge);
