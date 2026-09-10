@@ -2472,6 +2472,13 @@ body.phone-mode #app-wrap #s-home.screen.active{
   body:not(.phone-mode) .screen.active{
     grid-template-columns:294px minmax(0,1fr)!important;
     grid-template-rows:74px minmax(0,1fr)!important;
+    position:fixed!important;
+    inset:0!important;
+    width:100%!important;
+    height:100vh!important;
+    min-height:100vh!important;
+    overflow:hidden!important;
+    z-index:1!important;
   }
   body:not(.phone-mode) .screen.active>.navbar{
     position:relative!important;

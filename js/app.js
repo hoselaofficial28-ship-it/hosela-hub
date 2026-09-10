@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbxDAHTGFbjG2RMjIPqUmdLbPO3TqKFfpPuEw9p5sdc4tEJXy6zsyyzhQ6pO65Pben4ywQ/exec';
-var APP_VERSION = '20260910s';
+var APP_VERSION = '20260910t';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -737,6 +737,11 @@ function goTo(id) {
  var el = document.getElementById(id);
  if (!el) return;
  el.classList.add('active');
+ try {
+  window.scrollTo(0, 0);
+  document.documentElement.scrollTop = 0;
+  document.body.scrollTop = 0;
+ } catch(e) {}
  var c = el.querySelector('.content');
  if (c) c.scrollTop = 0;
  if (prevId && prevId !== id) {
