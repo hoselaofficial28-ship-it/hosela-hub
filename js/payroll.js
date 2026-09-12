@@ -147,15 +147,17 @@ function renderSalaryUsers(rows, bulanKey) {
  return;
  }
  var total = rows.reduce(function(s, r){ return s + (parseInt(r.gajiBulanBerlaku || r.gajiBulanan || 0, 10) || 0); }, 0);
+ var totalKerajinan = rows.reduce(function(s, r){ return s + (parseInt(r.bonusKerajinan || 0, 10) || 0); }, 0);
  var html =
  '<div class="card" style="padding:12px;margin-bottom:10px">'+
  '<label class="form-label">Bulan Gaji Berlaku</label>'+
  '<select class="form-input" onchange="changeSalaryMonth(this.value)">'+buildSalaryMonthOptions(bulanKey)+'</select>'+
- '<div style="font-size:11px;color:var(--text-muted);line-height:1.5;margin-top:8px">Gaji yang disimpan akan dipakai untuk perhitungan '+salaryMonthLabel(bulanKey)+' dan bulan setelahnya sampai ada perubahan baru.</div>'+
+ '<div style="font-size:11px;color:var(--text-muted);line-height:1.5;margin-top:8px">Gaji dan uang kerajinan yang disimpan akan dipakai untuk perhitungan '+salaryMonthLabel(bulanKey)+' dan bulan setelahnya sampai ada perubahan baru.</div>'+
  '</div>' +
- '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">' +
+ '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px">' +
  '<div class="card" style="padding:10px;text-align:center"><div style="font-size:18px;font-weight:900;color:var(--blue)">'+rows.length+'</div><div style="font-size:11px;color:var(--text-muted)">Karyawan</div></div>' +
- '<div class="card" style="padding:10px;text-align:center"><div style="font-size:14px;font-weight:900;color:var(--green)">Rp '+total.toLocaleString('id-ID')+'</div><div style="font-size:11px;color:var(--text-muted)">Total '+salaryMonthLabel(bulanKey)+'</div></div>' +
+ '<div class="card" style="padding:10px;text-align:center"><div style="font-size:14px;font-weight:900;color:var(--green)">Rp '+total.toLocaleString('id-ID')+'</div><div style="font-size:11px;color:var(--text-muted)">Total Gaji</div></div>' +
+ '<div class="card" style="padding:10px;text-align:center"><div style="font-size:14px;font-weight:900;color:#d97706">Rp '+totalKerajinan.toLocaleString('id-ID')+'</div><div style="font-size:11px;color:var(--text-muted)">Total Kerajinan</div></div>' +
  '</div>' +
  '<button class="btn btn-sm btn-primary" style="width:100%;margin-bottom:10px" onclick="loadSalarySettings(true)">Refresh Data</button>';
  rows.forEach(function(r) {
@@ -163,17 +165,20 @@ function renderSalaryUsers(rows, bulanKey) {
  var safeId = id.replace(/[^a-zA-Z0-9_-]/g, '');
  var effectiveSalary = parseInt(r.gajiBulanBerlaku || r.gajiBulanan || 0, 10) || 0;
  var activeSalary = parseInt(r.gajiBulanan || 0, 10) || 0;
+ var kerajinan = parseInt(r.bonusKerajinan || 0, 10) || 0;
  _salaryUserMap[id] = r;
  html += '<div class="card salary-user-card" data-search="'+salaryEsc((r.nama+' '+r.bagian+' '+r.jabatan).toLowerCase())+'" style="padding:12px;margin-bottom:8px">' +
  '<div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;margin-bottom:10px">' +
  '<div><div style="font-size:13px;font-weight:900;color:var(--text-dark)">'+salaryEsc(r.nama)+'</div><div style="font-size:11px;color:var(--text-muted)">'+salaryEsc(r.jabatan || '-')+' &middot; '+salaryEsc(r.bagian || '-')+'</div></div>' +
  '<span class="badge '+(r.status === 'AKTIF' ? 'badge-green' : 'badge-gray')+'">'+salaryEsc(r.status || '-')+'</span>' +
  '</div>' +
- '<label class="form-label">Gaji untuk '+salaryMonthLabel(bulanKey)+'</label>' +
- '<input class="form-input" type="number" min="0" inputmode="numeric" id="salary-'+safeId+'" value="'+effectiveSalary+'" style="margin-bottom:8px">' +
- '<input class="form-input" type="text" id="salary-note-'+safeId+'" placeholder="Catatan perubahan gaji (opsional)" style="margin-bottom:8px">' +
+ '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">' +
+ '<div><label class="form-label">Gaji untuk '+salaryMonthLabel(bulanKey)+'</label><input class="form-input" type="number" min="0" inputmode="numeric" id="salary-'+safeId+'" value="'+effectiveSalary+'"></div>' +
+ '<div><label class="form-label">Uang Kerajinan</label><input class="form-input" type="number" min="0" inputmode="numeric" id="kerajinan-'+safeId+'" value="'+kerajinan+'"></div>' +
+ '</div>' +
+ '<input class="form-input" type="text" id="salary-note-'+safeId+'" placeholder="Catatan perubahan gaji/kerajinan (opsional)" style="margin-bottom:8px">' +
  '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">' +
- '<div style="font-size:11px;color:var(--text-muted)">Gaji aktif: <b>Rp '+activeSalary.toLocaleString('id-ID')+'</b><br>Untuk bulan ini: <b>Rp '+effectiveSalary.toLocaleString('id-ID')+'</b></div>' +
+ '<div style="font-size:11px;color:var(--text-muted)">Gaji aktif: <b>Rp '+activeSalary.toLocaleString('id-ID')+'</b><br>Gaji bulan ini: <b>Rp '+effectiveSalary.toLocaleString('id-ID')+'</b><br>Kerajinan bulan ini: <b>Rp '+kerajinan.toLocaleString('id-ID')+'</b></div>' +
  '<div style="display:flex;gap:6px">' +
  '<button class="btn btn-sm btn-danger" onclick="deleteSalaryUser(&quot;'+salaryEsc(id)+'&quot;, this)">Hapus</button>' +
  '<button class="btn btn-sm btn-gold" onclick="saveSalaryUser(&quot;'+salaryEsc(id)+'&quot;, this)">Simpan</button>' +
@@ -200,12 +205,14 @@ function saveSalaryUser(userId, btn) {
  var safeId = String(userId).replace(/[^a-zA-Z0-9_-]/g, '');
  var input = document.getElementById('salary-' + safeId);
  var noteInput = document.getElementById('salary-note-' + safeId);
+ var kerajinanInput = document.getElementById('kerajinan-' + safeId);
  var salary = parseInt(input ? input.value : 0, 10) || 0;
+ var kerajinan = parseInt(kerajinanInput ? kerajinanInput.value : 0, 10) || 0;
  var bulanKey = getSalarySelectedMonth();
  var note = noteInput ? noteInput.value.trim() : '';
  if (salary <= 0) { showToast('Gaji harus lebih dari 0'); return; }
  if (btn) { btn.disabled = true; btn.textContent = 'Menyimpan...'; }
- gasCall('updateUserSalary', [currentUser.id, userId, salary, bulanKey, note], function(res) {
+ gasCall('updateUserSalary', [currentUser.id, userId, salary, bulanKey, note, kerajinan], function(res) {
  if (!res || res.error || res.success === false) {
  showToast((res && (res.msg || res.error)) || 'Gagal simpan gaji');
  if (btn) { btn.disabled = false; btn.textContent = 'Simpan'; }
@@ -215,7 +222,7 @@ function saveSalaryUser(userId, btn) {
  _salaryUsersMonth = '';
  Object.keys(_payrollPreviewCache).forEach(function(k){ delete _payrollPreviewCache[k]; });
  Object.keys(_payrollDetailCache).forEach(function(k){ delete _payrollDetailCache[k]; });
- showToast('Gaji '+salaryMonthLabel(bulanKey)+' berhasil diperbarui');
+ showToast('Gaji dan kerajinan '+salaryMonthLabel(bulanKey)+' berhasil diperbarui');
  loadSalarySettings(true);
  }, function() {
  showToast('Gagal simpan gaji');
