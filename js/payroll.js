@@ -531,6 +531,8 @@ function publishPayrollUI(payrollRunId) {
 function loadSlipGaji() {
  var el = document.getElementById('slip-gaji-content');
  if (!el || !currentUser) return;
+ cacheClearAction('getPayrollEmployeeSlip');
+ cacheClearAction('getPayrollEmployeeSlipDetail');
  el.innerHTML = skelCards(2);
 
  gasCall('getPayrollEmployeeSlip', [currentUser.id], function(res) {

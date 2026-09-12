@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbxDAHTGFbjG2RMjIPqUmdLbPO3TqKFfpPuEw9p5sdc4tEJXy6zsyyzhQ6pO65Pben4ywQ/exec';
-var APP_VERSION = '20260910v';
+var APP_VERSION = '20260912a';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -363,10 +363,10 @@ var CACHEABLE = [
  'getHomeData','getJobdeskList','getStaffByBagian','getJobdeskByBagian','getJobdeskByJabatan',
  'getUserKPI','getKalenderLibur','getAllUsers','getPengumuman','getIde','getAbsensiRekap',
  'getRekapBulananSemua','getPayrollPreview','getPapanPeringkat','getKPILaporan',
- 'getNotifikasi','getIzinKaryawan','getIzinPendingCount','getSanksiManual','getPayrollEmployeeSlip',
+ 'getNotifikasi','getIzinKaryawan','getIzinPendingCount','getSanksiManual',
  'getAbsensiMatrix','getAbsensiMatrixUser','getAllAbsensiRekap','getKPITemplate','getIzinPending',
  'getAnomaliPending','getPengaturan','getAbsensiCameraToday','getPayrollDetail',
- 'getPayrollEmployeeSlipDetail','getIzinTelatReview'
+ 'getIzinTelatReview'
 ];
 
 var CACHE_TTL_BY_ACTION = {
@@ -397,9 +397,7 @@ var CACHE_TTL_BY_ACTION = {
  getSanksiManual: 2 * 60 * 1000,
  getIzinTelatReview: 60 * 1000,
  getPayrollPreview: 5 * 60 * 1000,
- getPayrollDetail: 5 * 60 * 1000,
- getPayrollEmployeeSlip: 5 * 60 * 1000,
- getPayrollEmployeeSlipDetail: 5 * 60 * 1000
+ getPayrollDetail: 5 * 60 * 1000
 };
 
 function cacheTtlForAction(action) {
