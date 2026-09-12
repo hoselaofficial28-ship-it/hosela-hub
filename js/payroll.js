@@ -533,6 +533,10 @@ function loadSlipGaji() {
  if (!el || !currentUser) return;
  cacheClearAction('getPayrollEmployeeSlip');
  cacheClearAction('getPayrollEmployeeSlipDetail');
+ if (isPayrollAdminViewer()) {
+ loadPublishedEmployeeSlips();
+ return;
+ }
  el.innerHTML = skelCards(2);
 
  gasCall('getPayrollEmployeeSlip', [currentUser.id], function(res) {
@@ -546,6 +550,69 @@ function loadSlipGaji() {
  });
 }
 
+function isPayrollAdminViewer() {
+ return currentUser && (currentUser.bagian === 'Owner' || currentUser.bagian === 'Finance');
+}
+
+function buildRecentPayrollMonths(count) {
+ var now = new Date();
+ var months = [];
+ for (var i = 1; i <= (count || 12); i++) {
+ var d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+ months.push(d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'));
+ }
+ return months;
+}
+
+function loadPublishedEmployeeSlips() {
+ var el = document.getElementById('slip-gaji-content');
+ if (!el) return;
+ var months = buildRecentPayrollMonths(12);
+ var pending = months.length;
+ var rows = [];
+ el.innerHTML = skelCards(3);
+ cacheClearAction('getPayrollPreview');
+ cacheClearAction('getPayrollDetail');
+
+ function finishOne() {
+ pending -= 1;
+ if (pending > 0) return;
+ rows.sort(function(a, b) {
+ if ((a.bulan || '') !== (b.bulan || '')) return String(b.bulan || '').localeCompare(String(a.bulan || ''));
+ return String(a.nama || '').localeCompare(String(b.nama || ''));
+ });
+ renderAdminSlipList(rows);
+ }
+
+ months.forEach(function(monthKey) {
+ gasCall('getPayrollPreview', [monthKey], function(res) {
+ var status = String((res && res.status) || '').toUpperCase();
+ var data = (res && (res.data || res.items)) || [];
+ if (status === 'PUBLISHED' && data.length) {
+ data.forEach(function(d) {
+ rows.push({
+ id: d.id || '',
+ payrollRunId: d.payrollRunId || res.id || '',
+ userId: d.userId || '',
+ nama: d.nama || '-',
+ bagian: d.bagian || '-',
+ jabatan: d.jabatan || '-',
+ bulan: res.bulan || monthKey,
+ dipublishPada: res.dipublishPada || res.updatedAt || '-',
+ totalGaji: d.totalGaji || d.total || 0,
+ totalReward: d.totalReward || 0,
+ bonusKerajinan: d.bonusKerajinan || 0,
+ totalDenda: d.totalDenda || 0,
+ gajiPokok: d.gajiPokok || 0
+ });
+ });
+ }
+ finishOne();
+ }, function() {
+ finishOne();
+ });
+ });
+}
 function renderSlipSetupState() {
  var el = document.getElementById('slip-gaji-content');
  if (!el) return;
@@ -568,9 +635,9 @@ function renderSlipList(items) {
  el.innerHTML = items.map(function(s) {
  var targetId = 'slip-detail-' + String(s.payrollRunId || s.id || '').replace(/[^a-zA-Z0-9_-]/g, '');
  return '<div class="card" style="padding:12px;margin-bottom:8px">' +
- '<div style="display:flex;justify-content:space-between;align-items:center">' +
- '<div><div style="font-size:13px;font-weight:800;color:var(--text-dark)">'+(s.bulan || s.periode || '-')+'</div><div style="font-size:11px;color:var(--text-muted)">Dipublish '+(s.dipublishPada || '-')+'</div></div>' +
- '<div style="font-size:13px;font-weight:800;color:var(--green)">Rp '+(parseInt(s.totalGaji || s.total || 0, 10) || 0).toLocaleString('id-ID')+'</div>' +
+ '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px">' +
+ '<div><div style="font-size:13px;font-weight:800;color:var(--text-dark)">'+salaryEsc(salaryMonthLabel(s.bulan || s.periode || '-'))+'</div><div style="font-size:11px;color:var(--text-muted)">Dipublish '+salaryEsc(s.dipublishPada || '-')+'</div></div>' +
+ '<div style="font-size:13px;font-weight:800;color:var(--green);white-space:nowrap">Rp '+(parseInt(s.totalGaji || s.total || 0, 10) || 0).toLocaleString('id-ID')+'</div>' +
  '</div>' +
  '<button class="btn btn-sm btn-primary" style="margin-top:10px;width:100%" onclick="toggleSlipDetail(&quot;'+(s.payrollRunId || '')+'&quot;,&quot;'+targetId+'&quot;)">Lihat Slip</button>' +
  '<div id="'+targetId+'" style="display:none"></div>' +
@@ -578,6 +645,33 @@ function renderSlipList(items) {
  }).join('');
 }
 
+function renderAdminSlipList(items) {
+ var el = document.getElementById('slip-gaji-content');
+ if (!el) return;
+ if (!items.length) {
+ el.innerHTML = '<div class="empty-state"><div class="empty-icon"></div>Belum ada slip karyawan yang dipublish</div>';
+ return;
+ }
+ var total = items.reduce(function(sum, s) { return sum + (parseInt(s.totalGaji || s.total || 0, 10) || 0); }, 0);
+ var html = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">' +
+ '<div class="card" style="padding:10px;text-align:center"><div style="font-size:18px;font-weight:800;color:var(--blue)">'+items.length+'</div><div style="font-size:11px;color:var(--text-muted)">Slip Terbit</div></div>' +
+ '<div class="card" style="padding:10px;text-align:center"><div style="font-size:14px;font-weight:800;color:var(--green)">Rp '+total.toLocaleString('id-ID')+'</div><div style="font-size:11px;color:var(--text-muted)">Total Slip</div></div>' +
+ '</div>';
+ items.forEach(function(s) {
+ var safeId = String(s.id || s.payrollRunId || s.userId || '').replace(/[^a-zA-Z0-9_-]/g, '');
+ var targetId = 'admin-slip-detail-' + safeId;
+ html += '<div class="card" style="padding:12px;margin-bottom:8px">' +
+ '<div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start">' +
+ '<div><div style="font-size:13px;font-weight:800;color:var(--text-dark)">'+salaryEsc(s.nama || '-')+'</div><div style="font-size:11px;color:var(--text-muted)">'+salaryEsc(s.jabatan || '-')+' · '+salaryEsc(s.bagian || '-')+' · '+salaryEsc(salaryMonthLabel(s.bulan || '-'))+'</div></div>' +
+ '<div style="font-size:13px;font-weight:800;color:var(--green);white-space:nowrap">Rp '+(parseInt(s.totalGaji || s.total || 0, 10) || 0).toLocaleString('id-ID')+'</div>' +
+ '</div>' +
+ renderPayrollMiniBreakdown(s) +
+ '<button class="btn btn-sm btn-primary" style="margin-top:10px;width:100%" onclick="toggleAdminSlipDetail(&quot;'+salaryEsc(s.id || '')+'&quot;,&quot;'+targetId+'&quot;)">Lihat Slip</button>' +
+ '<div id="'+targetId+'" style="display:none"></div>' +
+ '</div>';
+ });
+ el.innerHTML = html;
+}
 function toggleSlipDetail(payrollRunId, targetId) {
  var target = document.getElementById(targetId);
  if (!target || !currentUser) return;
@@ -597,6 +691,31 @@ function toggleSlipDetail(payrollRunId, targetId) {
  return;
  }
  _slipDetailCache[payrollRunId] = res;
+ target.innerHTML = renderPayrollDetailBox(res);
+ }, function() {
+ target.innerHTML = '<div class="empty-state" style="padding:12px">Gagal memuat detail slip</div>';
+ });
+}
+
+function toggleAdminSlipDetail(payrollDetailId, targetId) {
+ var target = document.getElementById(targetId);
+ if (!target || !payrollDetailId) return;
+ if (target.style.display === 'block') {
+ target.style.display = 'none';
+ return;
+ }
+ target.style.display = 'block';
+ if (_payrollDetailCache[payrollDetailId]) {
+ target.innerHTML = renderPayrollDetailBox(_payrollDetailCache[payrollDetailId]);
+ return;
+ }
+ target.innerHTML = skelCards(1);
+ gasCall('getPayrollDetail', [payrollDetailId], function(res) {
+ if (!res || res.success === false) {
+ target.innerHTML = '<div class="empty-state" style="padding:12px">Detail slip belum tersedia</div>';
+ return;
+ }
+ _payrollDetailCache[payrollDetailId] = res;
  target.innerHTML = renderPayrollDetailBox(res);
  }, function() {
  target.innerHTML = '<div class="empty-state" style="padding:12px">Gagal memuat detail slip</div>';
