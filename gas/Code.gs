@@ -250,14 +250,53 @@ function updateUserSalary(actorId, userId, salary, bulanKey, note, bonusKerajina
   for (let i = 1; i < data.length; i++) {
     if (String(data[i][1]) === String(userId) && String(data[i][2]) === bulanKey) {
       sheet.getRange(i + 1, 4, 1, 5).setValues([[gaji, kerajinan, note || '', actor ? actor.nama : actorId, now]]);
+      const payrollUpdate = updateOpenPayrollDetailSalary_(userId, bulanKey, gaji, kerajinan);
       clearSalaryPayrollCache_(userId, bulanKey);
-      return { success: true, id: data[i][0], userId, bulan: bulanKey, gajiBulanan: gaji, bonusKerajinan: kerajinan };
+      return { success: true, id: data[i][0], userId, bulan: bulanKey, gajiBulanan: gaji, bonusKerajinan: kerajinan, payrollUpdate: payrollUpdate };
     }
   }
   const id = 'SAL-' + Utilities.getUuid().substring(0, 8);
   sheet.appendRow([id, userId, bulanKey, gaji, kerajinan, note || '', actor ? actor.nama : actorId, now]);
+  const payrollUpdate = updateOpenPayrollDetailSalary_(userId, bulanKey, gaji, kerajinan);
   clearSalaryPayrollCache_(userId, bulanKey);
-  return { success: true, id, userId, bulan: bulanKey, gajiBulanan: gaji, bonusKerajinan: kerajinan };
+  return { success: true, id, userId, bulan: bulanKey, gajiBulanan: gaji, bonusKerajinan: kerajinan, payrollUpdate: payrollUpdate };
+}
+
+
+function updateOpenPayrollDetailSalary_(userId, bulanKey, gaji, bonusKerajinan) {
+  const run = findPayrollRunByBulan(bulanKey);
+  if (!run) return { updated: false, reason: 'NO_PAYROLL_RUN' };
+  if (String(run.status || '').toUpperCase() === 'PUBLISHED') return { updated: false, reason: 'PUBLISHED_LOCKED' };
+  const sheets = ensurePayrollSheets();
+  const data = sheets.detail.getDataRange().getValues();
+  for (let i = 1; i < data.length; i++) {
+    const r = data[i];
+    if (String(r[1]) !== String(run.id) || String(r[2]) !== String(userId)) continue;
+    const totalReward = parseInt(r[14] || 0, 10) || 0;
+    const totalDenda = parseInt(r[15] || 0, 10) || 0;
+    const plus = parseInt(r[17] || 0, 10) || 0;
+    const minus = parseInt(r[18] || 0, 10) || 0;
+    const totalGaji = Math.max(0, gaji + totalReward + bonusKerajinan + plus - totalDenda - minus);
+    sheets.detail.getRange(i + 1, 7).setValue(gaji);
+    sheets.detail.getRange(i + 1, 17).setValue(bonusKerajinan);
+    sheets.detail.getRange(i + 1, 21).setValue(totalGaji);
+    upsertPayrollKerajinanItem_(r[0], bulanKey, bonusKerajinan);
+    return { updated: true, payrollRunId: run.id, payrollDetailId: r[0], status: run.status };
+  }
+  return { updated: false, reason: 'DETAIL_NOT_FOUND' };
+}
+
+function upsertPayrollKerajinanItem_(payrollDetailId, bulanKey, bonusKerajinan) {
+  const sheets = ensurePayrollSheets();
+  const data = sheets.item.getDataRange().getValues();
+  for (let i = data.length - 1; i >= 1; i--) {
+    if (String(data[i][1]) === String(payrollDetailId) && String(data[i][2]) === 'BONUS_KERAJINAN') {
+      sheets.item.deleteRow(i + 1);
+    }
+  }
+  if (bonusKerajinan > 0) {
+    sheets.item.appendRow(['PYI-' + Utilities.getUuid().substring(0, 8), payrollDetailId, 'BONUS_KERAJINAN', '', 'Bonus kerajinan bulan ' + bulanKey, bonusKerajinan]);
+  }
 }
 
 function clearSalaryPayrollCache_(userId, bulanKey) {
