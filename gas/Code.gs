@@ -72,6 +72,7 @@ function handleAPI(e) {
       case 'getAllUsers':           result = getAllUsers(); break;
       case 'getSalaryUsers':        result = getSalaryUsers(args[0], args[1]); break;
       case 'updateUserSalary':      result = updateUserSalary(args[0], args[1], args[2], args[3], args[4], args[5]); break;
+      case 'updateSalaryUsersBatch': result = updateSalaryUsersBatch(args[0], args[1], args[2]); break;
       case 'deactivateSalaryUser':  result = deactivateSalaryUser(args[0], args[1]); break;
       case 'nonaktifkanUser':      result = nonaktifkanUser(args[0]); break;
       case 'getPeraturan':         result = getPeraturan(); break;
@@ -227,6 +228,39 @@ function salaryHistoryColumns_(sheet) {
   };
 }
 
+function salarySettingPropertyKey_(userId, bulanKey) {
+  return 'SALARY_SETTING|' + String(userId) + '|' + String(bulanKey);
+}
+
+function saveSalarySettingProperty_(userId, bulanKey, gaji, bonusKerajinan, catatan, actor) {
+  const payload = {
+    userId: String(userId),
+    bulan: String(bulanKey),
+    gajiBulanan: Math.max(0, parseInt(gaji || 0, 10) || 0),
+    bonusKerajinan: Math.max(0, parseInt(bonusKerajinan || 0, 10) || 0),
+    catatan: catatan || '',
+    dibuatOleh: actor || '',
+    dibuatPada: new Date().toISOString()
+  };
+  PropertiesService.getScriptProperties().setProperty(salarySettingPropertyKey_(userId, bulanKey), JSON.stringify(payload));
+  return payload;
+}
+
+function getSalarySettingProperty_(userId, bulanKey) {
+  const props = PropertiesService.getScriptProperties().getProperties();
+  const prefix = 'SALARY_SETTING|' + String(userId) + '|';
+  const targetMonth = String(bulanKey || Utilities.formatDate(new Date(), 'Asia/Jakarta', 'yyyy-MM'));
+  let best = null;
+  Object.keys(props).forEach(function(key) {
+    if (key.indexOf(prefix) !== 0) return;
+    const rowMonth = key.substring(prefix.length);
+    if (!rowMonth || rowMonth > targetMonth) return;
+    if (!best || rowMonth >= String(best.bulan || '')) {
+      try { best = JSON.parse(props[key]); } catch(e) {}
+    }
+  });
+  return best;
+}
 function getEffectiveSalarySetting_(userId, bulanKey, fallbackSalary, fallbackKerajinan) {
   const sheet = ensureSalarySettingSheet_();
   const cols = salaryHistoryColumns_(sheet);
@@ -242,6 +276,16 @@ function getEffectiveSalarySetting_(userId, bulanKey, fallbackSalary, fallbackKe
       bestIndex = i;
     }
   }
+  const propBest = getSalarySettingProperty_(userId, targetMonth);
+  const sheetMonth = best ? String(best[cols.bulan] || '') : '';
+  if (propBest && (!sheetMonth || String(propBest.bulan || '') >= sheetMonth)) {
+    return {
+      gajiBulanan: parseInt(propBest.gajiBulanan || fallbackSalary || 0, 10) || 0,
+      bonusKerajinan: Math.max(0, parseInt(propBest.bonusKerajinan == null ? 150000 : propBest.bonusKerajinan, 10) || 0),
+      bulanSetting: propBest.bulan || '',
+      catatan: propBest.catatan || ''
+    };
+  }
   const salary = best ? (parseInt(best[cols.gajiBulanan] || 0, 10) || 0) : (parseInt(fallbackSalary || 0, 10) || 0);
   const kerajinanFallback = fallbackKerajinan == null ? 150000 : (parseInt(fallbackKerajinan || 0, 10) || 0);
   const rawKerajinan = best ? best[cols.bonusKerajinan] : '';
@@ -253,7 +297,6 @@ function getEffectiveSalarySetting_(userId, bulanKey, fallbackSalary, fallbackKe
     catatan: best ? (best[cols.catatan] || '') : ''
   };
 }
-
 function getSalaryUsers(actorId, bulanKey) {
   if (!isPayrollAdmin_(actorId)) return { success: false, msg: 'Akses ditolak' };
   bulanKey = String(bulanKey || Utilities.formatDate(new Date(), 'Asia/Jakarta', 'yyyy-MM'));
@@ -313,6 +356,20 @@ function updateUserSalary(actorId, userId, salary, bulanKey, note, bonusKerajina
   return { success: true, id, userId, bulan: bulanKey, gajiBulanan: gaji, bonusKerajinan: kerajinan, payrollUpdate: payrollUpdate };
 }
 
+function updateSalaryUsersBatch(actorId, bulanKey, items) {
+  if (!isPayrollAdmin_(actorId)) return { success: false, msg: 'Akses ditolak' };
+  bulanKey = String(bulanKey || Utilities.formatDate(new Date(), 'Asia/Jakarta', 'yyyy-MM'));
+  items = Array.isArray(items) ? items : [];
+  if (!items.length) return { success: false, msg: 'Tidak ada data untuk disimpan' };
+  const results = [];
+  for (let i = 0; i < items.length; i++) {
+    const it = items[i] || {};
+    const res = updateUserSalary(actorId, it.userId, it.salary, bulanKey, it.note || '', it.bonusKerajinan);
+    results.push(res);
+    if (!res || res.success === false) return { success: false, msg: (res && res.msg) || 'Gagal simpan salah satu karyawan', results };
+  }
+  return { success: true, bulan: bulanKey, saved: results.length, results };
+}
 function updateOpenPayrollDetailSalary_(userId, bulanKey, gaji, bonusKerajinan) {
   const run = findPayrollRunByBulan(bulanKey);
   if (!run) return { updated: false, reason: 'NO_PAYROLL_RUN' };

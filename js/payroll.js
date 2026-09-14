@@ -165,7 +165,10 @@ function renderSalaryUsers(rows, bulanKey) {
  '<div class="card" style="padding:10px;text-align:center"><div style="font-size:14px;font-weight:900;color:var(--green)">Rp '+total.toLocaleString('id-ID')+'</div><div style="font-size:11px;color:var(--text-muted)">Total Gaji</div></div>' +
  '<div class="card" style="padding:10px;text-align:center"><div style="font-size:14px;font-weight:900;color:#d97706">Rp '+totalKerajinan.toLocaleString('id-ID')+'</div><div style="font-size:11px;color:var(--text-muted)">Total Kerajinan</div></div>' +
  '</div>' +
- '<button class="btn btn-sm btn-primary" style="width:100%;margin-bottom:10px" onclick="loadSalarySettings(true)">Refresh Data</button>';
+ '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">' +
+ '<button class="btn btn-sm btn-primary" style="width:100%" onclick="loadSalarySettings(true)">Refresh Data</button>' +
+ '<button class="btn btn-sm btn-gold" id="salary-save-all" style="width:100%" onclick="saveAllSalaryUsers(this)">Simpan Semua Perubahan</button>' +
+ '</div>';
  rows.forEach(function(r) {
  var id = String(r.id || '');
  var safeId = id.replace(/[^a-zA-Z0-9_-]/g, '');
@@ -203,6 +206,61 @@ function filterSalaryUsers() {
  });
 }
 
+function collectSalaryUserPayloads() {
+ var bulanKey = getSalarySelectedMonth();
+ return _salaryUsersCache.map(function(r) {
+ var id = String(r.id || '');
+ var safeId = id.replace(/[^a-zA-Z0-9_-]/g, '');
+ var salaryInput = document.getElementById('salary-' + safeId);
+ var kerajinanInput = document.getElementById('kerajinan-' + safeId);
+ var noteInput = document.getElementById('salary-note-' + safeId);
+ return {
+ userId: id,
+ salary: parseInt(salaryInput ? salaryInput.value : 0, 10) || 0,
+ bonusKerajinan: parseInt(kerajinanInput ? kerajinanInput.value : 0, 10) || 0,
+ note: noteInput ? noteInput.value.trim() : '',
+ bulan: bulanKey
+ };
+ }).filter(function(item) { return item.userId; });
+}
+
+function clearSalaryLocalCaches() {
+ _salaryUsersCache = [];
+ _salaryUsersMonth = '';
+ Object.keys(_payrollPreviewCache).forEach(function(k){ delete _payrollPreviewCache[k]; });
+ Object.keys(_payrollDetailCache).forEach(function(k){ delete _payrollDetailCache[k]; });
+ cacheClearAction('getSalaryUsers');
+ cacheClearAction('getPayrollPreview');
+ cacheClearAction('getRekapBulananSemua');
+ cacheClearAction('getAllAbsensiRekap');
+}
+function saveAllSalaryUsers(btn) {
+ if (!currentUser || (currentUser.bagian !== 'Finance' && currentUser.bagian !== 'Owner')) {
+ showToast('Akses ditolak');
+ return;
+ }
+ var bulanKey = getSalarySelectedMonth();
+ var items = collectSalaryUserPayloads();
+ if (!items.length) { showToast('Tidak ada data untuk disimpan'); return; }
+ for (var i = 0; i < items.length; i++) {
+ if (items[i].salary <= 0) { showToast('Gaji harus lebih dari 0 untuk semua karyawan'); return; }
+ }
+ if (btn) { btn.disabled = true; btn.textContent = 'Menyimpan...'; }
+ gasCall('updateSalaryUsersBatch', [currentUser.id, bulanKey, items], function(res) {
+ if (!res || res.error || res.success === false) {
+ showToast((res && (res.msg || res.error)) || 'Gagal simpan semua perubahan');
+ if (btn) { btn.disabled = false; btn.textContent = 'Simpan Semua Perubahan'; }
+ return;
+ }
+ clearSalaryLocalCaches();
+ showToast('Semua gaji dan kerajinan '+salaryMonthLabel(bulanKey)+' berhasil diperbarui');
+ loadSalarySettings(true);
+ }, function() {
+ showToast('Gagal simpan semua perubahan');
+ if (btn) { btn.disabled = false; btn.textContent = 'Simpan Semua Perubahan'; }
+ });
+}
+
 function saveSalaryUser(userId, btn) {
  if (!currentUser || (currentUser.bagian !== 'Finance' && currentUser.bagian !== 'Owner')) {
  showToast('Akses ditolak');
@@ -229,10 +287,7 @@ function saveSalaryUser(userId, btn) {
  if (btn) { btn.disabled = false; btn.textContent = 'Simpan'; }
  return;
  }
- _salaryUsersCache = [];
- _salaryUsersMonth = '';
- Object.keys(_payrollPreviewCache).forEach(function(k){ delete _payrollPreviewCache[k]; });
- Object.keys(_payrollDetailCache).forEach(function(k){ delete _payrollDetailCache[k]; });
+ clearSalaryLocalCaches();
  showToast('Gaji dan kerajinan '+salaryMonthLabel(bulanKey)+' berhasil diperbarui');
  loadSalarySettings(true);
  }, function() {

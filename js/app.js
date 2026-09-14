@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbw6q_5ZaIGrekeBwZ5TKh6X1GpWkFHsa5i6whdwacQkTEa-vvNezHlxFMEQFKZkmm5ffQ/exec';
-var APP_VERSION = '20260914c';
+var APP_VERSION = '20260914d';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -411,6 +411,7 @@ function invalidateReadCacheAfterMutation(action) {
   addLibur: ['getKalenderLibur','getAbsensiRekap','getRekapBulananSemua','getPayrollPreview'],
   hapusLibur: ['getKalenderLibur','getAbsensiRekap','getRekapBulananSemua','getPayrollPreview'],
   nonaktifkanUser: ['getAllUsers','getStaffByBagian','getRekapBulananSemua'],
+  updateSalaryUsersBatch: ['getSalaryUsers','getAllUsers','getAbsensiRekap','getAllAbsensiRekap','getRekapBulananSemua','getPayrollPreview','getPayrollDetail','getPayrollEmployeeSlip','getPayrollEmployeeSlipDetail'],
   updateUserSalary: ['getSalaryUsers','getAllUsers','getAbsensiRekap','getAllAbsensiRekap','getRekapBulananSemua','getPayrollPreview','getPayrollDetail','getPayrollEmployeeSlip','getPayrollEmployeeSlipDetail'],
   deactivateSalaryUser: ['getSalaryUsers','getAllUsers','getStaffByBagian','getRekapBulananSemua','getPayrollPreview','getHomeData'],
   createPayrollDraft: ['getPayrollPreview','getPayrollDetail'],
