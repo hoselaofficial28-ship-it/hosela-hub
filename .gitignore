@@ -1,0 +1,6 @@
+# Sumber backend Apps Script (mengandung logika internal & kata sandi default).
+# JANGAN di-push ke repo publik. Disimpan hanya di komputer / editor Apps Script.
+gas/
+gas-backup/
+gas-paste/
+gas-split/
