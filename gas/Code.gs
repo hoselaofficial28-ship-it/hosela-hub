@@ -182,35 +182,75 @@ function isPayrollAdmin_(userId) {
 
 function ensureSalarySettingSheet_() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  let sheet = ss.getSheetByName('SALARY_SETTING');
-  const header = ['id','userId','bulan','gajiBulanan','bonusKerajinan','catatan','updatedBy','updatedAt'];
-  if (!sheet) sheet = ss.insertSheet('SALARY_SETTING');
+  let sheet = ss.getSheetByName('GAJI_HISTORY') || ss.getSheetByName('SALARY_SETTING');
+  const header = ['id','userId','nama','bulan','gajiBulanan','catatan','dibuatOleh','dibuatPada','bonusKerajinan'];
+  if (!sheet) sheet = ss.insertSheet('GAJI_HISTORY');
   if (sheet.getLastRow() === 0) {
     sheet.getRange(1, 1, 1, header.length).setValues([header]);
     sheet.setFrozenRows(1);
+  } else {
+    ensureSalaryHistoryColumn_(sheet, 'bonusKerajinan');
   }
   return sheet;
 }
 
+function normalizeHeader_(value) {
+  return String(value || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
+function ensureSalaryHistoryColumn_(sheet, headerName) {
+  const lastCol = Math.max(1, sheet.getLastColumn());
+  const headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+  const target = normalizeHeader_(headerName);
+  for (let i = 0; i < headers.length; i++) {
+    if (normalizeHeader_(headers[i]) === target) return i + 1;
+  }
+  sheet.getRange(1, lastCol + 1).setValue(headerName);
+  return lastCol + 1;
+}
+
+function salaryHistoryColumns_(sheet) {
+  ensureSalaryHistoryColumn_(sheet, 'bonusKerajinan');
+  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  const map = {};
+  headers.forEach(function(h, idx) { map[normalizeHeader_(h)] = idx; });
+  return {
+    id: map.id != null ? map.id : 0,
+    userId: map.userid != null ? map.userid : (map.iduser != null ? map.iduser : 1),
+    nama: map.nama != null ? map.nama : 2,
+    bulan: map.bulan != null ? map.bulan : 3,
+    gajiBulanan: map.gajibulanan != null ? map.gajibulanan : 4,
+    catatan: map.catatan != null ? map.catatan : 5,
+    dibuatOleh: map.dibuatoleh != null ? map.dibuatoleh : (map.updatedby != null ? map.updatedby : 6),
+    dibuatPada: map.dibuatpada != null ? map.dibuatpada : (map.updatedat != null ? map.updatedat : 7),
+    bonusKerajinan: map.bonuskerajinan != null ? map.bonuskerajinan : ensureSalaryHistoryColumn_(sheet, 'bonusKerajinan') - 1
+  };
+}
+
 function getEffectiveSalarySetting_(userId, bulanKey, fallbackSalary, fallbackKerajinan) {
   const sheet = ensureSalarySettingSheet_();
+  const cols = salaryHistoryColumns_(sheet);
   const data = sheet.getDataRange().getValues();
   const targetMonth = String(bulanKey || Utilities.formatDate(new Date(), 'Asia/Jakarta', 'yyyy-MM'));
-  let best = null;
+  let best = null, bestIndex = -1;
   for (let i = 1; i < data.length; i++) {
-    if (String(data[i][1]) !== String(userId)) continue;
-    const rowMonth = String(data[i][2] || '');
+    if (String(data[i][cols.userId]) !== String(userId)) continue;
+    const rowMonth = String(data[i][cols.bulan] || '');
     if (!rowMonth || rowMonth > targetMonth) continue;
-    if (!best || rowMonth > String(best[2] || '')) best = data[i];
+    if (!best || rowMonth > String(best[cols.bulan] || '') || (rowMonth === String(best[cols.bulan] || '') && i > bestIndex)) {
+      best = data[i];
+      bestIndex = i;
+    }
   }
-  const salary = best ? (parseInt(best[3] || 0, 10) || 0) : (parseInt(fallbackSalary || 0, 10) || 0);
+  const salary = best ? (parseInt(best[cols.gajiBulanan] || 0, 10) || 0) : (parseInt(fallbackSalary || 0, 10) || 0);
   const kerajinanFallback = fallbackKerajinan == null ? 150000 : (parseInt(fallbackKerajinan || 0, 10) || 0);
-  const kerajinan = best ? (best[4] === '' || best[4] == null ? kerajinanFallback : Math.max(0, parseInt(best[4] || 0, 10) || 0)) : kerajinanFallback;
+  const rawKerajinan = best ? best[cols.bonusKerajinan] : '';
+  const kerajinan = best ? (rawKerajinan === '' || rawKerajinan == null ? kerajinanFallback : Math.max(0, parseInt(rawKerajinan || 0, 10) || 0)) : kerajinanFallback;
   return {
     gajiBulanan: salary,
     bonusKerajinan: kerajinan,
-    bulanSetting: best ? best[2] : '',
-    catatan: best ? (best[5] || '') : ''
+    bulanSetting: best ? best[cols.bulan] : '',
+    catatan: best ? (best[cols.catatan] || '') : ''
   };
 }
 
@@ -227,6 +267,7 @@ function getSalaryUsers(actorId, bulanKey) {
       gajiBulanan: data[i][12] || 0,
       gajiBulanBerlaku: setting.gajiBulanan,
       bonusKerajinan: setting.bonusKerajinan,
+      bulanBerlaku: setting.bulanSetting || bulanKey,
       bulanSetting: setting.bulanSetting,
       catatanSetting: setting.catatan
     });
@@ -243,25 +284,34 @@ function updateUserSalary(actorId, userId, salary, bulanKey, note, bonusKerajina
   if (!userId) return { success: false, msg: 'User tidak valid' };
   if (gaji <= 0) return { success: false, msg: 'Gaji harus lebih dari 0' };
 
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const usersData = ss.getSheetByName('USERS').getDataRange().getValues();
+  let targetName = String(userId);
+  for (let i = 1; i < usersData.length; i++) {
+    if (String(usersData[i][0]) === String(userId)) { targetName = usersData[i][1] || userId; break; }
+  }
+
   const sheet = ensureSalarySettingSheet_();
-  const data = sheet.getDataRange().getValues();
+  const cols = salaryHistoryColumns_(sheet);
   const actor = getUserRole_(actorId);
   const now = new Date();
-  for (let i = 1; i < data.length; i++) {
-    if (String(data[i][1]) === String(userId) && String(data[i][2]) === bulanKey) {
-      sheet.getRange(i + 1, 4, 1, 5).setValues([[gaji, kerajinan, note || '', actor ? actor.nama : actorId, now]]);
-      const payrollUpdate = updateOpenPayrollDetailSalary_(userId, bulanKey, gaji, kerajinan);
-      clearSalaryPayrollCache_(userId, bulanKey);
-      return { success: true, id: data[i][0], userId, bulan: bulanKey, gajiBulanan: gaji, bonusKerajinan: kerajinan, payrollUpdate: payrollUpdate };
-    }
-  }
   const id = 'SAL-' + Utilities.getUuid().substring(0, 8);
-  sheet.appendRow([id, userId, bulanKey, gaji, kerajinan, note || '', actor ? actor.nama : actorId, now]);
+  const row = new Array(sheet.getLastColumn()).fill('');
+  row[cols.id] = id;
+  row[cols.userId] = userId;
+  row[cols.nama] = targetName;
+  row[cols.bulan] = bulanKey;
+  row[cols.gajiBulanan] = gaji;
+  row[cols.catatan] = note || '';
+  row[cols.dibuatOleh] = actor ? actor.nama : actorId;
+  row[cols.dibuatPada] = now;
+  row[cols.bonusKerajinan] = kerajinan;
+  sheet.appendRow(row);
+
   const payrollUpdate = updateOpenPayrollDetailSalary_(userId, bulanKey, gaji, kerajinan);
   clearSalaryPayrollCache_(userId, bulanKey);
   return { success: true, id, userId, bulan: bulanKey, gajiBulanan: gaji, bonusKerajinan: kerajinan, payrollUpdate: payrollUpdate };
 }
-
 
 function updateOpenPayrollDetailSalary_(userId, bulanKey, gaji, bonusKerajinan) {
   const run = findPayrollRunByBulan(bulanKey);

@@ -224,6 +224,11 @@ function saveSalaryUser(userId, btn) {
  if (btn) { btn.disabled = false; btn.textContent = 'Simpan'; }
  return;
  }
+ if (res.bonusKerajinan == null) {
+ showToast('Backend belum menyimpan uang kerajinan. Deploy Apps Script terbaru dulu.');
+ if (btn) { btn.disabled = false; btn.textContent = 'Simpan'; }
+ return;
+ }
  _salaryUsersCache = [];
  _salaryUsersMonth = '';
  Object.keys(_payrollPreviewCache).forEach(function(k){ delete _payrollPreviewCache[k]; });
