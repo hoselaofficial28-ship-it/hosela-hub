@@ -132,6 +132,12 @@ function loadSalarySettings(force) {
  });
 }
 
+function getKerajinanInputValue(r) {
+ if (r && Object.prototype.hasOwnProperty.call(r, 'bonusKerajinan') && r.bonusKerajinan !== '' && r.bonusKerajinan != null) {
+ return Math.max(0, parseInt(r.bonusKerajinan || 0, 10) || 0);
+ }
+ return 150000;
+}
 function renderSalaryUsers(rows, bulanKey) {
  var el = document.getElementById('salary-settings-content');
  if (!el) return;
@@ -147,7 +153,7 @@ function renderSalaryUsers(rows, bulanKey) {
  return;
  }
  var total = rows.reduce(function(s, r){ return s + (parseInt(r.gajiBulanBerlaku || r.gajiBulanan || 0, 10) || 0); }, 0);
- var totalKerajinan = rows.reduce(function(s, r){ return s + (parseInt(r.bonusKerajinan || 0, 10) || 0); }, 0);
+ var totalKerajinan = rows.reduce(function(s, r){ return s + getKerajinanInputValue(r); }, 0);
  var html =
  '<div class="card" style="padding:12px;margin-bottom:10px">'+
  '<label class="form-label">Bulan Gaji Berlaku</label>'+
@@ -165,7 +171,7 @@ function renderSalaryUsers(rows, bulanKey) {
  var safeId = id.replace(/[^a-zA-Z0-9_-]/g, '');
  var effectiveSalary = parseInt(r.gajiBulanBerlaku || r.gajiBulanan || 0, 10) || 0;
  var activeSalary = parseInt(r.gajiBulanan || 0, 10) || 0;
- var kerajinan = parseInt(r.bonusKerajinan || 0, 10) || 0;
+ var kerajinan = getKerajinanInputValue(r);
  _salaryUserMap[id] = r;
  html += '<div class="card salary-user-card" data-search="'+salaryEsc((r.nama+' '+r.bagian+' '+r.jabatan).toLowerCase())+'" style="padding:12px;margin-bottom:8px">' +
  '<div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;margin-bottom:10px">' +

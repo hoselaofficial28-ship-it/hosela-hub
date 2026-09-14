@@ -205,7 +205,7 @@ function getEffectiveSalarySetting_(userId, bulanKey, fallbackSalary, fallbackKe
   }
   const salary = best ? (parseInt(best[3] || 0, 10) || 0) : (parseInt(fallbackSalary || 0, 10) || 0);
   const kerajinanFallback = fallbackKerajinan == null ? 150000 : (parseInt(fallbackKerajinan || 0, 10) || 0);
-  const kerajinan = best ? Math.max(0, parseInt(best[4] || 0, 10) || 0) : kerajinanFallback;
+  const kerajinan = best ? (best[4] === '' || best[4] == null ? kerajinanFallback : Math.max(0, parseInt(best[4] || 0, 10) || 0)) : kerajinanFallback;
   return {
     gajiBulanan: salary,
     bonusKerajinan: kerajinan,
