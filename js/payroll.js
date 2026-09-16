@@ -105,6 +105,78 @@ function salaryEsc(s) {
  .replace(/'/g, '&#39;');
 }
 
+function payrollPdfMoney(n) {
+ return (parseInt(n || 0, 10) || 0).toLocaleString('id-ID');
+}
+
+function payrollPdfRow(label, value, type) {
+ var n = parseInt(value || 0, 10) || 0;
+ var sign = type === 'minus' && n > 0 ? '-' : (type === 'plus' && n > 0 ? '+' : '');
+ var cls = type === 'minus' ? 'minus' : 'plus';
+ return '<div class="pdf-row '+cls+'"><span>'+salaryEsc(label)+'</span><b>'+sign+' Rp '+payrollPdfMoney(Math.abs(n))+'</b></div>';
+}
+
+function buildPayrollSlipPdfHtml(res) {
+ var d = res && (res.slip || res.detail) || {};
+ var items = res && res.items || [];
+ var bulan = res && res.bulan || d.bulan || d.kerajinanSettingBulan || '';
+ var nama = d.nama || (currentUser && currentUser.nama) || '-';
+ var title = 'Slip Gaji - ' + nama + ' - ' + salaryMonthLabel(bulan);
+ var itemHtml = items.length ? items.map(function(item) {
+  var tipe = item.tipe || '';
+  var nominal = parseInt(item.nominal || 0, 10) || 0;
+  var minus = tipe === 'DENDA' || tipe === 'ADJUSTMENT_MINUS' || tipe === 'ABSEN';
+  return '<div class="pdf-item"><div><b>'+salaryEsc(payrollItemLabel(tipe))+'</b><small>'+salaryEsc(item.keterangan || item.tanggal || '-')+'</small></div><strong class="'+(minus ? 'minus' : 'plus')+'">'+(minus ? '-' : '+')+' Rp '+payrollPdfMoney(Math.abs(nominal))+'</strong></div>';
+ }).join('') : '<div class="pdf-empty">Tidak ada item detail.</div>';
+ var html = '<!doctype html><html><head><meta charset="utf-8"><title>'+salaryEsc(title)+'</title>'+
+ '<style>'+
+ '@page{size:A4;margin:16mm}*{box-sizing:border-box}body{margin:0;background:#eef4ff;font-family:Inter,Arial,sans-serif;color:#172033}.pdf-wrap{max-width:820px;margin:0 auto;padding:24px}.pdf-card{background:#fff;border:1px solid #dbe7ff;border-radius:22px;padding:28px;box-shadow:0 18px 50px rgba(37,99,235,.12)}.pdf-head{display:flex;justify-content:space-between;gap:18px;align-items:flex-start;border-bottom:1px solid #e5edff;padding-bottom:18px;margin-bottom:18px}.brand{display:flex;gap:12px;align-items:center}.logo{width:46px;height:46px;border-radius:14px;background:linear-gradient(135deg,#1d5fd7,#6ba4ff);color:#fff;display:grid;place-items:center;font-weight:900;font-size:24px}.brand h1{font-size:22px;margin:0;letter-spacing:-.03em}.brand p,.meta p{margin:3px 0 0;color:#64748b;font-size:12px}.meta{text-align:right}.meta b{font-size:15px;color:#0f172a}.employee{display:grid;grid-template-columns:1.4fr .8fr;gap:12px;margin:18px 0}.box{background:#f8fbff;border:1px solid #e2ebff;border-radius:16px;padding:14px}.box small{display:block;color:#64748b;font-size:11px;margin-bottom:4px}.box b{font-size:14px}.total{background:linear-gradient(135deg,#1f62db,#5a93ff);color:#fff;border-radius:18px;padding:18px;margin:18px 0;display:flex;justify-content:space-between;align-items:center}.total span{font-size:12px;opacity:.9}.total b{font-size:24px}.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:14px 0}.metric{border-radius:14px;padding:12px;text-align:center;background:#f8fbff;border:1px solid #e2ebff}.metric b{display:block;font-size:16px;color:#1d5fd7}.metric span{font-size:11px;color:#64748b}.section-title{font-size:13px;font-weight:900;margin:20px 0 10px;color:#0f172a}.pdf-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eef2ff;font-size:13px}.pdf-row.plus b,.plus{color:#059669}.pdf-row.minus b,.minus{color:#dc2626}.pdf-item{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;border:1px solid #e2ebff;border-radius:14px;padding:12px;margin-bottom:8px}.pdf-item small{display:block;color:#64748b;margin-top:3px}.pdf-empty{color:#64748b;border:1px dashed #cbdaf5;border-radius:14px;padding:14px;text-align:center}.note{margin-top:18px;color:#64748b;font-size:11px;line-height:1.5}.actions{position:sticky;top:0;display:flex;justify-content:flex-end;gap:8px;margin-bottom:14px}.actions button{border:0;border-radius:999px;padding:10px 14px;font-weight:800;cursor:pointer}.print{background:#1f62db;color:#fff}.close{background:#eaf1ff;color:#1f3b68}@media print{body{background:#fff}.pdf-wrap{padding:0}.actions{display:none}.pdf-card{box-shadow:none;border:0;border-radius:0;padding:0}}'+
+ '</style></head><body><div class="pdf-wrap"><div class="actions"><button class="close" onclick="window.close()">Tutup</button><button class="print" onclick="window.print()">Download / Simpan PDF</button></div><div class="pdf-card">'+
+ '<div class="pdf-head"><div class="brand"><div class="logo">H</div><div><h1>Hosela Hub</h1><p>Slip Gaji Karyawan</p></div></div><div class="meta"><b>'+salaryEsc(salaryMonthLabel(bulan))+'</b><p>Dipublish '+salaryEsc(d.dipublishPada || res.dipublishPada || '-')+'</p></div></div>'+
+ '<div class="employee"><div class="box"><small>Nama Karyawan</small><b>'+salaryEsc(nama)+'</b><p style="margin:4px 0 0;color:#64748b;font-size:12px">'+salaryEsc(d.jabatan || '-')+' · '+salaryEsc(d.bagian || '-')+'</p></div><div class="box"><small>ID Slip</small><b>'+salaryEsc(d.id || '-').slice(0,24)+'</b></div></div>'+
+ '<div class="metrics"><div class="metric"><b>'+payrollPdfMoney(d.hadir || 0)+'</b><span>Hadir</span></div><div class="metric"><b>'+payrollPdfMoney(d.absen || 0)+'</b><span>Absen</span></div><div class="metric"><b>'+payrollPdfMoney(d.telat || 0)+'</b><span>Telat</span></div><div class="metric"><b>'+payrollPdfMoney((d.lemburPulang || 0) + (d.lemburMinggu || 0) + (d.lemburLibur || 0))+'</b><span>Lembur</span></div></div>'+
+ '<div class="section-title">Rincian Komponen</div>'+payrollPdfRow('Gaji Pokok', d.gajiPokok, 'plus')+payrollPdfRow('Penghargaan', d.totalReward, 'plus')+payrollPdfRow('Bonus Kerajinan', d.bonusKerajinan, 'plus')+payrollPdfRow('Denda', d.totalDenda, 'minus')+(d.adjustmentPlus ? payrollPdfRow('Penyesuaian Tambahan', d.adjustmentPlus, 'plus') : '')+(d.adjustmentMinus ? payrollPdfRow('Penyesuaian Potongan', d.adjustmentMinus, 'minus') : '')+
+ '<div class="total"><span>Total Diterima</span><b>Rp '+payrollPdfMoney(d.totalGaji)+'</b></div><div class="section-title">Item Detail</div>'+itemHtml+
+ '<div class="note">Dokumen ini dibuat otomatis dari Hosela Hub berdasarkan slip gaji yang sudah dipublish. Simpan PDF ini sebagai arsip pribadi karyawan.</div></div></div><script>setTimeout(function(){ window.focus(); window.print(); }, 500);<\/script></body></html>';
+ return html;
+}
+
+function openPayrollSlipPdfWindow(res, popup) {
+ var html = buildPayrollSlipPdfHtml(res);
+ popup.document.open();
+ popup.document.write(html);
+ popup.document.close();
+}
+
+function downloadEmployeeSlipPdf(payrollRunId, userId, btn) {
+ if (!payrollRunId) { showToast('Payroll slip tidak valid'); return; }
+ var targetUserId = userId || (currentUser && currentUser.id) || '';
+ if (!targetUserId) { showToast('User tidak valid'); return; }
+ var popup = window.open('', '_blank');
+ if (!popup) { showToast('Popup diblokir. Izinkan popup untuk download PDF.'); return; }
+ popup.document.write('<div style="font-family:Arial,sans-serif;padding:24px;color:#172033">Menyiapkan slip PDF...</div>');
+ if (btn) { btn.disabled = true; btn.textContent = 'Menyiapkan PDF...'; }
+ var cached = targetUserId === (currentUser && currentUser.id) ? _slipDetailCache[payrollRunId] : null;
+ if (cached) {
+  openPayrollSlipPdfWindow(cached, popup);
+  if (btn) { btn.disabled = false; btn.textContent = 'Download PDF'; }
+  return;
+ }
+ gasCall('getPayrollEmployeeSlipDetail', [targetUserId, payrollRunId], function(res) {
+  if (btn) { btn.disabled = false; btn.textContent = 'Download PDF'; }
+  if (!res || res.error || res.success === false) {
+   popup.close();
+   showToast((res && (res.msg || res.error)) || 'Gagal menyiapkan PDF');
+   return;
+  }
+  if (targetUserId === (currentUser && currentUser.id)) _slipDetailCache[payrollRunId] = res;
+  openPayrollSlipPdfWindow(res, popup);
+ }, function() {
+  if (btn) { btn.disabled = false; btn.textContent = 'Download PDF'; }
+  popup.close();
+  showToast('Gagal menyiapkan PDF');
+ });
+}
 function loadSalarySettings(force) {
  if (!currentUser || (currentUser.bagian !== 'Finance' && currentUser.bagian !== 'Owner')) {
  goTo('s-home');
@@ -443,7 +515,9 @@ function renderPayrollDetailBox(res) {
  var d = res.detail || res.slip || {};
  var items = res.items || [];
  var html = '<div style="margin-top:10px;border-top:1px solid var(--gray-border);padding-top:10px">';
- html += '<div style="font-size:12px;font-weight:800;color:var(--text-dark);margin-bottom:8px">Rincian Komponen</div>';
+ html += '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px"><div style="font-size:12px;font-weight:800;color:var(--text-dark)">Rincian Komponen</div>';
+ if (d.payrollRunId && d.userId) html += '<button class="btn btn-sm btn-secondary" onclick="downloadEmployeeSlipPdf(&quot;'+salaryEsc(d.payrollRunId)+'&quot;,&quot;'+salaryEsc(d.userId)+'&quot;,this)">Download PDF</button>';
+ html += '</div>';
  html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px">';
  html += payrollMetric('Hadir', (d.hadir || 0) + ' hari', '#f0fdf4', '#16a34a');
  html += payrollMetric('Absen', (d.absen || 0) + ' hari', '#fff7f7', '#dc2626');
@@ -712,7 +786,10 @@ function renderSlipList(items) {
  '<div><div style="font-size:13px;font-weight:800;color:var(--text-dark)">'+salaryEsc(salaryMonthLabel(s.bulan || s.periode || '-'))+'</div><div style="font-size:11px;color:var(--text-muted)">Dipublish '+salaryEsc(s.dipublishPada || '-')+'</div></div>' +
  '<div style="font-size:13px;font-weight:800;color:var(--green);white-space:nowrap">Rp '+(parseInt(s.totalGaji || s.total || 0, 10) || 0).toLocaleString('id-ID')+'</div>' +
  '</div>' +
- '<button class="btn btn-sm btn-primary" style="margin-top:10px;width:100%" onclick="toggleSlipDetail(&quot;'+(s.payrollRunId || '')+'&quot;,&quot;'+targetId+'&quot;)">Lihat Slip</button>' +
+ '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px">' +
+ '<button class="btn btn-sm btn-primary" style="width:100%" onclick="toggleSlipDetail(&quot;'+(s.payrollRunId || '')+'&quot;,&quot;'+targetId+'&quot;)">Lihat Slip</button>' +
+ '<button class="btn btn-sm btn-secondary" style="width:100%" onclick="downloadEmployeeSlipPdf(&quot;'+(s.payrollRunId || '')+'&quot;,&quot;'+(currentUser && currentUser.id || '')+'&quot;,this)">Download PDF</button>' +
+ '</div>' +
  '<div id="'+targetId+'" style="display:none"></div>' +
  '</div>';
  }).join('');
