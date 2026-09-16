@@ -148,32 +148,58 @@ function openPayrollSlipPdfWindow(res, popup) {
  popup.document.close();
 }
 
+
+function showPayrollSlipPrintOverlay(res) {
+ var full = buildPayrollSlipPdfHtml(res);
+ var styleMatch = full.match(/<style>([\s\S]*?)<\/style>/);
+ var bodyMatch = full.match(/<body>([\s\S]*?)<script>/);
+ var style = styleMatch ? styleMatch[1] : '';
+ var body = bodyMatch ? bodyMatch[1] : '<div class="pdf-wrap"><div class="pdf-card">Slip tidak bisa ditampilkan.</div></div>';
+ var old = document.getElementById('payroll-print-root');
+ if (old && old.parentNode) old.parentNode.removeChild(old);
+ var root = document.createElement('div');
+ root.id = 'payroll-print-root';
+ root.innerHTML = '<style>'+style+'#payroll-print-root{position:fixed;inset:0;z-index:99999;background:#eef4ff;overflow:auto}.payroll-print-hint{max-width:820px;margin:14px auto 0;padding:0 24px;color:#475569;font:12px Arial,sans-serif}@media print{body>*:not(#payroll-print-root){display:none!important}#payroll-print-root{position:static!important;inset:auto!important;background:#fff!important;overflow:visible!important}.payroll-print-hint{display:none!important}}</style>'+body+'<div class="payroll-print-hint">Jika dialog PDF belum muncul, tekan tombol <b>Download / Simpan PDF</b> di atas.</div>';
+ document.body.appendChild(root);
+ var closeBtn = root.querySelector('.close');
+ if (closeBtn) closeBtn.onclick = function(){ if (root.parentNode) root.parentNode.removeChild(root); };
+ var printBtn = root.querySelector('.print');
+ if (printBtn) printBtn.onclick = function(){ window.print(); };
+}
+
+function openPayrollSlipPdfResult(res, popup) {
+ if (popup) {
+  try { openPayrollSlipPdfWindow(res, popup); return; } catch(e) {}
+ }
+ showPayrollSlipPrintOverlay(res);
+}
+
 function downloadEmployeeSlipPdf(payrollRunId, userId, btn) {
  if (!payrollRunId) { showToast('Payroll slip tidak valid'); return; }
  var targetUserId = userId || (currentUser && currentUser.id) || '';
  if (!targetUserId) { showToast('User tidak valid'); return; }
- var popup = window.open('', '_blank');
- if (!popup) { showToast('Popup diblokir. Izinkan popup untuk download PDF.'); return; }
- popup.document.write('<div style="font-family:Arial,sans-serif;padding:24px;color:#172033">Menyiapkan slip PDF...</div>');
+ var popup = null;
+ try { popup = window.open('', '_blank'); } catch(e) { popup = null; }
+ if (popup) popup.document.write('<div style="font-family:Arial,sans-serif;padding:24px;color:#172033">Menyiapkan slip PDF...</div>');
  if (btn) { btn.disabled = true; btn.textContent = 'Menyiapkan PDF...'; }
  var cached = targetUserId === (currentUser && currentUser.id) ? _slipDetailCache[payrollRunId] : null;
  if (cached) {
-  openPayrollSlipPdfWindow(cached, popup);
+  openPayrollSlipPdfResult(cached, popup);
   if (btn) { btn.disabled = false; btn.textContent = 'Download PDF'; }
   return;
  }
  gasCall('getPayrollEmployeeSlipDetail', [targetUserId, payrollRunId], function(res) {
   if (btn) { btn.disabled = false; btn.textContent = 'Download PDF'; }
   if (!res || res.error || res.success === false) {
-   popup.close();
+   if (popup) popup.close();
    showToast((res && (res.msg || res.error)) || 'Gagal menyiapkan PDF');
    return;
   }
   if (targetUserId === (currentUser && currentUser.id)) _slipDetailCache[payrollRunId] = res;
-  openPayrollSlipPdfWindow(res, popup);
+  openPayrollSlipPdfResult(res, popup);
  }, function() {
   if (btn) { btn.disabled = false; btn.textContent = 'Download PDF'; }
-  popup.close();
+  if (popup) popup.close();
   showToast('Gagal menyiapkan PDF');
  });
 }
