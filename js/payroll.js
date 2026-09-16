@@ -178,28 +178,23 @@ function downloadEmployeeSlipPdf(payrollRunId, userId, btn) {
  if (!payrollRunId) { showToast('Payroll slip tidak valid'); return; }
  var targetUserId = userId || (currentUser && currentUser.id) || '';
  if (!targetUserId) { showToast('User tidak valid'); return; }
- var popup = null;
- try { popup = window.open('', '_blank'); } catch(e) { popup = null; }
- if (popup) popup.document.write('<div style="font-family:Arial,sans-serif;padding:24px;color:#172033">Menyiapkan slip PDF...</div>');
  if (btn) { btn.disabled = true; btn.textContent = 'Menyiapkan PDF...'; }
  var cached = targetUserId === (currentUser && currentUser.id) ? _slipDetailCache[payrollRunId] : null;
  if (cached) {
-  openPayrollSlipPdfResult(cached, popup);
+  showPayrollSlipPrintOverlay(cached);
   if (btn) { btn.disabled = false; btn.textContent = 'Download PDF'; }
   return;
  }
  gasCall('getPayrollEmployeeSlipDetail', [targetUserId, payrollRunId], function(res) {
   if (btn) { btn.disabled = false; btn.textContent = 'Download PDF'; }
   if (!res || res.error || res.success === false) {
-   if (popup) popup.close();
    showToast((res && (res.msg || res.error)) || 'Gagal menyiapkan PDF');
    return;
   }
   if (targetUserId === (currentUser && currentUser.id)) _slipDetailCache[payrollRunId] = res;
-  openPayrollSlipPdfResult(res, popup);
+  showPayrollSlipPrintOverlay(res);
  }, function() {
   if (btn) { btn.disabled = false; btn.textContent = 'Download PDF'; }
-  if (popup) popup.close();
   showToast('Gagal menyiapkan PDF');
  });
 }
