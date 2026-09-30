@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbw6q_5ZaIGrekeBwZ5TKh6X1GpWkFHsa5i6whdwacQkTEa-vvNezHlxFMEQFKZkmm5ffQ/exec';
-var APP_VERSION = '20260916d';
+var APP_VERSION = '20260930a';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -3124,6 +3124,23 @@ function renderAttendanceMatrix(res) {
  filterAttendanceMatrix();
 }
 
+function estimateAttendanceScoreFromLiveRecap(liveRecap) {
+ if (!liveRecap || !liveRecap.hasData) return null;
+ var score = 100;
+ score -= (parseInt(liveRecap.absen || 0, 10) || 0) * 15;
+ score -= (parseInt(liveRecap.telat || 0, 10) || 0) * 2;
+ return Math.max(0, Math.min(100, score));
+}
+
+function attendanceScoreLabel(r, liveRecap) {
+ var raw = r && (r.skor != null && r.skor !== '' ? r.skor : (r.finalScore != null && r.finalScore !== '' ? r.finalScore : null));
+ var score = parseInt(raw, 10);
+ if (!isNaN(score) && score > 0) return score + '/100';
+ var estimated = estimateAttendanceScoreFromLiveRecap(liveRecap);
+ if (estimated != null) return estimated + '/100';
+ return '-/100';
+}
+
 function renderAttendanceUserRecap(u, res) {
  if (!_attendanceMatrixCanEdit) {
  var employeeLiveRecap = buildAttendanceMatrixRecap(u, res);
@@ -3151,7 +3168,7 @@ function renderAttendanceUserRecap(u, res) {
  }
  var denda = parseInt(r.totalDenda || 0, 10) || 0;
  var reward = (parseInt(r.totalReward || 0, 10) || 0) + (parseInt(r.bonusKerajinan || 0, 10) || 0);
- var skor = parseInt(r.skor || r.finalScore || 0, 10) || 0;
+ var skorLabel = attendanceScoreLabel(r, liveRecap);
  var userId = r.id || r.userId || r.user_id || r.ID || u.id || '';
  var safeId = String(userId || u.nama || '').replace(/[^a-zA-Z0-9_-]/g, '');
  var bulanKey = res.bulan || '';
@@ -3159,7 +3176,7 @@ function renderAttendanceUserRecap(u, res) {
  var detailId = 'att-rekap-detail-' + safeId + '-' + safeMonth;
  var btnId = 'att-rekap-btn-' + safeId + '-' + safeMonth;
  return '<div class="att-recap">'+
- '<div class="att-recap-head"><div><b>'+cleanDisplayText(r.nama || u.nama || '')+'</b><p>'+cleanDisplayText(r.jabatan || u.jabatan || '')+' &middot; '+cleanDisplayText(r.bagian || u.bagian || '')+'</p></div><span>'+skor+'/100</span></div>'+
+ '<div class="att-recap-head"><div><b>'+cleanDisplayText(r.nama || u.nama || '')+'</b><p>'+cleanDisplayText(r.jabatan || u.jabatan || '')+' &middot; '+cleanDisplayText(r.bagian || u.bagian || '')+'</p></div><span>'+skorLabel+'</span></div>'+ 
  '<div class="att-recap-grid">'+
  '<div class="att-recap-metric att-recap-green"><b>'+hadir+'</b><span>Hadir</span></div>'+
  '<div class="att-recap-metric att-recap-yellow"><b>'+telat+'</b><span>Telat</span></div>'+
