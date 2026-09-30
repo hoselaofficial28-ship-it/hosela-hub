@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbw6q_5ZaIGrekeBwZ5TKh6X1GpWkFHsa5i6whdwacQkTEa-vvNezHlxFMEQFKZkmm5ffQ/exec';
-var APP_VERSION = '20260930a';
+var APP_VERSION = '20260930b';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -3052,6 +3052,24 @@ function renderAttendanceMatrixWithRecap(matrixRes, bulanKey) {
  });
 }
 
+function attendanceTimeToMinutes(value) {
+ var match = String(value || '').match(/^(\d{1,2}):(\d{2})/);
+ if (!match) return null;
+ var hours = parseInt(match[1], 10);
+ var minutes = parseInt(match[2], 10);
+ if (isNaN(hours) || isNaN(minutes)) return null;
+ return (hours * 60) + minutes;
+}
+
+function attendanceDayIsLate(item, dateObj) {
+ if (!item) return false;
+ if (item.telat === true || String(item.telat).toLowerCase() === 'true') return true;
+ if (!item.masuk || (dateObj && dateObj.getDay() === 0)) return false;
+ var actualMinutes = attendanceTimeToMinutes(item.masuk);
+ var scheduleMinutes = attendanceTimeToMinutes(item.jadwalMasuk || '08:00');
+ return actualMinutes !== null && scheduleMinutes !== null && actualMinutes > scheduleMinutes;
+}
+
 function renderAttendanceMatrix(res) {
  var el = document.getElementById('att-matrix-content');
  var summary = document.getElementById('att-matrix-summary');
@@ -3075,12 +3093,12 @@ function renderAttendanceMatrix(res) {
  var firstDay = new Date(year, month - 1, 1).getDay();
  var leadingBlank = (firstDay + 6) % 7; // Monday-first calendar
  var dayNames = ['Sen','Sel','Rab','Kam','Jum','Sab','Min'];
- function attendanceDayStatus(item, masuk, pulang) {
+ function attendanceDayStatus(item, masuk, pulang, dateObj) {
  var hasTap = !!(masuk || pulang);
  if (item.anomali && !hasTap) return { cls:' anomaly', symbol:'!', title:'Tap anomali' };
  if (item.rejected && !hasTap) return { cls:' rejected', symbol:'&times;', title:'Ditolak' };
  if (item.absen && !hasTap) return { cls:' absent', symbol:'A', title:'Absen' };
- if (item.telat) return { cls:' filled late', symbol:'!', title:item.lembur ? 'Telat dan lembur' : 'Telat' };
+ if (attendanceDayIsLate(item, dateObj)) return { cls:' filled late', symbol:'!', title:item.lembur ? 'Telat dan lembur' : 'Telat' };
  if (item.lembur) return { cls:' filled overtime', symbol:'+', title:'Lembur' };
  if (masuk && pulang) return { cls:' filled complete', symbol:'&#10003;', title:'Lengkap' };
  if (masuk) return { cls:' filled partial', symbol:'&hellip;', title:'Belum pulang' };
@@ -3100,11 +3118,11 @@ function renderAttendanceMatrix(res) {
  var masuk = item.masuk || '';
  var pulang = item.pulang || '';
  var hasTap = !!(masuk || pulang);
- var status = attendanceDayStatus(item, masuk, pulang);
+ var dateObj = new Date(year, month - 1, d);
+ var status = attendanceDayStatus(item, masuk, pulang, dateObj);
  var statusClass = status.cls;
  var statusSymbol = status.symbol;
  var statusTitle = status.title;
- var dateObj = new Date(year, month - 1, d);
  if (dateObj.getDay() === 0) statusClass += ' sunday';
  var click = _attendanceMatrixCanEdit ? ' onclick="openAttendanceEdit(&quot;'+u.id+'&quot;,&quot;'+esc(u.nama)+'&quot;,&quot;'+res.bulan+'&quot;,'+d+',&quot;'+esc(masuk)+'&quot;,&quot;'+esc(pulang)+'&quot;)"' : '';
  days += '<button class="att-day'+statusClass+'" title="'+statusTitle+'"'+click+(_attendanceMatrixCanEdit?'':' type="button"')+'>'+
@@ -3265,8 +3283,9 @@ function renderAttendanceLiveDetailHtml(u, res, scopeId) {
  if (item.anomali && !hasTap) return ['Tap anomali', '#f59e0b'];
  if (item.rejected && !hasTap) return ['Ditolak', '#64748b'];
  if (item.absen && !hasTap) return ['Absen', '#ef4444'];
+ if (attendanceDayIsLate(item, dateObj)) return [item.lembur ? 'Telat dan lembur' : 'Telat', '#be123c'];
  if (item.lembur) return ['Lembur', '#7c3aed'];
- if (masuk && pulang) return [item.telat ? 'Telat' : 'Hadir lengkap', item.telat ? '#f59e0b' : '#16a34a'];
+ if (masuk && pulang) return ['Hadir lengkap', '#16a34a'];
  if (masuk) return ['Belum pulang', '#0e4fa3'];
  if (pulang) return ['Tanpa masuk', '#f59e0b'];
  return ['', ''];
@@ -3322,7 +3341,7 @@ function buildAttendanceMatrixRecap(u, res) {
  if (masuk && !isSunday) {
  out.hadir++;
  out.hasData = true;
- if (item.telat) out.telat++;
+ if (attendanceDayIsLate(item, new Date(year, month - 1, d))) out.telat++;
  }
  }
  return out;

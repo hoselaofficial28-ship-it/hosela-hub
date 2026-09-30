@@ -830,6 +830,7 @@ textarea.form-input{line-height:1.45}
 .home-category-grid,.home-category-card,.home-category-back{display:none}
 .att-day.late{background:#fff1f5;border-color:#fecdd6}
 .att-day.late span{color:#be123c}
+.att-day.late small{color:#9f1239;font-weight:800}
 .att-day.late em{color:#be123c;background:#ffe4ea}
 .att-day.anomaly{background:#fff7ed;border-color:#fed7aa}
 .att-day.anomaly span{color:#c2410c}
