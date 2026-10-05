@@ -2,6 +2,8 @@
 
 Hasil audit statis pada 5 Oktober 2026: frontend memiliki 68 pemanggilan `gasCall` bernama tetap. `ADA` berarti memiliki case pada dispatcher `handleAPI`; `GAP` berarti UI memanggilnya tetapi case dispatcher aktif tidak ditemukan.
 
+**Update 2026-10-05 (audit mendalam)**: seluruh 9 `GAP` di bawah sudah diinvestigasi tuntas — dikonfirmasi ulang nol implementasi di `gas/Code.gs` maupun seluruh arsip (`gas-backup`/`gas-paste`/`gas-split`). Kontrak lengkap (payload, response, UI pemicu, draft rancangan RPC) ada di [07-DATA-DICTIONARY.md §6](07-DATA-DICTIONARY.md). Keputusan Ko untuk 3 dari 9 aksi (sandi saat approve, hapus-vs-simpan saat tolak) tercatat di `DECISION-LOG.md`.
+
 | Aksi frontend | Dispatcher GAS |
 |---|---|
 | `addIde` | ADA |
@@ -74,6 +76,12 @@ Hasil audit statis pada 5 Oktober 2026: frontend memiliki 68 pemanggilan `gasCal
 | `validateLogin` | ADA |
 
 Dispatcher juga memiliki aksi yang dapat dipanggil secara dinamis atau tidak tampak pada pencarian literal, termasuk `getAbsensiMatrix`, `getAbsensiMatrixUser`, `getUserProfile`, `getNotifCountByMenu`, `getSPHistory`, `hitungBintang`, `notifPeraturanBaru`, dan endpoint debug. Audit runtime/network tetap wajib; tabel ini bukan pengganti contract test.
+
+**Temuan tambahan dari audit mendalam** (jangan ikut di-port ke clone):
+- `validatePIN(pin)` (`gas/Code.gs:135`) — dead code, selalu `{success:false}`, nol pemanggil. Dispatcher case `'validatePIN'` (`gas/Code.gs:38`) adalah alias legacy yang sebenarnya memanggil `validateLogin` — dua hal bernama sama, tidak saling terhubung.
+- `hapusAbsenDetail` (`gas/Code.gs:4463`) — dead code, nol pemanggil di seluruh file.
+- `getNotifCountByMenu` terdaftar di dispatcher (`gas/Code.gs:101`) tapi **tidak pernah dipanggil langsung dari frontend** — hanya dipakai internal oleh `getHomeData`.
+- Frontend `gasCall` (`js/app.js:570-650`) **tidak pernah memeriksa field `.error`** pada response sukses — akar penyebab beberapa aksi GAP menampilkan "toast sukses palsu" atau pesan error yang menyamarkan sebab asli (detail per-aksi di 07-DATA-DICTIONARY.md §6). Client clone wajib selalu cek `.success` eksplisit.
 
 Untuk setiap aksi, implementasi Supabase harus mencatat:
 
