@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Hosela Hub — DEMO Clone</title>
+<link rel="icon" type="image/svg+xml" href="assets/logo-icon.svg?v=3">
+<link rel="shortcut icon" type="image/png" href="assets/logo.png?v=3">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css?v=20260930b">
+
+
+
+
+
+
+<link rel="manifest" href="manifest.webmanifest?v=20260930b">
+<meta name="theme-color" content="#1557d8">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Hosela Hub">
+<link rel="apple-touch-icon" href="data:image/png;base64,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">
+</head>
+<body>
+<div id="demo-mode-banner" style="position:fixed;top:0;left:0;right:0;z-index:99999;background:#111827;color:#fbbf24;font-family:system-ui,sans-serif;font-size:12px;line-height:1.5;padding:7px 12px;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.3)">
+ MODE DEMO — data contoh, belum tersambung ke Supabase asli &middot;
+ Login: <b>Owner Demo</b> / <b>Finance Demo</b> / <b>Budi</b> / <b>Sari</b> / <b>Dimas</b> &middot; sandi semua: <b>demo123</b>
+ <span style="cursor:pointer;float:right;opacity:.6" onclick="document.getElementById('demo-mode-banner').style.display='none'">&times; tutup</span>
+</div>
+<div id="app-wrap" style="margin-top:34px">
+<div id="loading">
+ <div class="loading-logo"><img class="brand-logo-img" src="assets/logo-icon.svg?v=2" alt="Hosela Hub"></div>
+ <div class="loading-title">Hosela Hub</div>
+ <div class="loading-sub">Portal Internal Tim</div>
+ <div class="loading-bar"><div class="loading-progress"></div></div>
+</div>
+<div class="toast" id="toast"></div>
+
+<!-- LOGIN -->
+<div class="screen" id="s-login">
+ <div class="statusbar"></div>
+ <div class="login-top">
+ <div class="login-logo"><img class="brand-logo-img" src="assets/logo-icon.svg?v=2" alt="Hosela Hub"></div>
+ <div class="login-title">Hosela Hub</div>
+ <div class="login-sub">Attendance, payroll, dan operasional tim</div>
+ <div class="gold-bar-center"></div>
+ </div>
+ <div class="login-body">
+ <div class="pin-label">Masuk ke akun kerja</div>
+ <div class="form-group" id="username-group">
+ <label class="form-label">Nama Pengguna</label>
+ <input type="text" class="form-input" id="login-username" placeholder="Nama kamu" autocomplete="username">
+ <div style="font-size:11px;color:var(--blue);margin-top:4px;cursor:pointer" onclick="gantiAkun()">Bukan kamu? Ganti akun</div>
+ </div>
+ <div class="form-group">
+ <label class="form-label">Kata Sandi</label>
+ <input type="password" class="form-input" id="login-password" placeholder="Kata sandi" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
+ </div>
+ <div id="pin-spinner" style="display:none;justify-content:center;margin:8px 0">
+ <div style="width:28px;height:28px;border:3px solid rgba(14,79,163,0.2);border-top:3px solid #0e4fa3;border-radius:50%;animation:spin .7s linear infinite"></div>
+ </div>
+ <button class="btn btn-primary" id="login-btn" onclick="doLogin()">Masuk</button>
+ <div class="pin-error" id="pin-error"></div>
+ <div style="text-align:center;margin-top:14px">
+  <span style="font-size:13px;color:var(--text-muted)">Belum punya akun? </span>
+  <span style="font-size:13px;color:var(--blue);cursor:pointer;font-weight:600" onclick="goTo('s-daftar')">Daftar di sini</span>
+ </div>
+ </div>
+</div>
+
+<!-- SCREEN DAFTAR AKUN -->
+<div class="screen" id="s-daftar">
+ <div class="statusbar"></div>
+ <div class="login-top">
+  <div class="login-logo"><img class="brand-logo-img" src="assets/logo-icon.svg?v=2" alt="Hosela Hub"></div>
+  <div class="login-title">Daftar Akun</div>
+  <div class="login-sub">Isi data diri untuk mendaftar</div>
+  <div class="gold-bar-center"></div>
+ </div>
+ <div class="login-body">
+  <div class="form-group">
+   <label class="form-label">Nama Lengkap <span style="color:#dc2626">*</span></label>
+   <input type="text" class="form-input" id="daftar-nama" placeholder="Nama lengkap kamu" autocomplete="off">
+  </div>
+  <div class="form-group">
+   <label class="form-label">Bagian <span style="color:#dc2626">*</span></label>
+   <select class="form-input" id="daftar-bagian" onchange="onDaftarBagianChange()">
+    <option value="">Memuat...</option>
+   </select>
+  </div>
+  <div class="form-group">
+   <label class="form-label">Jabatan <span style="color:#dc2626">*</span></label>
+   <select class="form-input" id="daftar-jabatan">
+    <option value="">-- Pilih Bagian dulu --</option>
+   </select>
+  </div>
+  <div class="form-group">
+   <label class="form-label">Kata Sandi <span style="color:#dc2626">*</span></label>
+   <input type="password" class="form-input" id="daftar-sandi" placeholder="Buat kata sandi" autocomplete="new-password">
+  </div>
+  <div class="form-group">
+   <label class="form-label">Konfirmasi Kata Sandi <span style="color:#dc2626">*</span></label>
+   <input type="password" class="form-input" id="daftar-sandi2" placeholder="Ulangi kata sandi" autocomplete="new-password">
+  </div>
+  <div id="daftar-spinner" style="display:none;justify-content:center;margin:8px 0">
+   <div style="width:28px;height:28px;border:3px solid rgba(14,79,163,0.2);border-top:3px solid #0e4fa3;border-radius:50%;animation:spin .7s linear infinite"></div>
+  </div>
+  <button class="btn btn-primary" id="daftar-btn" onclick="submitDaftarAkun()">Kirim Pendaftaran</button>
+  <div class="pin-error" id="daftar-error" style="text-align:center"></div>
+  <div style="text-align:center;margin-top:14px">
+   <span style="font-size:13px;color:var(--text-muted)">Sudah punya akun? </span>
+   <span style="font-size:13px;color:var(--blue);cursor:pointer;font-weight:600" onclick="goTo('s-login')">Masuk</span>
+  </div>
+ </div>
+</div>
+
+<!-- SIDE MENU OVERLAY -->
+<div id="side-menu-overlay" onclick="closeSideMenu()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:1000"></div>
+<div id="side-menu" style="display:none;position:fixed;top:0;right:0;width:75%;max-width:280px;height:100%;background:#fff;z-index:1001;box-shadow:-4px 0 20px rgba(0,0,0,0.2);flex-direction:column;overflow-y:auto;transform:translateX(100%);transition:transform .28s cubic-bezier(.4,0,.2,1)">
+ <div style="background:var(--blue);padding:32px 20px 20px;color:#fff">
+ <div style="font-size:24px;font-weight:800" id="sm-nama">?</div>
+ <div style="font-size:12px;opacity:.8" id="sm-jabatan">?</div>
+ </div>
+ <div style="padding:16px;flex:1">
+ <div onclick="openPanduan()" style="display:flex;align-items:center;gap:12px;padding:12px;border-radius:8px;cursor:pointer;margin-bottom:4px" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">
+ <span class="side-icon side-book"></span><div><div style="font-size:13px;font-weight:600">Panduan Aplikasi</div><div style="font-size:11px;color:var(--text-muted)">Cara penggunaan Hosela Hub</div></div>
+ </div>
+ <div onclick="bukaEmailSettings()" style="display:flex;align-items:center;gap:12px;padding:12px;border-radius:8px;cursor:pointer;margin-bottom:4px" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">
+ <span class="side-icon side-mail"></span><div><div style="font-size:13px;font-weight:600">Email Saya</div><div style="font-size:11px;color:var(--text-muted)" id="sm-email">Belum diisi</div></div>
+ </div>
+ <div id="install-app-row" onclick="installApp()" style="display:none;align-items:center;gap:12px;padding:12px;border-radius:8px;cursor:pointer;margin-bottom:4px" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">
+ <span class="side-icon side-install"></span><div><div style="font-size:13px;font-weight:600">Install Aplikasi</div><div style="font-size:11px;color:var(--text-muted)">Tambahkan ke layar utama</div></div>
+ </div>
+ <div id="sm-email-form" style="display:none;background:#f7f9fc;border-radius:8px;padding:12px;margin-bottom:8px">
+ <input type="email" id="sm-email-input" class="form-input" placeholder="email@gmail.com" style="margin-bottom:8px">
+ <button class="btn btn-primary" style="width:100%;padding:8px;font-size:12px" onclick="simpanEmail()">Simpan Email</button>
+ </div>
+ </div>
+ <div style="padding:16px;border-top:1px solid var(--gray-border)">
+ <button onclick="doLogout()" style="width:100%;padding:12px;background:#fee2e2;color:#dc2626;border:none;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer"> Logout</button>
+ </div>
+</div>
+
+<!-- HOME -->
+<div class="screen" id="s-home">
+ <div class="statusbar"></div>
+ <div class="home-hero">
+ <button class="home-refresh-btn" onclick="refreshHomeData()" aria-label="Refresh data"></button>
+ <button class="home-menu-btn" onclick="openSideMenu()" aria-label="Buka menu"></button>
+ <div class="home-greeting">Selamat datang,</div>
+ <div class="home-name" id="home-name">?</div>
+ <select class="desktop-lang-select" id="desktop-lang-select" onchange="setAppLanguage(this.value)" aria-label="Pilih bahasa">
+  <option value="id">Bahasa Indonesia</option>
+  <option value="en">English</option>
+  <option value="zh">中文</option>
+ </select>
+ <div id="home-jabatan-badge"></div>
+ <div id="home-quote" style="font-size:12px;color:rgba(255,255,255,0.75);font-weight:400;margin-top:8px;font-style:italic;line-height:1.5"></div>
+ <div class="ann-banner" onclick="goTo('s-pengumuman')" id="home-ann-banner" style="display:none">
+ <div class="ann-dot"></div>
+ <div class="ann-text" id="home-ann-text"></div>
+ <span style="color:rgba(255,255,255,.6);font-size:16px">?</span>
+ </div>
+ </div>
+ <div class="content">
+ <section class="desktop-dashboard-hero">
+  <div>
+   <div class="desktop-hero-kicker" data-i18n="desktopHeroKicker">Ringkasan Operasional</div>
+   <h2 data-i18n="desktopHeroTitle">Hosela Dashboard</h2>
+   <p data-i18n="desktopHeroSub">Pantau absensi, KPI, payroll, pengumuman, dan aktivitas tim dalam satu layar kerja.</p>
+  </div>
+  <div class="desktop-hero-metrics">
+   <button type="button" onclick="goTo('s-catatan-kehadiran')"><span></span><b data-i18n="metricAttendance">Absensi</b><small data-i18n="metricAttendanceSub">Riwayat tim</small></button>
+   <button type="button" onclick="goTo('s-kpi-check')"><span></span><b data-i18n="metricKpi">KPI</b><small data-i18n="metricKpiSub">Checklist</small></button>
+   <button type="button" onclick="goTo('s-payroll')"><span></span><b data-i18n="metricPayroll">Payroll</b><small data-i18n="metricPayrollSub">Slip gaji</small></button>
+  </div>
+ </section>
+ <div class="home-clock-card">
+ <div class="home-clock-head">
+ <div>
+ <div class="home-clock-label">Waktu sekarang</div>
+ <div class="home-clock-date" id="home-clock-date">?</div>
+ </div>
+ <div class="home-clock-logo"><img src="assets/logo-icon.svg?v=2" alt="Hosela Hub"></div>
+ </div>
+ <div class="home-clock-time" id="home-clock-time">--:--:--</div>
+ <button class="home-clock-action" onclick="goTo('s-absensi-camera')">
+ <span class="home-clock-fingerprint"></span>
+ <span>Absensi Kamera</span>
+ </button>
+ </div>
+ <!-- Banner anomali tap -->
+ <div id="anomali-banner" style="display:none;background:#dc2626;border-radius:10px;padding:12px 14px;margin-bottom:10px;cursor:pointer" onclick="goTo('s-notifikasi')">
+ <div style="display:flex;align-items:center;gap:8px">
+ <span style="font-size:18px"></span>
+ <div style="flex:1">
+ <div style="font-size:12px;font-weight:700;color:#fff" id="anomali-banner-title">Perhatian! Ada tap fingerprint yang perlu dikonfirmasi</div>
+ <div style="font-size:11px;color:rgba(255,255,255,0.85);margin-top:2px" id="anomali-banner-sub">Segera menghadap Finance sebelum batas waktu atau kena denda</div>
+ </div>
+ <span style="color:rgba(255,255,255,0.7);font-size:16px">?</span>
+ </div>
+ </div>
+
+ <!-- Bintang Bulan Ini ? COMPACT -->
+ <div id="reward-section"></div>
+
+ <!-- Kartu Profil ? DOMINAN -->
+ <div id="profile-card"></div>
+
+ <div class="menu-grid" id="home-menu"></div>
+ </div>
+ <div class="navbar">
+ <div class="nav-item active" onclick="goTo('s-home')"><div class="nav-icon"></div><div class="nav-label">Beranda</div></div>
+ <div class="nav-item" onclick="goTo('s-jobdesk')"><div class="nav-icon"></div><div class="nav-label">Jobdesk</div></div>
+ <div class="nav-item" onclick="goTo('s-pengumuman')"><div class="nav-icon"></div><div class="nav-label">Pengumuman</div></div>
+ <div class="nav-item" onclick="goTo('s-ide')"><div class="nav-icon"></div><div class="nav-label">Ide Tim</div></div>
+ </div>
+</div>
+
+<!-- JOBDESK LIST -->
+<div class="screen" id="s-jobdesk">
+ <div class="statusbar"></div>
+ <div class="header">
+ <div class="header-row"><button class="back-btn" onclick="goTo('s-home')">?</button><div><h1>Jobdesk</h1><p>Pilih bagian</p></div></div>
+ <div class="gold-line"></div>
+ </div>
+ <div class="content" id="jobdesk-list"></div>
+ <div class="navbar">
+ <div class="nav-item" onclick="goTo('s-home')"><div class="nav-icon"></div><div class="nav-label">Beranda</div></div>
+ <div class="nav-item active"><div class="nav-icon"></div><div class="nav-label" style="color:var(--blue)">Jobdesk</div></div>
+ <div class="nav-item" onclick="goTo('s-pengumuman')"><div class="nav-icon"></div><div class="nav-label">Pengumuman</div></div>
+ <div class="nav-item" onclick="goTo('s-ide')"><div class="nav-icon"></div><div class="nav-label">Ide Tim</div></div>
+ </div>
+</div>
+
+<!-- STAFF LIST -->
+<div class="screen" id="s-staff">
+ <div class="statusbar"></div>
+ <div class="header">
+ <div class="header-row"><button class="back-btn" onclick="goTo('s-jobdesk')">?</button><div><h1 id="staff-bagian-title">?</h1><p>Pilih nama kamu</p></div></div>
+ <div class="gold-line"></div>
+ </div>
+ <div class="content" id="staff-list"></div>
+ <div class="navbar">
+ <div class="nav-item" onclick="goTo('s-home')"><div class="nav-icon"></div><div class="nav-label">Beranda</div></div>
+ <div class="nav-item active"><div class="nav-icon"></div><div class="nav-label" style="color:var(--blue)">Jobdesk</div></div>
+ <div class="nav-item" onclick="goTo('s-pengumuman')"><div class="nav-icon"></div><div class="nav-label">Pengumuman</div></div>
+ <div class="nav-item" onclick="goTo('s-ide')"><div class="nav-icon"></div><div class="nav-label">Ide Tim</div></div>
+ </div>
+</div>
+
+<!-- JOBDESK DETAIL -->
+<div class="screen" id="s-detail">
+ <div class="statusbar"></div>
+ <div class="header">
+ <div class="header-row"><button class="back-btn" onclick="goTo('s-staff')">?</button><div><h1 id="detail-nama">?</h1><p id="detail-jabatan">?</p></div></div>
+ <div style="display:flex;gap:6px;margin-top:8px" id="detail-badges"></div>
+ </div>
+ <div class="content">
+ <div class="card">
+ <div class="card-title"><div class="card-dot"></div>Jobdesk & Tanggung Jawab</div>
+ <div id="detail-jobdesk-content"><div class="empty-state" style="padding:10px"><div style="font-size:12px">Jobdesk belum tersedia.</div></div></div>
+ <a id="detail-doc-link" href="#" target="_blank" style="display:none;margin-top:10px;text-align:center;font-size:12px;color:var(--blue);font-weight:600;padding:8px;border:1px solid var(--blue);border-radius:8px;text-decoration:none"> Buka Dokumen Lengkap</a>
+ </div>
+ <div class="card" style="margin-top:10px">
+ <button class="btn btn-primary" style="width:100%" onclick="goTo('s-catatan-kehadiran')">Lihat Catatan Kehadiran</button>
+ </div>
+ </div>
+ <div class="navbar">
+ <div class="nav-item" onclick="goTo('s-home')"><div class="nav-icon"></div><div class="nav-label">Beranda</div></div>
+ <div class="nav-item active"><div class="nav-icon"></div><div class="nav-label" style="color:var(--blue)">Jobdesk</div></div>
+ <div class="nav-item" onclick="goTo('s-pengumuman')"><div class="nav-icon"></div><div class="nav-label">Pengumuman</div></div>
+ <div class="nav-item" onclick="goTo('s-ide')"><div class="nav-icon"></div><div class="nav-label">Ide Tim</div></div>
+ </div>
+</div>
+
+<!-- PENGUMUMAN -->
+<div class="screen" id="s-pengumuman">
+ <div class="statusbar"></div>
+ <div class="header">
+ <div class="header-row"><button class="back-btn" onclick="goTo('s-home')">?</button><div><h1>Pengumuman</h1><p>Info terbaru dari owner</p></div></div>
+ <div class="gold-line"></div>
+ </div>
+ <div class="content" id="pengumuman-list"><div class="empty-state"><div class="empty-icon"></div>Memuat...</div></div>
+ <div class="navbar">
+ <div class="nav-item" onclick="goTo('s-home')"><div class="nav-icon"></div><div class="nav-label">Beranda</div></div>
+ <div class="nav-item" onclick="goTo('s-jobdesk')"><div class="nav-icon"></div><div class="nav-label">Jobdesk</div></div>
+ <div class="nav-item active"><div class="nav-icon"></div><div class="nav-label" style="color:var(--blue)">Pengumuman</div></div>
+ <div class="nav-item" onclick="goTo('s-ide')"><div class="nav-icon"></div><div class="nav-label">Ide Tim</div></div>
+ </div>
+</div>
+
+<!-- BUAT PENGUMUMAN -->
+<div class="screen" id="s-tambah-pengumuman">
+ <div class="statusbar"></div>
+ <div class="header">
+ <div class="header-row"><button class="back-btn" onclick="goTo('s-home')">?</button><div><h1>Buat Pengumuman</h1><p>Tambah info untuk tim</p></div></div>
+ <div class="gold-line"></div>
+ </div>
+ <div class="content">
+ <div class="card">
+ <div class="form-group"><label class="form-label">Judul</label><input type="text" class="form-input" id="peng-judul" placeholder="Judul pengumuman"></div>
+ <div class="form-group"><label class="form-label">Isi</label><textarea class="form-input" id="peng-isi" placeholder="Isi pengumuman..." style="height:100px"></textarea></div>
+ <div class="form-group"><label class="form-label">Kategori</label>
+ <select class="form-input" id="peng-kategori"><option value="PENTING">PENTING</option><option value="INFO">INFO</option><option value="UMUM">UMUM</option></select>
+ </div>
+ <div class="form-group"><label class="form-label">Ditujukan untuk</label>
+ <select class="form-input" id="peng-target"><option value="ALL">Semua Tim</option><option value="Live">Live Streaming</option><option value="Packing">Packing</option><option value="Ecommerce">E-commerce</option><option value="Finance">Finance</option></select>
+ </div>
+ <button class="btn btn-primary" onclick="submitPengumuman()">Kirim Pengumuman</button>
+ </div>
+ </div>
+</div>
+
+<!-- IDE TIM -->
+<div class="screen" id="s-ide">
+ <div class="statusbar"></div>
+ <div class="header">
+ <div class="header-row"><button class="back-btn" onclick="goTo('s-home')">?</button><div><h1>Ide Tim</h1><p>Sampaikan ide terbaikmu</p></div></div>
+ <div class="gold-line"></div>
+ </div>
+ <div class="content">
+ <div class="card" style="margin-bottom:12px">
+ <div class="card-title"><div class="card-dot"></div>Tulis Ide Baru</div>
+ <div class="form-group"><label class="form-label">Judul Ide</label><input type="text" class="form-input" id="ide-judul" placeholder="Judul singkat ideamu"></div>
+ <div class="form-group"><label class="form-label">Deskripsi</label><textarea class="form-input" id="ide-deskripsi" placeholder="Jelaskan ideamu..."></textarea></div>
+ <button class="btn btn-primary" onclick="submitIde()">Kirim Ide</button>
+ </div>
+ <div class="section-label">Ide Masuk</div>
+ <div id="ide-list"><div class="empty-state"><div class="empty-icon"></div>Memuat...</div></div>
+ </div>
+ <div class="navbar">
+ <div class="nav-item" onclick="goTo('s-home')"><div class="nav-icon"></div><div class="nav-label">Beranda</div></div>
+ <div class="nav-item" onclick="goTo('s-jobdesk')"><div class="nav-icon"></div><div class="nav-label">Jobdesk</div></div>
+ <div class="nav-item" onclick="goTo('s-pengumuman')"><div class="nav-icon"></div><div class="nav-label">Pengumuman</div></div>
+ <div class="nav-item active"><div class="nav-icon"></div><div class="nav-label" style="color:var(--blue)">Ide Tim</div></div>
+ </div>
+</div>
+
+<!-- PERATURAN -->
+<div class="screen" id="s-peraturan">
+ <div class="statusbar"></div>
+ <div class="header">
+ <div class="header-row"><button class="back-btn" onclick="goTo('s-home')">?</button><div><h1>Peraturan</h1><p>Tata tertib kantor Hosela</p></div></div>
+ <div class="gold-line"></div>
+ </div>
+ <div class="content">
+ <div id="peraturan-notif-btn" style="display:none;margin-bottom:10px">
+ <button class="btn btn-gold" style="width:100%;padding:10px;font-size:12px" onclick="kirimNotifPeraturan()"> Kirim Notif Peraturan Baru ke Tim</button>
+ </div>
+ <div id="peraturan-content">
+ <div class="empty-state"><div class="empty-icon"></div>Memuat...</div>
+ </div>
+ </div>
+</div>
+
+<!-- KALENDER LIBUR -->
+<div class="screen" id="s-kalender">
+ <div class="statusbar"></div>
+ <div class="header">
+ <div class="header-row"><button class="back-btn" onclick="goTo('s-home')">?</button><div><h1>Kalender Libur</h1><p>Kelola hari libur difasilitasi</p></div></div>
+ <div class="gold-line"></div>
+ </div>
+ <div class="content">
+ <div class="card" style="margin-bottom:12px">
+ <div class="card-title"><div class="card-dot"></div>Tambah Hari Libur</div>
+ <div class="form-group"><label class="form-label">Tanggal</label><input type="date" class="form-input" id="libur-tgl"></div>
+ <div class="form-group"><label class="form-label">Nama Hari Libur</label><input type="text" class="form-input" id="libur-nama" placeholder="Contoh: Idul Fitri H-1"></div>
+ <button class="btn btn-primary" id="btn-add-libur" onclick="submitLibur()">Tambah</button>
+ </div>
+ <div class="section-label">Daftar Hari Libur Difasilitasi</div>
+ <div id="kalender-list"><div class="empty-state"><div class="empty-icon"></div>Memuat...</div></div>
+ </div>
+</div>
+
+<!-- KELOLA KARYAWAN -->
+<div class="screen" id="s-manage-users">
+ <div class="statusbar"></div>
+ <div class="header">
+ <div class="header-row"><button class="back-btn" onclick="goTo('s-home')">?</button><div><h1>Kelola Karyawan</h1><p>Aktif / Nonaktif akses</p></div><button class="btn btn-primary btn-sm" style="margin-left:auto;white-space:nowrap" onclick="goTo('s-tambah-karyawan')">+ Tambah</button></div>
+ <div class="gold-line"></div>
+ </div>
+ <div class="content" id="users-list"><div class="empty-state"><div class="empty-icon"></div>Memuat...</div></div>
+</div>
+
+<!-- TAMBAH KARYAWAN BARU -->
+<div class="screen" id="s-tambah-karyawan">
+ <div class="statusbar"></div>
+ <div class="header">
+ <div class="header-row"><button class="back-btn" onclick="goTo('s-manage-users')">?</button><div><h1>Tambah Karyawan</h1><p>Daftarkan anggota baru</p></div></div>
+ <div class="gold-line"></div>
+ </div>
+ <div class="content">
+ <div class="form-group"><label class="form-label">Nama Lengkap</label><input type="text" class="form-input" id="tk-nama" placeholder="Nama karyawan baru" autocomplete="off"></div>
+ <div class="form-group"><label class="form-label">Bagian</label><input type="text" class="form-input" id="tk-bagian" placeholder="Contoh: Packing, Live, Ecommerce"></div>
+ <div class="form-group"><label class="form-label">Jabatan</label><input type="text" class="form-input" id="tk-jabatan" placeholder="Contoh: Staff, Kepala Tim"></div>
+ <div class="form-group"><label class="form-label">Email <span style="color:var(--muted);font-weight:400">(opsional)</span></label><input type="email" class="form-input" id="tk-email" placeholder="email@gmail.com"></div>
+ <div style="background:#fffbeb;border:1px solid #fcd34d;border-radius:10px;padding:12px;margin-bottom:16px;font-size:13px;color:#92400e">Password default: <b>hosela</b> &mdash; karyawan wajib ganti setelah login pertama.</div>
+ <button class="btn btn-primary" id="tk-btn" onclick="submitTambahKaryawan()">Daftarkan Karyawan</button>
+ <div id="tk-error" class="pin-error"></div>
+ </div>
+</div>
+
+<!-- ABSENSI UPLOAD (Finance) -->
+<div class="screen" id="s-absensi-upload">
+ <div class="statusbar"></div>
+ <div class="header">
+ <div class="header-row"><button class="back-btn" onclick="goTo('s-home')">?</button><div><h1>Upload Absensi</h1><p>Data fingerprint mingguan</p></div></div>
+ <div class="gold-line"></div>
+ </div>
+ <div class="content">
+ <div class="card" style="margin-bottom:12px">
+ <div class="card-title"><div class="card-dot"></div>Cara Upload Data</div>
+ <div style="display:flex;gap:10px;margin-bottom:10px;align-items:flex-start">
+ <div class="step-num" style="background:var(--blue)">1</div>
+ <div style="font-size:12px;color:var(--text-dark);line-height:1.5">Export file Excel dari mesin fingerprint seperti biasa</div>
+ </div>
+ <div style="display:flex;gap:10px;margin-bottom:10px;align-items:flex-start">
+ <div class="step-num" style="background:var(--blue)">2</div>
+ <div style="font-size:12px;color:var(--text-dark);line-height:1.5">Buka file Excel di komputer</div>
+ </div>
+ <div style="display:flex;gap:10px;margin-bottom:10px;align-items:flex-start">
+ <div class="step-num" style="background:var(--blue)">3</div>
+ <div style="font-size:12px;color:var(--text-dark);line-height:1.5">Pilih semua <b>(Ctrl+A)</b> ? Salin <b>(Ctrl+C)</b></div>
+ </div>
+ <div style="display:flex;gap:10px;margin-bottom:10px;align-items:flex-start">
+ <div class="step-num" style="background:var(--blue)">4</div>
+ <div style="font-size:12px;color:var(--text-dark);line-height:1.5">Buka Google Sheets <b>Hosela Hub ? Database</b> ? tab <b>ABSENSI_UPLOAD</b></div>
+ </div>
+ <div style="display:flex;gap:10px;margin-bottom:10px;align-items:flex-start">
+ <div class="step-num" style="background:var(--blue)">5</div>
+ <div style="font-size:12px;color:var(--text-dark);line-height:1.5">Klik cell <b>A1</b> ? Tempel <b>(Ctrl+V)</b></div>
+ </div>
+ <div style="display:flex;gap:10px;align-items:flex-start">
+ <div class="step-num" style="background:var(--gold)">6</div>
+ <div style="font-size:12px;color:var(--text-dark);line-height:1.5">Kembali ke sini dan klik <b>Proses Data</b> di bawah</div>
+ </div>
+ </div>
+ <div id="upload-result" style="display:none;border-radius:10px;padding:12px;margin-bottom:10px;border:1px solid">
+ <div style="font-size:13px;font-weight:600;margin-bottom:4px" id="upload-result-title"></div>
+ <div style="font-size:11px;line-height:1.5" id="upload-result-msg"></div>
+ </div>
+ <button class="btn btn-primary" id="proses-btn" onclick="prosesAbsensi()">Proses Data Absensi</button>
+ <div style="margin-top:10px;padding:10px;background:var(--blue-light);border-radius:8px">
+ <div style="font-size:11px;color:#1d4ed8;line-height:1.6"> Sistem otomatis menghitung kehadiran, keterlambatan, absen, dan lembur. Sheet ABSENSI_UPLOAD akan dikosongkan setelah selesai.</div>
+ </div>
+ </div>
+</div>
+
+<!-- LAPORAN ABSENSI (Owner) -->
+<div class="screen" id="s-laporan-absensi">
+ <div class="statusbar"></div>
+ <div class="header">
+ <div class="header-row"><button class="back-btn" onclick="goTo('s-home')">?</button><div><h1>Laporan Absensi</h1><p id="laporan-minggu-label">Minggu terbaru</p></div></div>
+ <div class="gold-line"></div>
+ </div>
+ <div class="content" id="laporan-list"><div class="empty-state"><div class="empty-icon"></div>Memuat...</div></div>
+</div>
+
+<!-- KPI CHECK -->
+<div class="screen" id="s-kpi-check">
+ <div class="statusbar"></div>
+ <div class="header">
+ <div class="header-row"><button class="back-btn" onclick="goTo('s-home')">?</button><div><h1>KPI Checklist</h1><p id="kpi-check-minggu">Minggu ini</p></div></div>
+ <div class="gold-line"></div>
+ </div>
+ <div class="content" id="kpi-check-content">
+ <div class="empty-state"><div class="empty-icon"></div>Memuat...</div>
+ </div>
+</div>
+
+<!-- PAPAN PERINGKAT -->
+<div class="screen" id="s-papan-peringkat">
+ <div class="statusbar"></div>
+ <div class="header">
+ <div class="header-row"><button class="back-btn" onclick="goTo('s-home')">?</button><div><h1>Papan Peringkat</h1><p>Kinerja tim bulan ini</p></div></div>
+ <div class="gold-line"></div>
+ </div>
+ <div class="content" id="papan-content">
+ <div class="empty-state"><div class="empty-icon"></div>Memuat...</div>
+ </div>
+</div>
+
+<!-- GANTI PIN -->
+<div class="screen" id="s-ganti-pin">
+ <div class="statusbar"></div>
+ <div class="header">
+ <div class="header-row"><button class="back-btn" onclick="goTo('s-home')">?</button><div><h1>Ganti Sandi</h1><p>Ubah kata sandi kamu</p></div></div>
+ <div class="gold-line"></div>
+ </div>
+ <div class="content">
+ <div class="card">
+ <div class="form-group">
+ <label class="form-label">Sandi Lama</label>
+ <input type="password" class="form-input" id="pin-lama" placeholder="Masukkan sandi lama" autocomplete="current-password">
+ </div>
+ <div class="form-group">
+ <label class="form-label">Sandi Baru</label>
+ <input type="password" class="form-input" id="pin-baru" placeholder="Masukkan sandi baru" autocomplete="new-password">
+ </div>
+ <div class="form-group">
+ <label class="form-label">Konfirmasi Sandi Baru</label>
+ <input type="password" class="form-input" id="pin-konfirm" placeholder="Ulangi sandi baru" autocomplete="new-password">
+ </div>
+ <button class="btn btn-primary" onclick="submitGantiPIN()">Simpan Sandi Baru</button>
+ </div>
+ </div>
+</div>
+
+<!-- PAKSA GANTI PIN (login pertama kali) -->
+<div class="screen" id="s-paksa-ganti-pin">
+ <div class="statusbar"></div>
+ <div style="background:var(--blue);padding:30px 24px;text-align:center;flex-shrink:0">
+ <div style="font-size:36px;margin-bottom:8px"></div>
+ <div style="font-size:18px;font-weight:700;color:#fff">Buat Kata Sandi</div>
+ <div style="font-size:12px;color:rgba(255,255,255,0.7);margin-top:6px">Ini pertama kali kamu login.<br>Buat kata sandi pribadi sekarang.</div>
+ <div style="height:3px;background:var(--gold);width:40px;margin:12px auto 0;border-radius:2px"></div>
+ </div>
+ <div class="content" style="background:var(--gray-bg)">
+ <div class="card">
+ <div class="form-group">
+ <label class="form-label">Sandi Baru</label>
+ <input type="password" class="form-input" id="paksa-pin-baru" placeholder="Masukkan kata sandi baru" autocomplete="new-password">
+ </div>
+ <div class="form-group">
+ <label class="form-label">Konfirmasi Sandi Baru</label>
+ <input type="password" class="form-input" id="paksa-pin-konfirm" placeholder="Ulangi kata sandi baru" autocomplete="new-password">
+ </div>
+ <div style="background:var(--blue-light);border-radius:8px;padding:10px;margin-bottom:12px;font-size:11px;color:#1d4ed8">
+ Kata sandi digunakan untuk login ke Hosela Hub. Jangan bagikan ke siapapun.
+ </div>
+ <button class="btn btn-primary" onclick="submitPaksaGantiPIN()" id="paksa-btn">Simpan & Masuk</button>
+ </div>
+ </div>
+</div>
+
+<!-- SUBMIT IZIN -->
+<div class="screen" id="s-absensi-camera">
+ <div class="statusbar"></div>
+ <div class="header">
+ <div class="header-row"><button class="back-btn" onclick="goTo('s-home')">?</button><div><h1>Absensi Kamera</h1><p>Foto selfie dan lokasi kantor</p></div></div>
+ <div class="gold-line"></div>
+ </div>
+ <div class="content">
+ <div class="card camera-card">
+ <div class="camera-preview">
+ <video id="attendance-video" autoplay playsinline muted></video>
+ <canvas id="attendance-canvas" style="display:none"></canvas>
+ <img id="attendance-photo-preview" alt="" style="display:none">
+ <div id="attendance-camera-placeholder">Kamera belum aktif</div>
+ </div>
+ <div class="camera-actions">
+ <button class="btn btn-primary" id="camera-start-btn" onclick="startAttendanceCamera()">Aktifkan Kamera</button>
+ <button class="btn btn-gold" id="camera-capture-btn" onclick="captureAttendancePhoto()" disabled>Ambil Foto</button>
+ </div>
+ </div>
+ <div class="card">
+ <div class="card-title"><div class="card-dot"></div>Detail Absensi</div>
+ <div class="form-group">
+ <label class="form-label">Tipe Absensi</label>
+ <select id="attendance-type" class="form-input">
+ <option value="MASUK">Masuk</option>
+ <option value="PULANG">Pulang</option>
+ </select>
+ </div>
+ <div id="attendance-location-status" class="camera-status">Lokasi belum dibaca</div>
+ <button class="btn btn-primary" id="attendance-submit-btn" onclick="submitAttendanceCamera()" disabled>Kirim Absensi</button>
+ <div class="camera-note">Absensi akan ditolak jika lokasi berada di luar radius kantor. Data foto disimpan di Google Drive, bukan di cell Sheet.</div>
+ </div>
+ <div class="card">
+ <div class="card-title"><div class="card-dot"></div>Status Hari Ini</div>
+ <div id="attendance-today"><div class="empty-state"><div class="empty-icon"></div>Memuat...</div></div>
+ </div>
+ </div>
+</div>
+
+<!-- SUBMIT IZIN -->
+<div class="screen" id="s-izin">
+ <div class="statusbar"></div>
+ <div class="header">
+ <div class="header-row"><button class="back-btn" onclick="goTo('s-home')">?</button><div><h1>Izin / Sakit</h1><p>Ajukan ketidakhadiran</p></div></div>
+ <div class="gold-line"></div>
+ </div>
+ <div class="content">
+ <div class="card">
+ <div class="card-title"><div class="card-dot"></div>Ajukan Izin / Sakit</div>
+ <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:10px;margin-bottom:12px;font-size:11px;color:#92400e;line-height:1.6">
+ <b> Perhatian:</b><br>
+ Pengajuan izin sakit hanya dapat diproses jika diajukan <b>pada hari yang sama</b> dengan tanggal tidak masuk.<br>
+ Pengajuan yang terlambat berhak <b>ditolak</b> oleh Finance.
+ </div>
+ <input type="date" class="form-input" id="izin-tanggal">
+ </div>
+ <div class="form-group">
+ <label class="form-label">Jenis</label>
+ <select class="form-input" id="izin-jenis" onchange="toggleFotoField(this.value)">
+ <option value="SAKIT">Sakit</option>
+ <option value="IZIN">Izin</option>
+ </select>
+ </div>
+ <div class="form-group">
+ <label class="form-label">Keterangan</label>
+ <textarea class="form-input" id="izin-keterangan" rows="3" placeholder="Jelaskan alasan ketidakhadiran..."></textarea>
+ </div>
+ <div class="form-group" id="foto-group">
+ <label class="form-label"> Link Surat Dokter <span style="color:#dc2626">*Wajib untuk SAKIT</span></label>
+ <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:10px;margin-bottom:8px;font-size:11px;color:#92400e;line-height:1.6">
+ <b>Cara upload foto surat dokter:</b><br>
+ 1. Foto surat dokter dari HP kamu<br>
+ 2. Upload ke <b>Google Drive</b><br>
+ 3. Klik kanan file ? <b>Bagikan</b> ? pilih <b>"Siapa saja yang punya link"</b><br>
+ 4. Klik <b>Salin link</b> ? paste di kolom di bawah
+ </div>
+ <input type="url" class="form-input" id="izin-foto" placeholder="https://drive.google.com/file/d/...">
+ </div>
+ <button class="btn btn-primary" onclick="submitIzin()">Kirim Pengajuan</button>
+ </div>
+ <div class="card" style="margin-top:10px">
+ <div class="card-title"><div class="card-dot"></div>Riwayat Pengajuan</div>
+ <div id="izin-history"><div class="empty-state">Memuat...</div></div>
+ </div>
+ </div>
+</div>
+
+<!-- KELOLA IZIN (Finance/Owner) -->
+<div class="screen" id="s-kelola-izin">
+ <div class="statusbar"></div>
+ <div class="header">
+ <div class="header-row"><button class="back-btn" onclick="goTo('s-home')">?</button><div><h1>Kelola</h1><p>Izin & Tap Anomali</p></div></div>
+ <div class="gold-line"></div>
+ </div>
+ <div style="display:flex;border-bottom:2px solid var(--gray-border);background:#fff;flex-shrink:0">
+ <div id="tab-izin" onclick="switchKelolaTab('izin')" style="flex:1;padding:12px;text-align:center;font-size:12px;font-weight:700;color:var(--blue);border-bottom:2px solid var(--blue);cursor:pointer"> Izin/Sakit</div>
+ <div id="tab-anomali" onclick="switchKelolaTab('anomali')" style="flex:1;padding:12px;text-align:center;font-size:12px;font-weight:600;color:var(--text-muted);cursor:pointer"> Tap Anomali</div>
+ </div>
+ <div class="content">
+ <div id="kelola-izin-list"></div>
+ <div id="kelola-anomali-list" style="display:none"></div>
+ </div>
+</div>
+
+<!-- NOTIFIKASI -->
+<div class="screen" id="s-notifikasi">
+ <div class="statusbar"></div>
+ <div class="header">
+ <div class="header-row"><button class="back-btn" onclick="goTo('s-home')">?</button><div><h1>Notifikasi</h1><p>Peringatan & info untukmu</p></div>
+ <button onclick="hapusSemuaNotif()" style="background:none;border:none;color:rgba(255,255,255,0.7);font-size:12px;cursor:pointer;margin-left:auto">Hapus Semua</button>
+ </div>
+ <div class="gold-line"></div>
+ </div>
+ <div class="content" id="notif-list">
+ <div class="empty-state"><div class="empty-icon"></div>Memuat...</div>
+ </div>
+</div>
+
+<!-- PENGHARGAAN & DENDA MANUAL (Finance/Owner) -->
+<div class="screen" id="s-sanksi-manual">
+ <div class="statusbar"></div>
+ <div class="header">
+ <div class="header-row"><button class="back-btn" onclick="goTo('s-home')">?</button><div><h1>Penghargaan & Denda</h1><p>Denda dan penghargaan manual</p></div></div>
+ <div class="gold-line"></div>
+ </div>
+ <div class="content">
+ <div class="card">
+ <div class="card-title"><div class="card-dot"></div>Tambah Baru</div>
+ <div class="form-group">
+ <label class="form-label">Karyawan</label>
+ <select class="form-input" id="sanksi-user"></select>
+ </div>
+ <div class="form-group">
+ <label class="form-label">Tipe</label>
+ <select class="form-input" id="sanksi-tipe">
+ <option value="DENDA_MANUAL">Denda</option>
+ <option value="REWARD_MANUAL">Penghargaan</option>
+ </select>
+ </div>
+ <div class="form-group">
+ <label class="form-label">Bulan Gaji Berlaku</label>
+ <select class="form-input" id="sanksi-bulan"></select>
+ </div>
+ <div class="form-group">
+ <label class="form-label">Nominal (Rp)</label>
+ <input type="number" class="form-input" id="sanksi-nominal" placeholder="50000">
+ </div>
+ <div class="form-group">
+ <label class="form-label">Keterangan</label>
+ <textarea class="form-input" id="sanksi-keterangan" rows="2" placeholder="Alasan denda atau penghargaan..."></textarea>
+ </div>
+ <button class="btn btn-primary" onclick="submitSanksiManual()">Terapkan</button>
+ </div>
+ <div class="card" style="margin-top:10px">
+ <div class="card-title"><div class="card-dot"></div>Riwayat Penghargaan & Denda</div>
+ <div id="sanksi-history"><div class="empty-state">Memuat...</div></div>
+ </div>
+ </div>
+</div>
+
+<!-- REVIEW TELAT (Finance/Owner) -->
+<div class="screen" id="s-review-telat">
+ <div class="statusbar"></div>
+ <div class="header">
+ <div class="header-row"><button class="back-btn" onclick="goTo('s-home')">?</button><div><h1>Review Telat</h1><p>Tentukan potongan telat khusus</p></div></div>
+ <div class="gold-line"></div>
+ </div>
+ <div class="content">
+ <div style="display:flex;gap:8px;margin-bottom:12px">
+ <select id="izin-telat-bulan" class="form-input" style="flex:1" onchange="loadReviewTelat(true)"></select>
+ </div>
+ <div style="display:flex;gap:8px;margin-bottom:12px">
+ <select id="izin-telat-status" class="form-input" style="flex:1" onchange="loadReviewTelat(true)">
+ <option value="MENUNGGU">Menunggu Review</option>
+ <option value="ALL">Semua Status</option>
+ <option value="TELAT_NORMAL">Telat Normal</option>
+ <option value="IZIN_TELAT_KHUSUS">Izin Telat Khusus</option>
+ <option value="BEBAS_POTONGAN">Bebas Potongan</option>
+ </select>
+ </div>
+ <input id="izin-telat-search" class="form-input" style="margin-bottom:12px" placeholder="Cari nama, ID, tanggal, atau status..." oninput="filterReviewTelatList()">
+ <div id="review-telat-list"><div class="empty-state"><div class="empty-icon"></div>Memuat...</div></div>
+ </div>
+</div>
+<!-- CATATAN KEHADIRAN (Finance/Owner) -->
+<div class="screen" id="s-catatan-kehadiran">
+ <div class="statusbar"></div>
+ <div class="header">
+ <div class="header-row"><button class="back-btn" onclick="goTo('s-home')">?</button><div><h1>Catatan Kehadiran</h1><p>Riwayat masuk dan pulang bulanan</p></div></div>
+ <div class="gold-line"></div>
+ </div>
+ <div class="content">
+ <div style="display:flex;gap:8px;margin-bottom:12px">
+ <select id="att-matrix-bulan" class="form-input" style="flex:1" onchange="loadAttendanceMatrix(true)"></select>
+ </div>
+ <input id="att-matrix-search" class="form-input" style="margin-bottom:12px" placeholder="Cari nama atau bagian..." oninput="filterAttendanceMatrix()">
+ <div id="att-matrix-summary"></div>
+ <div id="att-matrix-content"><div class="empty-state"><div class="empty-icon"></div>Memuat...</div></div>
+ </div>
+</div>
+
+<!-- PAYROLL / GAJI (Finance/Owner) -->
+<div class="screen" id="s-setting-gaji">
+ <div class="statusbar"></div>
+ <div class="header">
+ <div class="header-row"><button class="back-btn" onclick="goTo('s-home')">?</button><div><h1>Pengaturan Gaji</h1><p>Ubah gaji bulanan karyawan</p></div></div>
+ <div class="gold-line"></div>
+ </div>
+ <div class="content">
+ <input id="salary-search" class="form-input" style="margin-bottom:12px" placeholder="Cari nama, bagian, atau jabatan..." oninput="filterSalaryUsers()">
+ <div id="salary-settings-content"><div class="empty-state"><div class="empty-icon"></div>Memuat...</div></div>
+ </div>
+</div>
+<div class="screen" id="s-payroll">
+ <div class="statusbar"></div>
+ <div class="header">
+ <div class="header-row"><button class="back-btn" onclick="goTo('s-home')">?</button><div><h1>Penggajian</h1><p>Pratinjau gaji sebelum menerbitkan slip</p></div></div>
+ <div class="gold-line"></div>
+ </div>
+ <div class="content">
+ <div style="display:flex;gap:8px;margin-bottom:12px">
+ <select id="payroll-bulan-sel" class="form-input" style="flex:1" onchange="loadPayrollPreview()"></select>
+ </div>
+ <div id="payroll-content"><div class="empty-state"><div class="empty-icon"></div>Memuat...</div></div>
+ </div>
+</div>
+
+<!-- SLIP GAJI (Karyawan) -->
+<div class="screen" id="s-slip-gaji">
+ <div class="statusbar"></div>
+ <div class="header">
+ <div class="header-row"><button class="back-btn" onclick="goTo('s-home')">?</button><div><h1>Slip Gaji</h1><p>Slip yang sudah dipublish</p></div></div>
+ <div class="gold-line"></div>
+ </div>
+ <div class="content" id="slip-gaji-content">
+ <div class="empty-state"><div class="empty-icon"></div>Memuat...</div>
+ </div>
+</div>
+
+<!-- PHONE PREVIEW -->
+</div><!-- /app-wrap -->
+<button class="preview-btn" onclick="togglePreview()"> Pratinjau HP</button>
+
+<script src="js/mock-backend.js"></script>
+<script src="js/app.js?v=20260930b"></script>
+<script src="js/payroll.js?v=20260930b"></script>
+<script src="js/preview.js?v=20260930b"></script>
+</body>
+</html>
