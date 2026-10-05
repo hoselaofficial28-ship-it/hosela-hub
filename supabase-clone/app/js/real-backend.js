@@ -8,6 +8,13 @@
 
   function profileRow(p) { return Array.isArray(p) ? p[0] : p; }
 
+  var MONTH_ID = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+  function fmtTanggalId(isoDate) {
+    if (!isoDate) return '';
+    var d = new Date(String(isoDate).substring(0, 10) + 'T12:00:00');
+    return d.getDate() + ' ' + MONTH_ID[d.getMonth()] + ' ' + d.getFullYear();
+  }
+
   var handlers = {
     validateLogin: async function (args) {
       var nama = args[0], password = args[1];
@@ -104,6 +111,161 @@
       var r = await window.sb.rpc('process_absensi_app_to_rekap', { p_bulan_key: bulanKey });
       if (r.error) return { success: false, msg: r.error.message };
       return r.data;
+    },
+
+    // args lama: [userId, tgl, jenis, keterangan, linkFoto]
+    submitIzin: async function (args) {
+      var tgl = args[1], jenis = args[2], ket = args[3], foto = args[4];
+      var r = await window.sb.rpc('submit_izin', { p_tanggal: tgl, p_jenis: jenis, p_keterangan: ket, p_link_foto: foto || null });
+      if (r.error) return { success: false, msg: r.error.message };
+      return r.data;
+    },
+
+    // Return ARRAY langsung (bukan {success,data}) -- sesuai ekspektasi UI lama.
+    getIzinKaryawan: async function (args) {
+      var userId = args[0];
+      var r = await window.sb.from('leave_requests')
+        .select('id,tanggal,jenis,keterangan,status')
+        .eq('user_id', userId).order('submitted_at', { ascending: false }).limit(10);
+      if (r.error) return [];
+      return (r.data || []).map(function (row) {
+        return { id: row.id, tanggal: fmtTanggalId(row.tanggal), jenis: row.jenis, keterangan: row.keterangan, status: row.status };
+      });
+    },
+
+    getIzinPending: async function () {
+      var r = await window.sb.rpc('get_izin_pending');
+      if (r.error) return [];
+      return (r.data || []).map(function (row) {
+        return { id: row.id, userId: row.user_id, nama: row.nama, tanggal: fmtTanggalId(row.tanggal), jenis: row.jenis, keterangan: row.keterangan, linkFoto: row.link_foto || '' };
+      });
+    },
+
+    // args lama: [izinId, status, actorNama] -- actorNama diabaikan, pakai auth.uid()
+    approveIzin: async function (args) {
+      var r = await window.sb.rpc('approve_izin', { p_izin_id: args[0], p_status: args[1] });
+      if (r.error) return { success: false, msg: r.error.message };
+      return r.data;
+    },
+
+    getPayrollPreview: async function (args) {
+      var r = await window.sb.rpc('get_payroll_preview', { p_bulan_key: args[0] });
+      if (r.error) return { success: false, msg: r.error.message };
+      return r.data;
+    },
+
+    // args lama: [bulanKey, actorNama] -- actorNama diabaikan, pakai auth.uid()
+    createPayrollDraft: async function (args) {
+      var r = await window.sb.rpc('create_payroll_draft', { p_bulan_key: args[0] });
+      if (r.error) return { success: false, msg: r.error.message };
+      return r.data;
+    },
+
+    confirmPayroll: async function (args) {
+      var r = await window.sb.rpc('confirm_payroll', { p_payroll_run_id: args[0] });
+      if (r.error) return { success: false, msg: r.error.message };
+      return r.data;
+    },
+
+    publishPayroll: async function (args) {
+      var r = await window.sb.rpc('publish_payroll', { p_payroll_run_id: args[0] });
+      if (r.error) return { success: false, msg: r.error.message };
+      return r.data;
+    },
+
+    getPayrollDetail: async function (args) {
+      var r = await window.sb.rpc('get_payroll_detail', { p_payroll_detail_id: args[0] });
+      if (r.error) return { success: false, msg: r.error.message };
+      return r.data;
+    },
+
+    updatePayrollAdjustment: async function (args) {
+      var r = await window.sb.rpc('update_payroll_adjustment', {
+        p_payroll_detail_id: args[0], p_adjustment_plus: parseInt(args[1], 10) || 0,
+        p_adjustment_minus: parseInt(args[2], 10) || 0, p_catatan: args[3] || ''
+      });
+      if (r.error) return { success: false, msg: r.error.message };
+      return r.data;
+    },
+
+    getPayrollEmployeeSlip: async function (args) {
+      var r = await window.sb.rpc('get_payroll_employee_slip', { p_user_id: args[0] || null });
+      if (r.error) return { success: false, msg: r.error.message };
+      return r.data;
+    },
+
+    // args lama: [userId, payrollRunId]
+    getPayrollEmployeeSlipDetail: async function (args) {
+      var r = await window.sb.rpc('get_payroll_employee_slip_detail', { p_user_id: args[0], p_payroll_run_id: args[1] });
+      if (r.error) return { success: false, msg: r.error.message };
+      return r.data;
+    },
+
+    getRekapBulananSemua: async function (args) {
+      var r = await window.sb.rpc('get_rekap_bulanan_semua', { p_bulan_key: args[0] });
+      if (r.error) return { success: false, msg: r.error.message, data: [] };
+      var hariKerja = await window.sb.rpc('calc_hari_kerja_efektif', { p_bulan_key: args[0] });
+      return {
+        success: true, bulan: args[0], hariKerja: (hariKerja.data) || 0,
+        data: (r.data || []).map(function (row) {
+          return {
+            userId: row.user_id, nama: row.nama, bagian: row.bagian, jabatan: row.jabatan,
+            hadir: row.hadir, telat: row.telat, absen: row.absen,
+            lemburMinggu: row.lembur_minggu, lemburLibur: row.lembur_libur,
+            bintang: row.bintang, skor: row.skor,
+            totalDenda: row.total_denda, totalReward: row.total_reward, bonusKerajinan: row.bonus_kerajinan,
+            gajiPokok: row.gaji_pokok, gajiHarian: row.gaji_harian
+          };
+        })
+      };
+    },
+
+    // Query langsung (bukan RPC) -- RLS kpi_templates sudah izinkan baca semua.
+    getKPITemplate: async function (args) {
+      var jabatan = args[0];
+      var r = await window.sb.from('kpi_templates').select('id,no_urut,indikator,keterangan').eq('jabatan', jabatan).order('no_urut');
+      if (r.error) return [];
+      return (r.data || []).map(function (row) {
+        return { id: row.id, no: row.no_urut, indikator: row.indikator, keterangan: row.keterangan };
+      });
+    },
+
+    // Query langsung + grouping di JS -- RLS kpi_reports sudah izinkan baca sendiri.
+    getKPILaporan: async function (args) {
+      var userId = args[0];
+      var r = await window.sb.from('kpi_reports')
+        .select('minggu,kpi_template_id,indikator,selesai,catatan')
+        .eq('user_id', userId).order('minggu', { ascending: false });
+      if (r.error) return [];
+      var weeks = {};
+      var order = [];
+      (r.data || []).forEach(function (row) {
+        if (!weeks[row.minggu]) { weeks[row.minggu] = { minggu: row.minggu, items: [], selesai: 0, total: 0 }; order.push(row.minggu); }
+        var w = weeks[row.minggu];
+        w.items.push({ kpiId: row.kpi_template_id, indikator: row.indikator, selesai: row.selesai, catatan: row.catatan });
+        w.total++;
+        if (row.selesai) w.selesai++;
+      });
+      return order.slice(0, 4).map(function (k) { return weeks[k]; });
+    },
+
+    submitKPILaporan: async function (args) {
+      var minggu = args[1], items = args[2];
+      var r = await window.sb.rpc('submit_kpi_laporan', { p_minggu: minggu, p_items: items || [] });
+      if (r.error) return { success: false, msg: r.error.message };
+      return r.data;
+    },
+
+    getPapanPeringkat: async function () {
+      var r = await window.sb.rpc('get_papan_peringkat');
+      if (r.error) return [];
+      return (r.data || []).map(function (row) {
+        return {
+          id: row.id, nama: row.nama, jabatan: row.jabatan, bagian: row.bagian,
+          bintang: row.bintang, skor: row.skor, finalScore: row.final_score,
+          ranking: row.ranking, isRanking1: row.is_ranking1, apresiasi: row.apresiasi
+        };
+      });
     }
   };
 
