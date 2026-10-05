@@ -579,9 +579,18 @@ function gasCall(action, args, success, failure) {
  var cached = cacheGet(cacheKey);
  if (cached) { if (success) success(cached); return; }
  }
- // ====== MODE DEMO (supabase-clone) ======
- // Belum tersambung ke Supabase/GAS asli — dialihkan ke data contoh di js/mock-backend.js
- // supaya tampilan & alur bisa dicek sebelum backend Supabase nyata jadi.
+ // ====== SUPABASE ASLI dulu (js/real-backend.js), baru fallback DEMO ======
+ if (window.realBackendHandles && window.realBackendHandles(action)) {
+ window.realBackend(action, args || []).then(function(result) {
+  finishSuccess(result);
+ }).catch(function(err) {
+  console.error('[REAL] error, action=' + action, err);
+  if (failure) failure(err); else console.error('Supabase Error:', err);
+ });
+ return;
+ }
+ // Belum tersambung ke Supabase asli untuk aksi ini — dialihkan ke data
+ // contoh di js/mock-backend.js supaya tampilan & alur tetap bisa dicek.
  setTimeout(function() {
  try {
   if (typeof window.mockBackend !== 'function') throw new Error('mock-backend.js belum termuat');
@@ -854,6 +863,7 @@ function onDaftarBagianChange() {
 
 function submitDaftarAkun() {
  var nama    = (document.getElementById('daftar-nama').value || '').trim();
+ var email   = (document.getElementById('daftar-email').value || '').trim();
  var bagian  = (document.getElementById('daftar-bagian').value || '').trim();
  var jabatan = (document.getElementById('daftar-jabatan').value || '').trim();
  var sandi   = document.getElementById('daftar-sandi').value || '';
@@ -862,19 +872,22 @@ function submitDaftarAkun() {
  var btn     = document.getElementById('daftar-btn');
  errEl.textContent = ''; errEl.style.color = '#dc2626';
  if (!nama)   { errEl.textContent = 'Nama lengkap wajib diisi'; return; }
+ if (!email || email.indexOf('@') === -1) { errEl.textContent = 'Email valid wajib diisi'; return; }
  if (!bagian) { errEl.textContent = 'Silakan pilih bagian'; return; }
  if (!jabatan){ errEl.textContent = 'Silakan pilih jabatan'; return; }
  if (!sandi)  { errEl.textContent = 'Kata sandi tidak boleh kosong'; return; }
+ if (sandi.length < 6) { errEl.textContent = 'Kata sandi minimal 6 karakter'; return; }
  if (sandi !== sandi2) { errEl.textContent = 'Konfirmasi kata sandi tidak cocok'; return; }
  btn.disabled = true;
  document.getElementById('daftar-spinner').style.display = 'flex';
- gasCall('daftarAkun', [nama, bagian, jabatan, sandi], function(r) {
+ gasCall('daftarAkun', [nama, bagian, jabatan, sandi, email], function(r) {
   btn.disabled = false;
   document.getElementById('daftar-spinner').style.display = 'none';
   if (r && r.success) {
    errEl.style.color = '#16a34a';
    errEl.textContent = r.msg || 'Akun berhasil dibuat!';
    document.getElementById('daftar-nama').value = '';
+   document.getElementById('daftar-email').value = '';
    document.getElementById('daftar-bagian').value = '';
    document.getElementById('daftar-jabatan').innerHTML = '<option value="">-- Pilih Bagian dulu --</option>';
    document.getElementById('daftar-sandi').value = '';
@@ -915,7 +928,7 @@ function doLogin() {
  history.replaceState({ screen: 's-home' }, '', '#home');
  goTo('s-home');
  } else {
- errEl.textContent = 'Nama pengguna atau kata sandi salah.';
+ errEl.textContent = (r && r.msg) ? r.msg : 'Nama pengguna atau kata sandi salah.';
  document.getElementById('login-password').value = '';
  }
  }, function() {
