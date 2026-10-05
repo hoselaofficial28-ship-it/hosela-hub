@@ -4,3 +4,12 @@ gas/
 gas-backup/
 gas-paste/
 gas-split/
+
+# Kredensial lokal untuk clone Supabase/Google Drive.
+.env
+.env.*
+!.env.example
+supabase-clone/.env
+supabase-clone/.env.*
+!supabase-clone/.env.example
+supabase-clone/HANDOFF.local.md
