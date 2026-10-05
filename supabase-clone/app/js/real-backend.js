@@ -70,6 +70,40 @@
       var r = await window.sb.rpc('tolak_registrasi', { p_user_id: args[0] });
       if (r.error) return { success: false, msg: r.error.message };
       return r.data;
+    },
+
+    // args lama: [userId, nama, tipe, photoData, lat, lng, accuracy, clientTime]
+    // Foto (photoData) BELUM disambung ke Google Drive -- cuma metadata tap yang
+    // tersimpan untuk sekarang, foto diabaikan di sisi ini sampai Edge Function
+    // upload dibangun.
+    submitAbsensiCamera: async function (args) {
+      var tipe = args[2], lat = args[4], lng = args[5], accuracy = args[6];
+      var r = await window.sb.rpc('submit_absensi_camera', {
+        p_tipe: tipe, p_lat: lat, p_lng: lng, p_akurasi: Math.round(accuracy || 0)
+      });
+      if (r.error) return { success: false, msg: r.error.message };
+      return r.data;
+    },
+
+    getAbsensiCameraToday: async function (args) {
+      var userId = args[0];
+      var today = new Date();
+      var tgl = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
+      var r = await window.sb.from('attendance_events')
+        .select('id,tanggal,jam,tipe,status,jarak_kantor_meter,catatan')
+        .eq('user_id', userId).eq('tanggal', tgl)
+        .order('created_at', { ascending: false });
+      if (r.error) return { success: false, data: [] };
+      return { success: true, data: (r.data || []).map(function (row) {
+        return { id: row.id, tanggal: row.tanggal, jam: row.jam, tipe: row.tipe, status: row.status, distance: row.jarak_kantor_meter, jarak: row.jarak_kantor_meter, catatan: row.catatan };
+      }) };
+    },
+
+    processAbsensiAppToRekap: async function (args) {
+      var bulanKey = args[0];
+      var r = await window.sb.rpc('process_absensi_app_to_rekap', { p_bulan_key: bulanKey });
+      if (r.error) return { success: false, msg: r.error.message };
+      return r.data;
     }
   };
 
