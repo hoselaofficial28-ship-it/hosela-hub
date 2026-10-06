@@ -1779,6 +1779,7 @@ function submitTambahKaryawan() {
  if (!nama) { errEl.textContent = 'Nama wajib diisi'; return; }
  if (!bagian) { errEl.textContent = 'Bagian wajib diisi'; return; }
  if (!jabatan) { errEl.textContent = 'Jabatan wajib diisi'; return; }
+ if (!email) { errEl.textContent = 'Email wajib diisi (dipakai untuk login)'; return; }
  btn.disabled = true; btn.textContent = 'Mendaftarkan...';
  gasCall('addKaryawanBaru', [nama, bagian, jabatan, email], function(res) {
   btn.disabled = false; btn.textContent = 'Daftarkan Karyawan';
