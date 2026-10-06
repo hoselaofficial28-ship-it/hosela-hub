@@ -266,6 +266,74 @@
           ranking: row.ranking, isRanking1: row.is_ranking1, apresiasi: row.apresiasi
         };
       });
+    },
+
+    // args lama: [nama, bagian, jabatan, email]. Lewat Edge Function (bukan
+    // RPC) -- satu-satunya cara aman buat akun+password dari server.
+    addKaryawanBaru: async function (args) {
+      var nama = args[0], bagian = args[1], jabatan = args[2], email = args[3];
+      var r = await window.sb.functions.invoke('add-karyawan', { body: { nama: nama, bagian: bagian, jabatan: jabatan, email: email } });
+      if (r.error) {
+        var msg = 'Gagal mendaftarkan karyawan';
+        try { var body = await r.error.context.json(); if (body && body.msg) msg = body.msg; } catch (e) {}
+        return { success: false, msg: msg };
+      }
+      return r.data;
+    },
+
+    // args lama: [actorId, bulanKey] -- actorId diabaikan, pakai auth.uid()
+    getSalaryUsers: async function (args) {
+      var r = await window.sb.rpc('get_salary_users', { p_bulan_key: args[1] || null });
+      if (r.error) return { success: false, msg: r.error.message };
+      return {
+        success: true, bulan: args[1],
+        data: (r.data || []).map(function (row) {
+          return {
+            id: row.id, nama: row.nama, bagian: row.bagian, jabatan: row.jabatan, status: row.status,
+            gajiBulanan: row.gaji_bulanan, gajiBulanBerlaku: row.gaji_bulan_berlaku, bonusKerajinan: row.bonus_kerajinan,
+            bulanBerlaku: row.bulan_berlaku, bulanSetting: row.bulan_setting, catatanSetting: row.catatan_setting
+          };
+        })
+      };
+    },
+
+    // args lama: [actorId, userId, salary, bulanKey, note, bonusKerajinan]
+    updateUserSalary: async function (args) {
+      var r = await window.sb.rpc('update_user_salary', {
+        p_user_id: args[1], p_salary: parseInt(args[2], 10) || 0, p_bulan_key: args[3] || null,
+        p_note: args[4] || '', p_bonus_kerajinan: parseInt(args[5], 10) || 150000
+      });
+      if (r.error) return { success: false, msg: r.error.message };
+      return r.data;
+    },
+
+    // args lama: [actorId, bulanKey, items]
+    updateSalaryUsersBatch: async function (args) {
+      var r = await window.sb.rpc('update_salary_users_batch', { p_bulan_key: args[1] || null, p_items: args[2] || [] });
+      if (r.error) return { success: false, msg: r.error.message };
+      return r.data;
+    },
+
+    // args lama: [actorId, userId]
+    deactivateSalaryUser: async function (args) {
+      var r = await window.sb.rpc('deactivate_salary_user', { p_user_id: args[1] });
+      if (r.error) return { success: false, msg: r.error.message };
+      return r.data;
+    },
+
+    getAllUsers: async function () {
+      var r = await window.sb.rpc('get_all_users');
+      if (r.error) return [];
+      return (r.data || []).map(function (row) {
+        return { id: row.id, nama: row.nama, bagian: row.bagian, jabatan: row.jabatan, status: row.status };
+      });
+    },
+
+    // args lama: [userId] -- sama persis deactivate_salary_user, cuma beda jumlah argumen
+    nonaktifkanUser: async function (args) {
+      var r = await window.sb.rpc('deactivate_salary_user', { p_user_id: args[0] });
+      if (r.error) return { success: false, msg: r.error.message };
+      return r.data;
     }
   };
 
