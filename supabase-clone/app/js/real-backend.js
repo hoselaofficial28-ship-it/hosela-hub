@@ -14,6 +14,12 @@
     var d = new Date(String(isoDate).substring(0, 10) + 'T12:00:00');
     return d.getDate() + ' ' + MONTH_ID[d.getMonth()] + ' ' + d.getFullYear();
   }
+  function fmtTanggalJamId(isoDatetime) {
+    if (!isoDatetime) return '';
+    var d = new Date(isoDatetime);
+    var jam = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+    return d.getDate() + ' ' + MONTH_ID[d.getMonth()] + ' ' + d.getFullYear() + ' ' + jam;
+  }
 
   var handlers = {
     validateLogin: async function (args) {
@@ -333,6 +339,120 @@
     nonaktifkanUser: async function (args) {
       var r = await window.sb.rpc('deactivate_salary_user', { p_user_id: args[0] });
       if (r.error) return { success: false, msg: r.error.message };
+      return r.data;
+    },
+
+    // Query langsung -- RLS announcements sudah filter bagian sendiri/ALL otomatis.
+    getPengumuman: async function (args) {
+      var bagian = args[0];
+      var r = await window.sb.from('announcements')
+        .select('id,judul,isi,kategori,dibuat_oleh,created_at')
+        .eq('status', 'AKTIF').order('created_at', { ascending: false });
+      if (r.error) return [];
+      return (r.data || []).map(function (row) {
+        return { id: row.id, judul: row.judul, isi: row.isi, kategori: row.kategori, dibuat: row.dibuat_oleh, tgl: fmtTanggalId(row.created_at) };
+      });
+    },
+
+    // args lama: [judul, isi, kategori, target, actorNama]
+    addPengumuman: async function (args) {
+      var r = await window.sb.rpc('add_pengumuman', { p_judul: args[0], p_isi: args[1], p_kategori: args[2], p_target_bagian: args[3] });
+      if (r.error) return { success: false, msg: r.error.message };
+      return r.data;
+    },
+
+    getIde: async function () {
+      var r = await window.sb.rpc('get_ide');
+      if (r.error) return [];
+      return (r.data || []).map(function (row) {
+        return { id: row.id, judul: row.judul, deskripsi: row.deskripsi, tgl: fmtTanggalId(row.tgl), status: row.status, feedback: row.feedback, nama: row.nama, bagian: row.bagian };
+      });
+    },
+
+    // args lama: [userId, nama, judul, deskripsi] -- userId/nama diabaikan, pakai auth.uid()
+    addIde: async function (args) {
+      var judul = args[2], deskripsi = args[3];
+      var r = await window.sb.from('team_ideas').insert({ user_id: (await window.sb.auth.getUser()).data.user.id, judul: judul, deskripsi: deskripsi });
+      if (r.error) return { success: false, msg: r.error.message };
+      return { success: true };
+    },
+
+    // Query langsung -- RLS holidays "semua baca".
+    getKalenderLibur: async function () {
+      var r = await window.sb.from('holidays').select('id,tanggal,nama,difasilitasi').order('tanggal', { ascending: false });
+      if (r.error) return [];
+      return (r.data || []).map(function (row) {
+        return { id: row.id, tanggal: fmtTanggalId(row.tanggal), nama: row.nama, difasilitasi: row.difasilitasi ? 'YA' : 'TIDAK' };
+      });
+    },
+
+    // args lama: [tanggal, nama, actorNama]
+    addLibur: async function (args) {
+      var r = await window.sb.rpc('add_libur', { p_tanggal: args[0], p_nama: args[1] });
+      if (r.error) return { success: false, msg: r.error.message };
+      return r.data;
+    },
+
+    // args lama: [id, actorNama]
+    hapusLibur: async function (args) {
+      var r = await window.sb.rpc('hapus_libur', { p_holiday_id: args[0] });
+      if (r.error) return { success: false, msg: r.error.message };
+      return r.data;
+    },
+
+    // Query langsung -- RLS rules "semua baca".
+    getPeraturan: async function () {
+      var r = await window.sb.from('rules').select('no_urut,kategori,isi').order('no_urut');
+      if (r.error) return [];
+      return (r.data || []).map(function (row) {
+        return { no: row.no_urut, kategori: row.kategori, isi: row.isi };
+      });
+    },
+
+    // args lama: [userId] -- query langsung, RLS notifications "baca sendiri".
+    getNotifikasi: async function (args) {
+      var userId = args[0];
+      var r = await window.sb.from('notifications')
+        .select('id,judul,isi,tipe,status,created_at,menu')
+        .eq('user_id', userId).order('created_at', { ascending: false }).limit(30);
+      if (r.error) return [];
+      return (r.data || []).map(function (row) {
+        return { id: row.id, judul: row.judul, isi: row.isi, tipe: row.tipe, dibaca: row.status === 'SUDAH', tgl: fmtTanggalJamId(row.created_at), menu: row.menu };
+      });
+    },
+
+    // args lama: [notifId]
+    hapusNotifikasi: async function (args) {
+      var r = await window.sb.rpc('hapus_notifikasi', { p_notif_id: args[0] });
+      if (r.error) return { success: false };
+      return r.data;
+    },
+
+    // args lama: [userId]
+    hapusSemuaNotifikasi: async function () {
+      var r = await window.sb.rpc('hapus_semua_notifikasi');
+      if (r.error) return { success: false };
+      return r.data;
+    },
+
+    // args lama: [keterangan]
+    triggerNotifPeraturan: async function (args) {
+      var r = await window.sb.rpc('trigger_notif_peraturan', { p_keterangan: args[0] || '' });
+      if (r.error) return { success: false };
+      return r.data;
+    },
+
+    // args lama: [notifId]
+    tandaiDibaca: async function (args) {
+      var r = await window.sb.rpc('tandai_dibaca', { p_notif_id: args[0] });
+      if (r.error) return { success: false };
+      return r.data;
+    },
+
+    // args lama: [userId, menu] -- userId diabaikan, RPC pakai auth.uid() sendiri.
+    tandaiMenuDibaca: async function (args) {
+      var r = await window.sb.rpc('tandai_menu_dibaca', { p_menu: args[1] });
+      if (r.error) return { success: false };
       return r.data;
     }
   };
