@@ -27,7 +27,13 @@
       var resolved = await window.sb.rpc('resolve_login_email', { p_nama: nama });
       if (resolved.error || !resolved.data) return { success: false, msg: 'Nama atau sandi salah' };
       var signIn = await window.sb.auth.signInWithPassword({ email: resolved.data, password: password });
-      if (signIn.error || !signIn.data.session) return { success: false, msg: 'Nama atau sandi salah' };
+      if (signIn.error || !signIn.data.session) {
+        var authMsg = (signIn.error && signIn.error.message) ? signIn.error.message : '';
+        if (/email not confirmed/i.test(authMsg)) {
+          return { success: false, msg: 'Akun sudah terdaftar, tetapi konfirmasi email Supabase masih aktif. Hubungi Owner untuk mengaktifkan akun.' };
+        }
+        return { success: false, msg: 'Nama atau sandi salah' };
+      }
       var prof = await window.sb.rpc('get_my_profile');
       var p = profileRow(prof.data);
       if (prof.error || !p) { await window.sb.auth.signOut(); return { success: false, msg: 'Profil tidak ditemukan' }; }
