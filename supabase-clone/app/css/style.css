@@ -2897,3 +2897,35 @@ body.phone-mode #app-wrap #s-home.screen.active{
     display:none!important;
   }
 }
+
+/* Form pendaftaran lebih tinggi daripada layar HP. Jadikan seluruh layar daftar
+   sebagai satu area scroll agar tombol Kirim Pendaftaran selalu dapat dicapai. */
+body:not(.phone-mode) #s-daftar.screen.active{
+  height:100dvh!important;
+  min-height:100dvh!important;
+  overflow-x:hidden!important;
+  overflow-y:auto!important;
+  -webkit-overflow-scrolling:touch;
+  overscroll-behavior-y:contain;
+  touch-action:pan-y;
+}
+#s-daftar .login-top{
+  flex-shrink:0;
+}
+#s-daftar .login-body{
+  flex:0 0 auto;
+  padding-bottom:calc(32px + env(safe-area-inset-bottom, 0px));
+}
+#s-daftar #daftar-btn{
+  min-height:48px;
+  scroll-margin-bottom:calc(24px + env(safe-area-inset-bottom, 0px));
+}
+body.phone-mode #app-wrap #s-daftar.screen.active{
+  height:0!important;
+  min-height:0!important;
+  flex:1;
+  overflow-x:hidden!important;
+  overflow-y:auto!important;
+  -webkit-overflow-scrolling:touch;
+  touch-action:pan-y;
+}
