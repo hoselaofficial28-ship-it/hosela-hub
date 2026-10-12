@@ -378,6 +378,21 @@ body{background:#f5f7fb;color:var(--text-dark)}
 .jabatan-badge{border-radius:6px;background:rgba(255,255,255,.12)!important;border:1px solid rgba(255,255,255,.18)!important;color:#fff!important;letter-spacing:0}
 .camera-preview{border-radius:8px;background:#0b1220}
 
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.owner-account-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:12px}
+.owner-stat{padding:12px 10px;border:1px solid var(--gray-border);border-radius:8px;background:#fff;box-shadow:var(--shadow-sm)}
+.owner-stat strong{display:block;font-size:22px;line-height:1.1;color:var(--text-dark)}
+.owner-stat span{display:block;margin-top:5px;font-size:11px;color:var(--text-muted)}
+.owner-stat-active strong{color:#067647}.owner-stat-inactive strong{color:#b42318}
+.owner-account-tools{display:grid;grid-template-columns:minmax(0,1fr) 150px;gap:8px;margin-bottom:10px}
+.owner-access-note{margin-bottom:12px;padding:10px 12px;border:1px solid #bfdbfe;border-radius:8px;background:#eff6ff;color:#1e40af;font-size:12px;line-height:1.5}
+.owner-user-card{align-items:flex-start;gap:10px}
+.owner-user-card .list-info{min-width:0}
+.owner-user-card .list-info h4,.owner-user-card .list-info p{overflow-wrap:anywhere}
+.owner-user-meta{margin-top:4px!important;font-size:11px!important;color:var(--text-muted)!important}
+.owner-user-actions{display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0}
+@media(max-width:520px){.owner-account-tools{grid-template-columns:1fr}.owner-user-card{flex-wrap:wrap}.owner-user-actions{width:100%;align-items:stretch}.owner-user-actions .btn{min-height:44px;width:100%}}
+
 /* Modern UI refresh */
 :root{
   --blue:#1557d8;

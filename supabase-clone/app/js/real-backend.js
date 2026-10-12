@@ -62,7 +62,7 @@
       }
       // Jangan biarkan user "setengah login" sebelum di-approve Owner.
       try { await window.sb.auth.signOut(); } catch (e) {}
-      return { success: true, msg: 'Pendaftaran terkirim! Menunggu persetujuan Owner sebelum bisa login.' };
+      return { success: true, msg: 'Pendaftaran berhasil! Akun langsung aktif dan bisa dipakai untuk login.' };
     },
 
     getRegistrasiPending: async function () {
@@ -370,6 +370,24 @@
       return (r.data || []).map(function (row) {
         return { id: row.id, nama: row.nama, bagian: row.bagian, jabatan: row.jabatan, status: row.status };
       });
+    },
+
+    getOwnerAccounts: async function () {
+      var r = await window.sb.rpc('get_owner_accounts');
+      if (r.error) throw r.error;
+      return (r.data || []).map(function (row) {
+        return {
+          id: row.id, nama: row.nama, bagian: row.bagian, jabatan: row.jabatan,
+          email: row.email, status: row.status,
+          createdAt: fmtTanggalJamId(row.created_at), nonaktifAt: fmtTanggalJamId(row.nonaktif_at)
+        };
+      });
+    },
+
+    setUserAccess: async function (args) {
+      var r = await window.sb.rpc('set_user_access', { p_user_id: args[0], p_active: !!args[1] });
+      if (r.error) return { success: false, msg: r.error.message };
+      return r.data;
     },
 
     // args lama: [userId] -- sama persis deactivate_salary_user, cuma beda jumlah argumen

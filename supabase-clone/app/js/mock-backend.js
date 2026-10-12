@@ -251,13 +251,20 @@
       return karyawanList().sort(function (a, b) { return b.finalScore - a.finalScore; }).map(function (u) { return { id: u.id, nama: u.nama, bagian: u.bagian, jabatan: u.jabatan, bintang: u.bintang, finalScore: u.finalScore }; });
     },
     getAllUsers: function () { return USERS.map(publicUser); },
+    getOwnerAccounts: function () { return USERS.map(function(u) { var row = publicUser(u); row.createdAt = fmtDate(new Date()); return row; }); },
+    setUserAccess: function (args) {
+      var u = findUser(args[0]);
+      if (!u || u.bagian === 'Owner') return { success: false, msg: 'Akun tidak dapat diubah' };
+      u.status = args[1] ? 'AKTIF' : 'NONAKTIF';
+      return { success: true, msg: u.nama + (args[1] ? ' berhasil diaktifkan kembali' : ' berhasil dinonaktifkan') };
+    },
     nonaktifkanUser: function (args) { var u = findUser(args[0]); if (u) u.status = 'NONAKTIF'; return { success: !!u }; },
 
     // ---- 6 aksi "gap" registrasi — didemokan bekerja penuh di sini ----
     getDaftarOptions: function () { return { success: true, data: JOBDESK_OPTIONS }; },
     daftarAkun: function (args) {
-      REGISTRASI_PENDING.push({ id: uid('REG'), nama: args[0], bagian: args[1], jabatan: args[2], tglDaftar: fmtDate(new Date()), _sandi: args[3] });
-      return { success: true, msg: 'Pendaftaran terkirim, menunggu persetujuan Owner (demo)' };
+      USERS.push({ id: uid('U'), nama: args[0], sandi: args[3] || DEMO_PASSWORD, bagian: args[1], jabatan: args[2], email: args[4] || '', status: 'AKTIF', bintang: 0, skor: 0, skorKPI: 0, gajiBulanan: 0, finalScore: 0 });
+      return { success: true, msg: 'Pendaftaran berhasil! Akun langsung aktif dan bisa dipakai untuk login (demo).' };
     },
     getRegistrasiPending: function () { return { data: REGISTRASI_PENDING.map(function (r) { return { id: r.id, nama: r.nama, bagian: r.bagian, jabatan: r.jabatan, tglDaftar: r.tglDaftar }; }) }; },
     approveRegistrasi: function (args) {

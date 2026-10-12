@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbw6q_5ZaIGrekeBwZ5TKh6X1GpWkFHsa5i6whdwacQkTEa-vvNezHlxFMEQFKZkmm5ffQ/exec';
-var APP_VERSION = '20261012b';
+var APP_VERSION = '20261012c';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -361,7 +361,7 @@ function clearLoginSession() {
 // Actions yang boleh di-cache (read-only)
 var CACHEABLE = [
  'getHomeData','getJobdeskList','getStaffByBagian','getJobdeskByBagian','getJobdeskByJabatan',
- 'getUserKPI','getKalenderLibur','getAllUsers','getPengumuman','getIde','getAbsensiRekap',
+ 'getUserKPI','getKalenderLibur','getAllUsers','getOwnerAccounts','getPengumuman','getIde','getAbsensiRekap',
  'getRekapBulananSemua','getPayrollPreview','getPapanPeringkat','getKPILaporan',
  'getNotifikasi','getIzinKaryawan','getIzinPendingCount','getSanksiManual',
  'getAbsensiMatrix','getAbsensiMatrixUser','getAllAbsensiRekap','getKPITemplate','getIzinPending',
@@ -383,6 +383,7 @@ var CACHE_TTL_BY_ACTION = {
  getRekapBulananSemua: 10 * 60 * 1000,
  getAllAbsensiRekap: 5 * 60 * 1000,
  getAllUsers: 15 * 60 * 1000,
+ getOwnerAccounts: 2 * 60 * 1000,
  getJobdeskList: 30 * 60 * 1000,
  getStaffByBagian: 15 * 60 * 1000,
  getJobdeskByBagian: 30 * 60 * 1000,
@@ -411,6 +412,7 @@ function invalidateReadCacheAfterMutation(action) {
   addLibur: ['getKalenderLibur','getAbsensiRekap','getRekapBulananSemua','getPayrollPreview'],
   hapusLibur: ['getKalenderLibur','getAbsensiRekap','getRekapBulananSemua','getPayrollPreview'],
   nonaktifkanUser: ['getAllUsers','getStaffByBagian','getRekapBulananSemua'],
+  setUserAccess: ['getOwnerAccounts','getAllUsers','getStaffByBagian','getRekapBulananSemua','getHomeData'],
   updateSalaryUsersBatch: ['getSalaryUsers','getAllUsers','getAbsensiRekap','getAllAbsensiRekap','getRekapBulananSemua','getPayrollPreview','getPayrollDetail','getPayrollEmployeeSlip','getPayrollEmployeeSlipDetail'],
   updateUserSalary: ['getSalaryUsers','getAllUsers','getAbsensiRekap','getAllAbsensiRekap','getRekapBulananSemua','getPayrollPreview','getPayrollDetail','getPayrollEmployeeSlip','getPayrollEmployeeSlipDetail'],
   deactivateSalaryUser: ['getSalaryUsers','getAllUsers','getStaffByBagian','getRekapBulananSemua','getPayrollPreview','getHomeData'],
@@ -1124,7 +1126,7 @@ function loadHome(forceRefresh) {
  }
  if (u.bagian === 'Owner') {
  menus.push({id:'s-tambah-pengumuman', icon:'edit', bg:'#f0fdf4', label:'Buat Pengumuman', sub:'Info baru'});
- menus.push({id:'s-manage-users', icon:'users', bg:'#fef3c7', label:'Kelola Tim', sub:'Aktif / Nonaktif'});
+ menus.push({id:'s-manage-users', icon:'users', bg:'#fef3c7', label:'Pendaftar & Akses', sub:'Pantau dan kelola akun'});
  menus.push({id:'s-laporan-absensi', icon:'chart', bg:'#e0f2fe', label:'Laporan Absensi', sub:'Rekap kehadiran'});
  menus.push({id:'s-sanksi-manual', icon:'scale', bg:'#fce7f3', label:'Penghargaan & Denda', sub:'Denda dan penghargaan manual'});
  menus.push({id:'s-review-telat', icon:'check', bg:'#fff7ed', label:'Review Telat', sub:'Toleransi izin telat'});
@@ -1797,81 +1799,89 @@ function hapusLibur(id, nama, tgl, btn) {
  });
 }
 
-function loadUsers() {
+var _ownerAccounts = [];
+
+function loadUsers(force) {
  var list = document.getElementById('users-list');
- list.innerHTML = '<div class="empty-state"><div class="empty-icon"></div>Memuat...</div>';
- // Muat pendaftaran pending sekaligus
- gasCall('getRegistrasiPending', [], function(res) {
-  var pending = (res && res.data) ? res.data : [];
-  var pendingHtml = '';
-  if (pending.length) {
-   pendingHtml = '<div class="section-label" style="background:#fff7ed;color:#92400e;border-radius:8px;padding:8px 12px;margin-bottom:8px">⏳ Menunggu Persetujuan ('+pending.length+')</div>' +
-   pending.map(function(p) {
-    return '<div class="list-item" style="cursor:default;background:#fffbeb;border:1px solid #fde68a;margin-bottom:6px;border-radius:10px">'+
-     '<div class="avatar" style="background:#fef3c7;color:#92400e">'+initials(p.nama)+'</div>'+
-     '<div class="list-info"><h4>'+cleanDisplayText(p.nama)+'</h4>'+
-     '<p>'+cleanDisplayText(p.jabatan)+' · '+cleanDisplayText(p.bagian)+(p.noHP?' · '+p.noHP:'')+'</p>'+
-     '<p style="color:#6b7280;font-size:11px">Daftar: '+p.tglDaftar+'</p></div>'+
-     '<div style="display:flex;flex-direction:column;gap:4px">'+
-     '<button class="btn btn-sm" style="background:#16a34a;color:#fff;border:none" onclick="approveRegistrasi(\''+p.id+'\',\''+esc(p.nama)+'\')">✓ Setujui</button>'+
-     '<button class="btn btn-sm btn-danger" onclick="tolakRegistrasi(\''+p.id+'\',\''+esc(p.nama)+'\')">✗ Tolak</button>'+
-     '</div></div>';
-   }).join('');
-  }
-  gasCall('getAllUsers', [], function(data) {
-   if (!data || !data.length) { list.innerHTML = pendingHtml || '<div class="empty-state">Tidak ada data</div>'; return; }
-   var aktif = data.filter(function(u){ return u.status === 'AKTIF'; });
-   var nonaktif = data.filter(function(u){ return u.status !== 'AKTIF'; });
-   list.innerHTML = pendingHtml +
-    (aktif.length ? '<div class="section-label">Aktif</div>' + aktif.map(userCard).join('') : '') +
-    (nonaktif.length ? '<div class="section-label" style="margin-top:12px">Nonaktif</div>' + nonaktif.map(userCard).join('') : '');
-  }, function(){ list.innerHTML = pendingHtml || '<div class="empty-state">Gagal memuat</div>'; });
+ if (!list) return;
+ if (!currentUser || currentUser.bagian !== 'Owner') {
+  list.innerHTML = '<div class="empty-state">Menu ini khusus Owner.</div>';
+  return;
+ }
+ list.innerHTML = '<div class="empty-state"><div class="empty-icon"></div>Memuat akun terdaftar...</div>';
+ if (force) cacheClear('getOwnerAccounts' + JSON.stringify([]));
+ gasCall('getOwnerAccounts', [], function(data) {
+  _ownerAccounts = Array.isArray(data) ? data : [];
+  renderOwnerAccounts();
  }, function() {
-  // Kalau getRegistrasiPending gagal, tetap load users biasa
-  gasCall('getAllUsers', [], function(data) {
-   if (!data || !data.length) { list.innerHTML = '<div class="empty-state">Tidak ada data</div>'; return; }
-   var aktif = data.filter(function(u){ return u.status === 'AKTIF'; });
-   var nonaktif = data.filter(function(u){ return u.status !== 'AKTIF'; });
-   list.innerHTML =
-    (aktif.length ? '<div class="section-label">Aktif</div>' + aktif.map(userCard).join('') : '') +
-    (nonaktif.length ? '<div class="section-label" style="margin-top:12px">Nonaktif</div>' + nonaktif.map(userCard).join('') : '');
-  }, function(){ list.innerHTML = '<div class="empty-state">Gagal memuat</div>'; });
+  list.innerHTML = '<div class="empty-state">Gagal memuat akun. Periksa koneksi lalu coba lagi.</div>';
  });
 }
 
-function approveRegistrasi(userId, nama) {
- if (!confirm('Setujui pendaftaran ' + nama + '?\nMereka dapat login dengan kata sandi awal: hosela')) return;
- gasCall('approveRegistrasi', [userId, currentUser.id], function(r) {
-  showToast(r.msg || 'Berhasil disetujui');
-  cacheClear('getAllUsers' + JSON.stringify([]));
-  loadUsers();
- }, function(){ showToast('Gagal. Coba lagi.'); });
+function renderOwnerAccounts() {
+ var list = document.getElementById('users-list');
+ if (!list) return;
+ var searchEl = document.getElementById('owner-user-search');
+ var filterEl = document.getElementById('owner-user-filter');
+ var query = String(searchEl ? searchEl.value : '').trim().toLowerCase();
+ var filter = filterEl ? filterEl.value : 'ALL';
+ var total = _ownerAccounts.length;
+ var aktif = _ownerAccounts.filter(function(u){ return u.status === 'AKTIF'; }).length;
+ var nonaktif = total - aktif;
+ document.getElementById('owner-users-total').textContent = total;
+ document.getElementById('owner-users-active').textContent = aktif;
+ document.getElementById('owner-users-inactive').textContent = nonaktif;
+ var shown = _ownerAccounts.filter(function(u) {
+  if (filter !== 'ALL' && u.status !== filter) return false;
+  if (!query) return true;
+  return [u.nama,u.bagian,u.jabatan,u.email].join(' ').toLowerCase().indexOf(query) !== -1;
+ });
+ if (!shown.length) {
+  list.innerHTML = '<div class="empty-state">Tidak ada akun yang cocok dengan pencarian atau filter.</div>';
+  return;
+ }
+ list.innerHTML = shown.map(ownerAccountCard).join('');
 }
 
-function tolakRegistrasi(userId, nama) {
- if (!confirm('Tolak dan hapus pendaftaran ' + nama + '?')) return;
- gasCall('tolakRegistrasi', [userId, currentUser.id], function(r) {
-  showToast(r.msg || 'Pendaftaran ditolak');
-  loadUsers();
- }, function(){ showToast('Gagal. Coba lagi.'); });
+function ownerAccountCard(u, i) {
+ var ci = (i || 0) % AVT_BG.length;
+ var nama = htmlEscape(cleanDisplayText(u.nama));
+ var bagian = htmlEscape(cleanDisplayText(u.bagian));
+ var jabatan = htmlEscape(cleanDisplayText(u.jabatan));
+ var email = htmlEscape(cleanDisplayText(u.email || 'Email tidak tersedia'));
+ var tanggal = htmlEscape(cleanDisplayText(u.createdAt || 'Tanggal tidak tersedia'));
+ var isOwner = u.bagian === 'Owner';
+ var statusBadge = u.status === 'AKTIF'
+  ? '<span class="badge badge-green">Aktif</span>'
+  : '<span class="badge badge-red">Nonaktif</span>';
+ var action = '';
+ if (isOwner || (currentUser && u.id === currentUser.id)) {
+  action = '<span class="badge badge-gray">Akun Owner</span>';
+ } else if (u.status === 'AKTIF') {
+  action = '<button class="btn btn-danger btn-sm" aria-label="Nonaktifkan '+nama+'" onclick="setUserAccess(\''+u.id+'\',false,\''+esc(u.nama)+'\')">Kick / Nonaktifkan</button>';
+ } else {
+  action = '<button class="btn btn-primary btn-sm" aria-label="Aktifkan kembali '+nama+'" onclick="setUserAccess(\''+u.id+'\',true,\''+esc(u.nama)+'\')">Aktifkan Kembali</button>';
+ }
+ return '<div class="list-item owner-user-card" style="cursor:default">'+
+  '<div class="avatar" style="background:'+AVT_BG[ci]+';color:'+AVT_TXT[ci]+'">'+htmlEscape(initials(u.nama))+'</div>'+
+  '<div class="list-info"><h4>'+nama+'</h4><p>'+jabatan+' · '+bagian+'</p>'+
+  '<p class="owner-user-meta">'+email+' · Terdaftar '+tanggal+'</p></div>'+
+  '<div class="owner-user-actions">'+statusBadge+action+'</div></div>';
 }
 
-function userCard(u, i) {
- var ci = (i||0) % AVT_BG.length;
- var aksi = u.status === 'AKTIF'
- ? '<button class="btn btn-danger btn-sm" onclick="tendang(\''+u.id+'\',\''+esc(u.nama)+'\')">Nonaktifkan</button>'
- : '<span class="badge badge-gray">Nonaktif</span>';
- return '<div class="list-item" style="cursor:default">'+
- '<div class="avatar" style="background:'+AVT_BG[ci]+';color:'+AVT_TXT[ci]+'">'+initials(u.nama)+'</div>'+
- '<div class="list-info"><h4>'+u.nama+'</h4><p>'+u.jabatan+' · '+u.bagian+'</p></div>'+
- aksi+'</div>';
+function setUserAccess(userId, makeActive, nama) {
+ var actionLabel = makeActive ? 'Aktifkan kembali' : 'Kick / nonaktifkan';
+ var effect = makeActive ? 'Akun dapat login kembali.' : 'Akun tidak dapat login atau memakai fitur terlindungi, tetapi histori tetap tersimpan.';
+ if (!confirm(actionLabel+' akses '+nama+'?\n'+effect)) return;
+ gasCall('setUserAccess', [userId, makeActive], function(r) {
+  if (!r || r.success === false) { showToast((r && r.msg) || 'Perubahan akses gagal'); return; }
+  showToast(r.msg || (nama + (makeActive ? ' berhasil diaktifkan' : ' berhasil dinonaktifkan')));
+  loadUsers(true);
+ }, function(){ showToast('Gagal mengubah akses. Coba lagi.'); });
 }
 
-function tendang(userId, nama) {
- if (!confirm('Nonaktifkan akses '+nama+'?\nMereka tidak bisa login lagi.')) return;
- gasCall('nonaktifkanUser', [userId], function(){ showToast(nama+' berhasil dinonaktifkan'); loadUsers(); },
- function(){ showToast('Gagal. Coba lagi.'); });
-}
+function userCard(u, i) { return ownerAccountCard(u, i); }
+function tendang(userId, nama) { setUserAccess(userId, false, nama); }
 
 function submitTambahKaryawan() {
  var nama = (document.getElementById('tk-nama').value || '').trim();
@@ -3552,6 +3562,11 @@ function processAttendanceAppRecap() {
 
 function initials(nama) { return (nama||'').split(' ').map(function(w){return w[0];}).join('').substring(0,2).toUpperCase(); }
 function esc(s) { return (s||'').replace(/'/g,"\\'"); }
+function htmlEscape(s) {
+ return String(s == null ? '' : s).replace(/[&<>"']/g, function(ch) {
+  return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch];
+ });
+}
 function formatTglShort(tglStr) {
  if (!tglStr) return '';
  var m = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];

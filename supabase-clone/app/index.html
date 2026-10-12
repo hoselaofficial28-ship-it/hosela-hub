@@ -381,14 +381,32 @@
  </div>
 </div>
 
-<!-- KELOLA KARYAWAN -->
+<!-- PENDAFTAR & AKSES (OWNER) -->
 <div class="screen" id="s-manage-users">
  <div class="statusbar"></div>
  <div class="header">
- <div class="header-row"><button class="back-btn" onclick="goTo('s-home')">?</button><div><h1>Kelola Karyawan</h1><p>Aktif / Nonaktif akses</p></div><button class="btn btn-primary btn-sm" style="margin-left:auto;white-space:nowrap" onclick="goTo('s-tambah-karyawan')">+ Tambah</button></div>
+ <div class="header-row"><button class="back-btn" onclick="goTo('s-home')">?</button><div><h1>Pendaftar & Akses</h1><p>Khusus Owner · akun baru langsung aktif</p></div><button class="btn btn-primary btn-sm" style="margin-left:auto;white-space:nowrap" onclick="goTo('s-tambah-karyawan')">+ Tambah</button></div>
  <div class="gold-line"></div>
  </div>
- <div class="content" id="users-list"><div class="empty-state"><div class="empty-icon"></div>Memuat...</div></div>
+ <div class="content">
+  <div class="owner-account-summary" aria-label="Ringkasan akun">
+   <div class="owner-stat"><strong id="owner-users-total">—</strong><span>Total akun</span></div>
+   <div class="owner-stat owner-stat-active"><strong id="owner-users-active">—</strong><span>Aktif</span></div>
+   <div class="owner-stat owner-stat-inactive"><strong id="owner-users-inactive">—</strong><span>Nonaktif</span></div>
+  </div>
+  <div class="owner-account-tools">
+   <label class="sr-only" for="owner-user-search">Cari nama, bagian, jabatan, atau email</label>
+   <input class="form-input" id="owner-user-search" type="search" placeholder="Cari nama, bagian, jabatan, atau email" oninput="renderOwnerAccounts()">
+   <label class="sr-only" for="owner-user-filter">Filter status akun</label>
+   <select class="form-input" id="owner-user-filter" onchange="renderOwnerAccounts()">
+    <option value="ALL">Semua status</option>
+    <option value="AKTIF">Aktif</option>
+    <option value="NONAKTIF">Nonaktif</option>
+   </select>
+  </div>
+  <div class="owner-access-note">Akun pendaftar baru langsung aktif. Nonaktifkan untuk mencabut akses tanpa menghapus histori kerja.</div>
+  <div id="users-list"><div class="empty-state"><div class="empty-icon"></div>Memuat...</div></div>
+ </div>
 </div>
 
 <!-- TAMBAH KARYAWAN BARU -->
@@ -790,7 +808,7 @@
 <script src="js/supabase-client.js"></script>
 <script src="js/real-backend.js"></script>
 <script src="js/mock-backend.js"></script>
-<script src="js/app.js?v=20261012b"></script>
+<script src="js/app.js?v=20261012c"></script>
 <script src="js/payroll.js?v=20260930b"></script>
 <script src="js/preview.js?v=20260930b"></script>
 </body>
