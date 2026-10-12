@@ -13,6 +13,7 @@ assert.match(html, /id="office-setting-card"/);
 assert.match(html, /class="content izin-page-content"/);
 assert.match(html, /class="content slip-page-content"/);
 assert.match(html, /content="width=device-width, initial-scale=1\.0"/);
+assert.doesNotMatch(html, /MODE CAMPURAN|demo-mode-banner/);
 
 assert.match(app, /gasCall\('getMyJobdesk'/);
 assert.match(app, /gasCall\('saveOwnerJobdesk'/);
