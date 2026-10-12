@@ -119,6 +119,43 @@
       return r.data;
     },
 
+    // Kalender kehadiran dibangun dari tabel Supabase yang sudah dilindungi RLS.
+    // Owner/Finance mendapat semua profil; karyawan otomatis hanya melihat dirinya.
+    getAbsensiMatrix: async function (args) {
+      return buildAttendanceMatrix(args[0], null);
+    },
+
+    getAbsensiMatrixUser: async function (args) {
+      return buildAttendanceMatrix(args[1], args[0]);
+    },
+
+    updateAbsensiMatrixDay: async function (args) {
+      var r = await window.sb.rpc('update_absensi_matrix_day', {
+        p_user_id: args[0], p_tanggal: args[1], p_jam_masuk: args[2] || null,
+        p_jam_pulang: args[3] || null, p_catatan: args[4] || ''
+      });
+      if (r.error) return { success: false, msg: r.error.message };
+      return r.data;
+    },
+
+    importAbsensiUploadToApp: async function (args) {
+      var r = await window.sb.rpc('import_attendance_legacy_to_events', { p_bulan_key: args[0] });
+      if (r.error) return { success: false, msg: r.error.message };
+      return r.data;
+    },
+
+    getAbsensiRekap: async function (args) {
+      var r = await window.sb.rpc('get_absensi_rekap', { p_user_id: args[0] });
+      if (r.error) return { bulanIni: '', liburBulanIni: [], data: [], success: false, msg: r.error.message };
+      return r.data;
+    },
+
+    getAllAbsensiRekap: async function () {
+      var r = await window.sb.rpc('get_all_absensi_rekap');
+      if (r.error) return { minggu: '', data: [] };
+      return r.data;
+    },
+
     // args lama: [userId, tgl, jenis, keterangan, linkFoto]
     submitIzin: async function (args) {
       var tgl = args[1], jenis = args[2], ket = args[3], foto = args[4];
@@ -456,6 +493,88 @@
       return r.data;
     }
   };
+
+  function attendanceDayCell(user, day) {
+    if (!user.days[day]) user.days[day] = { masuk: '', pulang: '', absen: false, telat: false, lembur: false, anomali: false, rejected: false, rows: [] };
+    return user.days[day];
+  }
+
+  function attendanceTime(value) {
+    return value ? String(value).substring(0, 8) : '';
+  }
+
+  function attendanceMinutes(value) {
+    var m = String(value || '').match(/^(\d{1,2}):(\d{2})/);
+    return m ? (parseInt(m[1], 10) * 60 + parseInt(m[2], 10)) : null;
+  }
+
+  function attendanceScheduleForDate(schedules, dateKey) {
+    var found = (schedules || []).find(function (s) { return dateKey >= s.dari && dateKey <= s.sampai; });
+    return found || { jam_masuk: '08:00:00', jam_pulang: '18:00:00' };
+  }
+
+  async function buildAttendanceMatrix(bulanKey, targetUserId) {
+    bulanKey = String(bulanKey || '');
+    if (!/^\d{4}-\d{2}$/.test(bulanKey)) return { success: false, msg: 'Bulan tidak valid' };
+    var start = bulanKey + '-01';
+    var parts = bulanKey.split('-');
+    var end = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10), 0);
+    var endKey = end.getFullYear() + '-' + String(end.getMonth() + 1).padStart(2, '0') + '-' + String(end.getDate()).padStart(2, '0');
+
+    var profileQuery = window.sb.from('profiles').select('id,nama,bagian,jabatan').eq('status', 'AKTIF').order('nama');
+    if (targetUserId) profileQuery = profileQuery.eq('id', targetUserId);
+    else profileQuery = profileQuery.not('bagian', 'in', '(Owner,Finance)');
+    var results = await Promise.all([
+      profileQuery,
+      window.sb.from('attendance_events').select('id,user_id,tanggal,jam,tipe,status,source,catatan').gte('tanggal', start).lte('tanggal', endKey).order('created_at'),
+      window.sb.from('attendance_details').select('id,user_id,tanggal,waktu,tipe,keterangan').gte('tanggal', start).lte('tanggal', endKey),
+      window.sb.from('attendance_anomalies').select('id,user_id,tanggal,tipe,status').gte('tanggal', start).lte('tanggal', endKey).eq('status', 'MENUNGGU'),
+      window.sb.from('work_schedules').select('dari,sampai,jam_masuk,jam_pulang,urutan').lte('dari', endKey).gte('sampai', start).order('urutan')
+    ]);
+    var failed = results.find(function (x) { return x.error; });
+    if (failed) return { success: false, msg: failed.error.message };
+
+    var users = (results[0].data || []).map(function (p) { return { id: p.id, nama: p.nama, bagian: p.bagian, jabatan: p.jabatan, days: {} }; });
+    var userMap = {};
+    users.forEach(function (u) { userMap[u.id] = u; });
+    var totalMasuk = 0, totalPulang = 0;
+
+    (results[2].data || []).forEach(function (row) {
+      var u = userMap[row.user_id]; if (!u) return;
+      var day = parseInt(String(row.tanggal).substring(8, 10), 10), cell = attendanceDayCell(u, day);
+      if (row.tipe === 'ABSEN') cell.absen = true;
+      else if (row.tipe === 'TELAT') cell.telat = true;
+      else if (row.tipe === 'LEMBUR_PULANG' || row.tipe === 'LEMBUR_MINGGU' || row.tipe === 'LEMBUR_LIBUR') cell.lembur = true;
+    });
+    (results[3].data || []).forEach(function (row) {
+      var u = userMap[row.user_id]; if (!u) return;
+      var cell = attendanceDayCell(u, parseInt(String(row.tanggal).substring(8, 10), 10));
+      cell.anomali = true; cell.absen = false; cell.anomaliTipe = row.tipe || '';
+    });
+    (results[1].data || []).forEach(function (row) {
+      var u = userMap[row.user_id]; if (!u) return;
+      var day = parseInt(String(row.tanggal).substring(8, 10), 10), cell = attendanceDayCell(u, day);
+      var jam = attendanceTime(row.jam), tipe = String(row.tipe || '').toUpperCase();
+      cell.rows.push({ id: row.id, tipe: tipe, jam: jam, status: row.status, source: row.source, catatan: row.catatan || '' });
+      if (row.status !== 'DITERIMA') { cell.rejected = true; return; }
+      if (tipe === 'ABSEN') { cell.masuk = ''; cell.pulang = ''; cell.absen = new Date(row.tanggal + 'T12:00:00').getDay() !== 0; cell.rejected = false; return; }
+      cell.absen = false;
+      if (tipe === 'MASUK') { cell.masuk = jam; totalMasuk++; }
+      if (tipe === 'PULANG') { cell.pulang = jam; totalPulang++; }
+    });
+    users.forEach(function (u) {
+      Object.keys(u.days).forEach(function (day) {
+        var cell = u.days[day], dateKey = bulanKey + '-' + String(day).padStart(2, '0');
+        var schedule = attendanceScheduleForDate(results[4].data || [], dateKey);
+        cell.jadwalMasuk = attendanceTime(schedule.jam_masuk).substring(0, 5) || '08:00';
+        if (cell.masuk && cell.pulang) cell.anomali = false;
+        if (cell.anomali || cell.masuk || cell.pulang) cell.absen = false;
+        var actual = attendanceMinutes(cell.masuk), required = attendanceMinutes(cell.jadwalMasuk);
+        if (actual !== null && required !== null && new Date(dateKey + 'T12:00:00').getDay() !== 0 && actual > required) cell.telat = true;
+      });
+    });
+    return { success: true, version: 'attendance-matrix-supabase-20261012', sources: ['attendance_details','attendance_events'], bulan: bulanKey, days: end.getDate(), users: users, totalMasuk: totalMasuk, totalPulang: totalPulang };
+  }
 
   window.realBackendHandles = function (action) { return Object.prototype.hasOwnProperty.call(handlers, action); };
   window.realBackend = function (action, args) { return handlers[action](args || []); };
