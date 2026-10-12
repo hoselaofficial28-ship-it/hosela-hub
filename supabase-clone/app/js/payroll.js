@@ -785,9 +785,9 @@ function renderSlipSetupState() {
  var el = document.getElementById('slip-gaji-content');
  if (!el) return;
  el.innerHTML =
- '<div class="card" style="padding:16px">' +
+ '<div class="card slip-empty-card">' +
  '<div class="card-title"><div class="card-dot"></div>Slip gaji belum tersedia</div>' +
- '<div style="font-size:12px;color:var(--text-muted);line-height:1.6">' +
+ '<div class="slip-empty-copy">' +
  'Menu ini sudah disiapkan. Slip akan muncul di sini setelah Finance/Owner mengonfirmasi dan mem-publish payroll.' +
  '</div>' +
  '</div>';
@@ -802,17 +802,17 @@ function renderSlipList(items) {
  }
  el.innerHTML = items.map(function(s) {
  var targetId = 'slip-detail-' + String(s.payrollRunId || s.id || '').replace(/[^a-zA-Z0-9_-]/g, '');
- return '<div class="card" style="padding:12px;margin-bottom:8px">' +
- '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px">' +
- '<div><div style="font-size:13px;font-weight:800;color:var(--text-dark)">'+salaryEsc(salaryMonthLabel(s.bulan || s.periode || '-'))+'</div><div style="font-size:11px;color:var(--text-muted)">Dipublish '+salaryEsc(s.dipublishPada || '-')+'</div></div>' +
- '<div style="font-size:13px;font-weight:800;color:var(--green);white-space:nowrap">Rp '+(parseInt(s.totalGaji || s.total || 0, 10) || 0).toLocaleString('id-ID')+'</div>' +
+ return '<article class="card slip-card">' +
+ '<div class="slip-card-head">' +
+ '<div><div class="slip-period">'+salaryEsc(salaryMonthLabel(s.bulan || s.periode || '-'))+'</div><div class="slip-meta">Diterbitkan '+salaryEsc(s.dipublishPada || '-')+'</div></div>' +
+ '<div class="slip-amount"><span>Gaji bersih</span><strong>Rp '+(parseInt(s.totalGaji || s.total || 0, 10) || 0).toLocaleString('id-ID')+'</strong></div>' +
  '</div>' +
- '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px">' +
- '<button class="btn btn-sm btn-primary" style="width:100%" onclick="toggleSlipDetail(&quot;'+(s.payrollRunId || '')+'&quot;,&quot;'+targetId+'&quot;)">Lihat Slip</button>' +
- '<button class="btn btn-sm btn-secondary" style="width:100%" onclick="downloadEmployeeSlipPdf(&quot;'+(s.payrollRunId || '')+'&quot;,&quot;'+(currentUser && currentUser.id || '')+'&quot;,this)">Download PDF</button>' +
+ '<div class="slip-actions">' +
+ '<button class="btn btn-sm btn-primary" onclick="toggleSlipDetail(&quot;'+(s.payrollRunId || '')+'&quot;,&quot;'+targetId+'&quot;)">Lihat Rincian</button>' +
+ '<button class="btn btn-sm btn-secondary" onclick="downloadEmployeeSlipPdf(&quot;'+(s.payrollRunId || '')+'&quot;,&quot;'+(currentUser && currentUser.id || '')+'&quot;,this)">Unduh PDF</button>' +
  '</div>' +
- '<div id="'+targetId+'" style="display:none"></div>' +
- '</div>';
+ '<div id="'+targetId+'" class="slip-detail-panel" style="display:none"></div>' +
+ '</article>';
  }).join('');
 }
 
@@ -824,22 +824,22 @@ function renderAdminSlipList(items) {
  return;
  }
  var total = items.reduce(function(sum, s) { return sum + (parseInt(s.totalGaji || s.total || 0, 10) || 0); }, 0);
- var html = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">' +
- '<div class="card" style="padding:10px;text-align:center"><div style="font-size:18px;font-weight:800;color:var(--blue)">'+items.length+'</div><div style="font-size:11px;color:var(--text-muted)">Slip Terbit</div></div>' +
- '<div class="card" style="padding:10px;text-align:center"><div style="font-size:14px;font-weight:800;color:var(--green)">Rp '+total.toLocaleString('id-ID')+'</div><div style="font-size:11px;color:var(--text-muted)">Total Slip</div></div>' +
+ var html = '<div class="slip-summary-grid">' +
+ '<div class="card slip-summary-card"><strong>'+items.length+'</strong><span>Slip Terbit</span></div>' +
+ '<div class="card slip-summary-card"><strong class="is-green">Rp '+total.toLocaleString('id-ID')+'</strong><span>Total Slip</span></div>' +
  '</div>';
  items.forEach(function(s) {
  var safeId = String(s.id || s.payrollRunId || s.userId || '').replace(/[^a-zA-Z0-9_-]/g, '');
  var targetId = 'admin-slip-detail-' + safeId;
- html += '<div class="card" style="padding:12px;margin-bottom:8px">' +
- '<div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start">' +
- '<div><div style="font-size:13px;font-weight:800;color:var(--text-dark)">'+salaryEsc(s.nama || '-')+'</div><div style="font-size:11px;color:var(--text-muted)">'+salaryEsc(s.jabatan || '-')+' · '+salaryEsc(s.bagian || '-')+' · '+salaryEsc(salaryMonthLabel(s.bulan || '-'))+'</div></div>' +
- '<div style="font-size:13px;font-weight:800;color:var(--green);white-space:nowrap">Rp '+(parseInt(s.totalGaji || s.total || 0, 10) || 0).toLocaleString('id-ID')+'</div>' +
+ html += '<article class="card slip-card">' +
+ '<div class="slip-card-head">' +
+ '<div><div class="slip-period">'+salaryEsc(s.nama || '-')+'</div><div class="slip-meta">'+salaryEsc(s.jabatan || '-')+' · '+salaryEsc(s.bagian || '-')+' · '+salaryEsc(salaryMonthLabel(s.bulan || '-'))+'</div></div>' +
+ '<div class="slip-amount"><span>Gaji bersih</span><strong>Rp '+(parseInt(s.totalGaji || s.total || 0, 10) || 0).toLocaleString('id-ID')+'</strong></div>' +
  '</div>' +
  renderPayrollMiniBreakdown(s) +
- '<button class="btn btn-sm btn-primary" style="margin-top:10px;width:100%" onclick="toggleAdminSlipDetail(&quot;'+salaryEsc(s.id || '')+'&quot;,&quot;'+targetId+'&quot;)">Lihat Slip</button>' +
- '<div id="'+targetId+'" style="display:none"></div>' +
- '</div>';
+ '<div class="slip-actions slip-actions-single"><button class="btn btn-sm btn-primary" onclick="toggleAdminSlipDetail(&quot;'+salaryEsc(s.id || '')+'&quot;,&quot;'+targetId+'&quot;)">Lihat Rincian Slip</button></div>' +
+ '<div id="'+targetId+'" class="slip-detail-panel" style="display:none"></div>' +
+ '</article>';
  });
  el.innerHTML = html;
 }

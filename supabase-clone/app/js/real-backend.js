@@ -403,6 +403,41 @@
       return r.data;
     },
 
+    getMyJobdesk: async function () {
+      var r = await window.sb.rpc('get_my_jobdesk');
+      if (r.error) return { success: false, msg: r.error.message };
+      var row = profileRow(r.data);
+      return row ? { success: true, data: row } : { success: true, data: null };
+    },
+
+    getOwnerJobdesks: async function () {
+      var r = await window.sb.rpc('get_owner_jobdesks');
+      if (r.error) return { success: false, data: [], msg: r.error.message };
+      return { success: true, data: r.data || [] };
+    },
+
+    saveOwnerJobdesk: async function (args) {
+      var r = await window.sb.rpc('upsert_jobdesk_link', {
+        p_bagian: args[0], p_jabatan: args[1], p_link: args[2]
+      });
+      if (r.error) return { success: false, msg: r.error.message };
+      return r.data;
+    },
+
+    getOfficeSettings: async function () {
+      var r = await window.sb.rpc('get_office_settings');
+      if (r.error) return { success: false, msg: r.error.message };
+      return { success: true, data: r.data || {} };
+    },
+
+    setOfficeSettings: async function (args) {
+      var r = await window.sb.rpc('set_office_settings', {
+        p_lat: args[0], p_lng: args[1], p_radius: args[2]
+      });
+      if (r.error) return { success: false, msg: r.error.message };
+      return r.data;
+    },
+
     // Query langsung -- RLS announcements sudah filter bagian sendiri/ALL otomatis.
     getPengumuman: async function (args) {
       var bagian = args[0];
@@ -463,11 +498,19 @@
 
     // Query langsung -- RLS rules "semua baca".
     getPeraturan: async function () {
-      var r = await window.sb.from('rules').select('no_urut,kategori,isi').order('no_urut');
+      var r = await window.sb.from('rules').select('id,no_urut,kategori,isi').order('no_urut');
       if (r.error) return [];
       return (r.data || []).map(function (row) {
-        return { no: row.no_urut, kategori: row.kategori, isi: row.isi };
+        return { id: row.id, no: row.no_urut, kategori: row.kategori, isi: row.isi };
       });
+    },
+
+    savePeraturan: async function (args) {
+      var r = await window.sb.rpc('save_rule', {
+        p_id: args[0] || null, p_kategori: args[1], p_isi: args[2]
+      });
+      if (r.error) return { success: false, msg: r.error.message };
+      return r.data;
     },
 
     // args lama: [userId] -- query langsung, RLS notifications "baca sendiri".

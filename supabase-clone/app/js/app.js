@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbw6q_5ZaIGrekeBwZ5TKh6X1GpWkFHsa5i6whdwacQkTEa-vvNezHlxFMEQFKZkmm5ffQ/exec';
-var APP_VERSION = '20261012e';
+var APP_VERSION = '20261012f';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -1314,18 +1314,119 @@ function skelCards(n) {
 
 function loadJobdeskList() {
  var list = document.getElementById('jobdesk-list');
- list.innerHTML = skelCards(4);
- gasCall('getJobdeskList', [], function(data) {
- if (!data || !data.length) { list.innerHTML = '<div class="empty-state">Tidak ada data bagian</div>'; return; }
- var icons = {Live:'target', Packing:'package', Ecommerce:'cart', Finance:'card'};
- var colors = {Live:'#dbeafe', Packing:'#fce7f3', Ecommerce:'#d1fae5', Finance:'#fef3c7'};
- list.innerHTML = '<div class="section-label">Pilih Bagian</div>' + data.map(function(b) {
- return '<div class="list-item" onclick="openBagian(\''+b.bagian+'\')">'+
- '<div class="list-icon" style="background:'+(colors[b.bagian]||'#f3f4f6')+'">'+uiIcon(icons[b.bagian]||'building')+'</div>'+
- '<div class="list-info"><h4>'+b.bagian+'</h4><p>'+b.count+' anggota aktif</p></div>'+
- '<div class="list-arr">›</div></div>';
+ if (!list || !currentUser) return;
+ var isOwner = currentUser.bagian === 'Owner';
+ var ownerPanel = document.getElementById('jobdesk-owner-panel');
+ var subtitle = document.getElementById('jobdesk-subtitle');
+ if (ownerPanel) ownerPanel.style.display = isOwner ? 'block' : 'none';
+ if (subtitle) subtitle.textContent = isOwner ? 'Atur dokumen kerja setiap bagian dan jabatan' : 'Hanya jobdesk bagian dan jabatan Anda';
+ list.innerHTML = skelCards(isOwner ? 4 : 1);
+
+ if (isOwner) {
+   loadOwnerJobdeskOptions();
+   gasCall('getOwnerJobdesks', [], function(res) {
+     renderOwnerJobdeskList(res && (res.data || res.items) || []);
+   }, function(){ list.innerHTML = '<div class="empty-state">Gagal memuat daftar jobdesk Owner.</div>'; });
+   return;
+ }
+
+ gasCall('getMyJobdesk', [], function(res) {
+   var jd = res && (res.data || res);
+   var bagian = jobdeskSafe((jd && jd.bagian) || currentUser.bagian || '-');
+   var jabatan = jobdeskSafe((jd && jd.jabatan) || currentUser.jabatan || '-');
+   var link = jd && /^https?:\/\//i.test(String(jd.link || '')) ? String(jd.link) : '';
+   list.innerHTML = '<section class="jobdesk-self-card">'+
+     '<div class="jobdesk-self-icon">'+uiIcon('clipboard')+'</div>'+
+     '<div class="eyebrow">JOBDESK ANDA</div><h2>'+jabatan+'</h2><p>'+bagian+'</p>'+
+     (link
+       ? '<a class="btn btn-primary jobdesk-open-link" href="'+jobdeskSafe(link)+'" target="_blank" rel="noopener noreferrer">Buka Dokumen Jobdesk</a>'
+       : '<div class="form-alert form-alert-info"><strong>Dokumen belum tersedia</strong><span>Owner belum memasang link jobdesk untuk jabatan ini.</span></div>')+
+     '</section>';
+ }, function(){ list.innerHTML = '<div class="empty-state">Gagal memuat jobdesk Anda.</div>'; });
+}
+
+function jobdeskSafe(value) {
+ return String(value == null ? '' : value).replace(/[&<>"']/g, function(ch) {
+   return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch];
+ });
+}
+
+function loadOwnerJobdeskOptions() {
+ gasCall('getDaftarOptions', [], function(res) {
+   var options = res && (res.data || res) || {};
+   window._ownerJobdeskOptions = options;
+   var bagianEl = document.getElementById('jobdesk-admin-bagian');
+   if (!bagianEl) return;
+   var selected = bagianEl.value;
+   bagianEl.innerHTML = '<option value="">Pilih bagian</option>' + Object.keys(options).map(function(b) {
+     return '<option value="'+jobdeskSafe(b)+'">'+jobdeskSafe(b)+'</option>';
+   }).join('');
+   if (selected && options[selected]) bagianEl.value = selected;
+   updateOwnerJobdeskRoles();
+ });
+}
+
+function updateOwnerJobdeskRoles() {
+ var bagian = document.getElementById('jobdesk-admin-bagian').value;
+ var jabatanEl = document.getElementById('jobdesk-admin-jabatan');
+ var roles = (window._ownerJobdeskOptions && window._ownerJobdeskOptions[bagian]) || [];
+ jabatanEl.innerHTML = '<option value="">'+(bagian ? 'Pilih jabatan' : 'Pilih bagian dahulu')+'</option>' + roles.map(function(j) {
+   return '<option value="'+jobdeskSafe(j)+'">'+jobdeskSafe(j)+'</option>';
  }).join('');
- }, function(){ list.innerHTML = '<div class="empty-state">Gagal memuat</div>'; });
+}
+
+function renderOwnerJobdeskList(items) {
+ var list = document.getElementById('jobdesk-list');
+ if (!list) return;
+ if (!items.length) { list.innerHTML = '<div class="empty-state">Belum ada daftar jabatan.</div>'; return; }
+ var grouped = {};
+ items.forEach(function(item) { (grouped[item.bagian] = grouped[item.bagian] || []).push(item); });
+ var html = '<div class="section-label owner-list-label">Daftar Jobdesk</div>';
+ Object.keys(grouped).forEach(function(bagian) {
+   html += '<section class="jobdesk-group"><div class="jobdesk-group-head"><h3>'+jobdeskSafe(bagian)+'</h3><span>'+grouped[bagian].length+' jabatan</span></div>';
+   grouped[bagian].forEach(function(item) {
+     var hasLink = /^https?:\/\//i.test(String(item.link || ''));
+     html += '<div class="jobdesk-admin-row"><div class="jobdesk-admin-info"><strong>'+jobdeskSafe(item.jabatan)+'</strong><span>'+(hasLink ? 'Link Drive sudah terpasang' : 'Belum ada link dokumen')+'</span></div>'+
+       '<span class="status-pill '+(hasLink?'status-pill-success':'status-pill-muted')+'">'+(hasLink?'Siap':'Kosong')+'</span>'+
+       '<button class="btn btn-sm btn-secondary" data-bagian="'+encodeURIComponent(item.bagian)+'" data-jabatan="'+encodeURIComponent(item.jabatan)+'" data-link="'+encodeURIComponent(item.link || '')+'" onclick="editOwnerJobdeskFromButton(this)">'+(hasLink?'Ubah':'Isi Link')+'</button></div>';
+   });
+   html += '</section>';
+ });
+ list.innerHTML = html;
+}
+
+function editOwnerJobdeskFromButton(btn) {
+ editOwnerJobdesk(
+   decodeURIComponent(btn.getAttribute('data-bagian') || ''),
+   decodeURIComponent(btn.getAttribute('data-jabatan') || ''),
+   decodeURIComponent(btn.getAttribute('data-link') || '')
+ );
+}
+
+function editOwnerJobdesk(bagian, jabatan, link) {
+ var bagianEl = document.getElementById('jobdesk-admin-bagian');
+ bagianEl.value = bagian;
+ updateOwnerJobdeskRoles();
+ document.getElementById('jobdesk-admin-jabatan').value = jabatan;
+ document.getElementById('jobdesk-admin-link').value = link || '';
+ document.getElementById('jobdesk-owner-panel').scrollIntoView({ behavior:'smooth', block:'start' });
+}
+
+function saveOwnerJobdesk() {
+ var bagian = document.getElementById('jobdesk-admin-bagian').value;
+ var jabatan = document.getElementById('jobdesk-admin-jabatan').value;
+ var link = document.getElementById('jobdesk-admin-link').value.trim();
+ var btn = document.getElementById('jobdesk-save-btn');
+ if (!bagian || !jabatan) { showToast('Pilih bagian dan jabatan'); return; }
+ if (!/^https?:\/\//i.test(link)) { showToast('Masukkan link Google Drive yang valid'); return; }
+ btn.disabled = true; btn.textContent = 'Menyimpan...';
+ gasCall('saveOwnerJobdesk', [bagian, jabatan, link], function(res) {
+   btn.disabled = false; btn.textContent = 'Simpan Jobdesk';
+   if (!res || res.success === false) { showToast((res && res.msg) || 'Gagal menyimpan jobdesk'); return; }
+   showToast('Link jobdesk berhasil disimpan');
+   document.getElementById('jobdesk-admin-link').value = '';
+   loadJobdeskList();
+ }, function(){ btn.disabled = false; btn.textContent = 'Simpan Jobdesk'; showToast('Koneksi gagal'); });
 }
 
 function openBagian(bagian) {
@@ -2163,21 +2264,22 @@ function submitPaksaGantiPIN() {
 
 // ─── IZIN / SAKIT ────────────────────────────────
 function loadIzin() {
- // Set default tanggal hari ini
- var today = new Date().toISOString().split('T')[0];
+ // Pakai tanggal lokal agar tidak bergeser sehari karena zona waktu UTC.
+ var now = new Date();
+ var today = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');
  document.getElementById('izin-tanggal').value = today;
+ toggleFotoField(document.getElementById('izin-jenis').value);
  // Load riwayat
  var hist = document.getElementById('izin-history');
  hist.innerHTML = skelCards(3);
  gasCall('getIzinKaryawan', [currentUser.id], function(data) {
  if (!data || !data.length) { hist.innerHTML = '<div class="empty-state">Belum ada pengajuan</div>'; return; }
- var stMap = { MENUNGGU: ['#f59e0b','#fff7ed'], DISETUJUI: ['#16a34a','#f0fdf4'], DITOLAK: ['#dc2626','#fff7f7'] };
  hist.innerHTML = data.map(function(d) {
- var st = stMap[d.status] || ['#6b7280','#f9fafb'];
- return '<div style="border:1px solid var(--gray-border);border-radius:8px;padding:10px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">'+
- '<div><div style="font-size:12px;font-weight:600;color:var(--text-dark)">'+d.jenis+' · '+d.tanggal+'</div>'+
- '<div style="font-size:11px;color:var(--text-muted)">'+d.keterangan+'</div></div>'+
- '<span style="font-size:10px;background:'+st[1]+';color:'+st[0]+';padding:3px 8px;border-radius:10px;font-weight:700;flex-shrink:0">'+d.status+'</span></div>';
+ var statusClass = d.status === 'DISETUJUI' ? 'success' : d.status === 'DITOLAK' ? 'danger' : 'warning';
+ return '<article class="izin-history-item">'+
+ '<div class="izin-history-main"><strong>'+jobdeskSafe(d.jenis)+' · '+jobdeskSafe(d.tanggal)+'</strong>'+
+ '<p>'+jobdeskSafe(d.keterangan || '-')+'</p></div>'+
+ '<span class="status-pill status-pill-'+statusClass+'">'+jobdeskSafe(d.status || 'MENUNGGU')+'</span></article>';
  }).join('');
  });
 }
@@ -2190,7 +2292,7 @@ function submitIzin() {
  if (!tgl) { showToast('Pilih tanggal dulu'); return; }
  if (!ket) { showToast('Keterangan wajib diisi'); return; }
  if (jenis === 'SAKIT' && !foto) { showToast('Surat dokter wajib untuk izin SAKIT'); return; }
- var btn = event.target;
+ var btn = document.querySelector('.izin-submit-btn');
  btn.textContent = 'Mengirim...'; btn.disabled = true;
  gasCall('submitIzin', [currentUser.id, tgl, jenis, ket, foto], function(r) {
  btn.textContent = 'Kirim Pengajuan'; btn.disabled = false;
@@ -2199,7 +2301,7 @@ function submitIzin() {
  document.getElementById('izin-foto').value = '';
  showToast('Pengajuan berhasil dikirim! ');
  loadIzin();
- } else { showToast('Gagal mengirim. Coba lagi.'); }
+ } else { showToast((r && r.msg) || 'Gagal mengirim. Coba lagi.'); }
  }, function(){ btn.textContent = 'Kirim Pengajuan'; btn.disabled = false; showToast('Koneksi gagal'); });
 }
 
@@ -2419,10 +2521,13 @@ function _updateMenuBadge(menuLabel, count) {
 function loadPeraturan() {
  var el = document.getElementById('peraturan-content');
  el.innerHTML = skelCards(4);
- // Tampilkan tombol notif hanya untuk Owner
+ var isOwner = currentUser && currentUser.bagian === 'Owner';
  var notifBtn = document.getElementById('peraturan-notif-btn');
- if (notifBtn) notifBtn.style.display = (currentUser && currentUser.bagian === 'Owner') ? 'block' : 'none';
+ var ownerPanel = document.getElementById('peraturan-owner-panel');
+ if (notifBtn) notifBtn.style.display = isOwner ? 'block' : 'none';
+ if (ownerPanel) ownerPanel.style.display = isOwner ? 'block' : 'none';
  gasCall('getPeraturan', [], function(data) {
+ window._peraturanData = data || [];
  if (!data || !data.length) { el.innerHTML = '<div class="empty-state">Belum ada peraturan</div>'; return; }
  var grouped = {};
  var order = [];
@@ -2432,14 +2537,50 @@ function loadPeraturan() {
  });
  var html = '';
  order.forEach(function(kat, ki) {
- html += '<div class="section-label"'+(ki>0?' style="margin-top:12px"':'')+'>'+kat+'</div>';
+ html += '<div class="section-label"'+(ki>0?' style="margin-top:12px"':'')+'>'+jobdeskSafe(kat)+'</div>';
  grouped[kat].forEach(function(p) {
  var num = String(p.no).padStart(2,'0');
- html += '<div class="peraturan-item"><div class="peraturan-num">'+num+'</div><div class="peraturan-text">'+p.isi+'</div></div>';
+ html += '<article class="peraturan-item"><div class="peraturan-num">'+num+'</div><div class="peraturan-text">'+jobdeskSafe(p.isi)+'</div>'+
+   (isOwner ? '<button class="btn btn-sm btn-secondary peraturan-edit-btn" data-rule-id="'+jobdeskSafe(p.id || '')+'" onclick="editPeraturan(this.getAttribute(\'data-rule-id\'))">Edit</button>' : '')+'</article>';
  });
  });
  el.innerHTML = html;
  }, function(){ el.innerHTML = '<div class="empty-state">Gagal memuat peraturan</div>'; });
+}
+
+function editPeraturan(id) {
+ var item = (window._peraturanData || []).find(function(p){ return String(p.id) === String(id); });
+ if (!item) { showToast('Data peraturan tidak ditemukan'); return; }
+ document.getElementById('peraturan-edit-id').value = item.id || '';
+ document.getElementById('peraturan-kategori').value = item.kategori || '';
+ document.getElementById('peraturan-isi').value = item.isi || '';
+ document.getElementById('peraturan-cancel-btn').style.display = 'inline-flex';
+ document.getElementById('peraturan-save-btn').textContent = 'Simpan Perubahan';
+ document.getElementById('peraturan-owner-panel').scrollIntoView({ behavior:'smooth', block:'start' });
+}
+
+function cancelEditPeraturan() {
+ document.getElementById('peraturan-edit-id').value = '';
+ document.getElementById('peraturan-kategori').value = '';
+ document.getElementById('peraturan-isi').value = '';
+ document.getElementById('peraturan-cancel-btn').style.display = 'none';
+ document.getElementById('peraturan-save-btn').textContent = 'Tambah Peraturan';
+}
+
+function savePeraturan() {
+ var id = document.getElementById('peraturan-edit-id').value || null;
+ var kategori = document.getElementById('peraturan-kategori').value.trim();
+ var isi = document.getElementById('peraturan-isi').value.trim();
+ var btn = document.getElementById('peraturan-save-btn');
+ if (!kategori || !isi) { showToast('Kategori dan isi peraturan wajib diisi'); return; }
+ btn.disabled = true; btn.textContent = 'Menyimpan...';
+ gasCall('savePeraturan', [id, kategori, isi], function(res) {
+   btn.disabled = false; btn.textContent = id ? 'Simpan Perubahan' : 'Tambah Peraturan';
+   if (!res || res.success === false) { showToast((res && res.msg) || 'Gagal menyimpan peraturan'); return; }
+   showToast(res.msg || 'Peraturan berhasil disimpan');
+   cancelEditPeraturan();
+   loadPeraturan();
+ }, function(){ btn.disabled = false; btn.textContent = id ? 'Simpan Perubahan' : 'Tambah Peraturan'; showToast('Koneksi gagal'); });
 }
 
 function kirimNotifPeraturan() {
@@ -2750,9 +2891,61 @@ function loadAbsensiCamera() {
  if (placeholder) { placeholder.style.display = 'flex'; placeholder.textContent = 'Kamera belum aktif'; }
  if (submitBtn) submitBtn.disabled = true;
  if (captureBtn) captureBtn.disabled = true;
+ var officeCard = document.getElementById('office-setting-card');
+ var isOwner = currentUser && currentUser.bagian === 'Owner';
+ if (officeCard) officeCard.style.display = isOwner ? 'block' : 'none';
+ if (isOwner) loadOfficeSettings();
  updateAttendanceLocationStatus('Membaca lokasi...', '');
  getAttendanceLocation();
  loadAttendanceToday();
+}
+
+function loadOfficeSettings() {
+ var state = document.getElementById('office-setting-state');
+ if (state) { state.className = 'status-pill status-pill-muted'; state.textContent = 'Memuat...'; }
+ gasCall('getOfficeSettings', [], function(res) {
+   var data = res && (res.data || res) || {};
+   var lat = data.OFFICE_LAT || '';
+   var lng = data.OFFICE_LNG || '';
+   document.getElementById('office-lat').value = lat;
+   document.getElementById('office-lng').value = lng;
+   document.getElementById('office-radius').value = data.OFFICE_RADIUS_M || 120;
+   if (state) {
+     var ready = lat !== '' && lng !== '';
+     state.className = 'status-pill '+(ready ? 'status-pill-success' : 'status-pill-warning');
+     state.textContent = ready ? 'Sudah diset' : 'Belum diset';
+   }
+ }, function(){ if (state) { state.className = 'status-pill status-pill-danger'; state.textContent = 'Gagal dimuat'; } });
+}
+
+function useCurrentLocationForOffice() {
+ if (!navigator.geolocation) { showToast('Browser tidak mendukung lokasi'); return; }
+ showToast('Sedang membaca lokasi Owner...');
+ navigator.geolocation.getCurrentPosition(function(pos) {
+   document.getElementById('office-lat').value = Number(pos.coords.latitude).toFixed(7);
+   document.getElementById('office-lng').value = Number(pos.coords.longitude).toFixed(7);
+   showToast('Koordinat terisi. Tekan Simpan Lokasi Kantor.');
+ }, function(){ showToast('Lokasi gagal dibaca. Pastikan GPS dan izin lokasi aktif.'); }, {
+   enableHighAccuracy: true, timeout: 20000, maximumAge: 0
+ });
+}
+
+function saveOfficeSettings() {
+ var lat = parseFloat(document.getElementById('office-lat').value);
+ var lng = parseFloat(document.getElementById('office-lng').value);
+ var radius = parseInt(document.getElementById('office-radius').value, 10);
+ var btn = document.getElementById('office-save-btn');
+ if (!Number.isFinite(lat) || lat < -90 || lat > 90 || !Number.isFinite(lng) || lng < -180 || lng > 180) {
+   showToast('Latitude atau longitude tidak valid'); return;
+ }
+ if (!Number.isFinite(radius) || radius < 20 || radius > 2000) { showToast('Radius harus 20–2000 meter'); return; }
+ btn.disabled = true; btn.textContent = 'Menyimpan...';
+ gasCall('setOfficeSettings', [lat, lng, radius], function(res) {
+   btn.disabled = false; btn.textContent = 'Simpan Lokasi Kantor';
+   if (!res || res.success === false) { showToast((res && res.msg) || 'Gagal menyimpan lokasi kantor'); return; }
+   showToast('Lokasi kantor berhasil disimpan');
+   loadOfficeSettings();
+ }, function(){ btn.disabled = false; btn.textContent = 'Simpan Lokasi Kantor'; showToast('Koneksi gagal'); });
 }
 
 function getAttendanceLocation() {

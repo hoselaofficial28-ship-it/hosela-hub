@@ -46,9 +46,9 @@
     { id: 'IDE-001', userId: 'U-K1', nama: 'Budi', judul: 'Label QR di rak packing', deskripsi: 'Biar pencarian barang lebih cepat.', tgl: fmtDate(daysAgo(6)), status: 'DITERIMA', feedback: 'Ide bagus, akan dicoba bulan depan.' }
   ];
   var PERATURAN = [
-    { no: '01', kategori: 'Kehadiran', isi: 'Jam masuk 08:00, toleransi telat dihitung per 10 menit.' },
-    { no: '02', kategori: 'Kehadiran', isi: 'Absen tanpa izin mempengaruhi bonus kerajinan bulan itu.' },
-    { no: '03', kategori: 'Umum', isi: 'Gunakan seragam saat jam kerja toko.' }
+    { id: 'RULE-001', no: '01', kategori: 'Kehadiran', isi: 'Jam masuk 08:00, toleransi telat dihitung per 10 menit.' },
+    { id: 'RULE-002', no: '02', kategori: 'Kehadiran', isi: 'Absen tanpa izin mempengaruhi bonus kerajinan bulan itu.' },
+    { id: 'RULE-003', no: '03', kategori: 'Umum', isi: 'Gunakan seragam saat jam kerja toko.' }
   ];
   var LIBUR = [
     { id: 'LBR-002', tanggal: fmtDate(daysAgo(-20)), nama: 'Hari Kemerdekaan', difasilitasi: 'YA' },
@@ -111,6 +111,8 @@
     'HR & General Affairs': ['HR Admin', 'Recruitment & People Operations', 'General Affairs Staff', 'HRGA Supervisor'],
     'Product & Merchandising': ['Product Research', 'Merchandiser', 'Product Development', 'Catalog Specialist', 'Product Lead']
   };
+  var JOBDESK_LINKS = {};
+  var OFFICE_SETTINGS = { OFFICE_LAT: '-6.2000', OFFICE_LNG: '106.8000', OFFICE_RADIUS_M: '120' };
 
   // Payroll run in-memory (per bulan)
   var PAYROLL_RUNS = {}; // bulanKey -> { id, status, details:[...] }
@@ -164,7 +166,7 @@
     },
 
     getPengaturan: function () {
-      return { OFFICE_LAT: '-6.2000', OFFICE_LNG: '106.8000', OFFICE_RADIUS_M: '120', LINK_PANDUAN: '' };
+      return { OFFICE_LAT: OFFICE_SETTINGS.OFFICE_LAT, OFFICE_LNG: OFFICE_SETTINGS.OFFICE_LNG, OFFICE_RADIUS_M: OFFICE_SETTINGS.OFFICE_RADIUS_M, LINK_PANDUAN: '' };
     },
 
     getHomeData: function (args) {
@@ -205,6 +207,29 @@
     hapusSemuaNotifikasi: function (args) { NOTIF[args[0]] = []; return { success: true }; },
 
     // ---- Jobdesk ----
+    getMyJobdesk: function () {
+      var u = findUser(window.currentUser && window.currentUser.id);
+      if (!u) return { success: true, data: null };
+      return { success: true, data: { bagian: u.bagian, jabatan: u.jabatan, link: JOBDESK_LINKS[u.bagian+'|'+u.jabatan] || '' } };
+    },
+    getOwnerJobdesks: function () {
+      var data = [];
+      Object.keys(JOBDESK_OPTIONS).forEach(function(bagian) {
+        JOBDESK_OPTIONS[bagian].forEach(function(jabatan) {
+          data.push({ bagian: bagian, jabatan: jabatan, link: JOBDESK_LINKS[bagian+'|'+jabatan] || '' });
+        });
+      });
+      return { success: true, data: data };
+    },
+    saveOwnerJobdesk: function (args) {
+      JOBDESK_LINKS[args[0]+'|'+args[1]] = args[2];
+      return { success: true, msg: 'Link jobdesk berhasil disimpan (demo)' };
+    },
+    getOfficeSettings: function () { return { success: true, data: OFFICE_SETTINGS }; },
+    setOfficeSettings: function (args) {
+      OFFICE_SETTINGS = { OFFICE_LAT: String(args[0]), OFFICE_LNG: String(args[1]), OFFICE_RADIUS_M: String(args[2]) };
+      return { success: true, msg: 'Lokasi kantor berhasil disimpan (demo)' };
+    },
     getJobdeskList: function () {
       var map = {};
       karyawanList().forEach(function (u) { map[u.bagian] = (map[u.bagian] || 0) + 1; });
@@ -234,6 +259,13 @@
       return { success: true };
     },
     getPeraturan: function () { return PERATURAN; },
+    savePeraturan: function (args) {
+      var id = args[0], kategori = args[1], isi = args[2];
+      var row = PERATURAN.find(function(p){ return p.id === id; });
+      if (row) { row.kategori = kategori; row.isi = isi; }
+      else PERATURAN.push({ id: uid('RULE'), no: String(PERATURAN.length + 1).padStart(2, '0'), kategori: kategori, isi: isi });
+      return { success: true, msg: id ? 'Peraturan diperbarui (demo)' : 'Peraturan ditambahkan (demo)' };
+    },
     triggerNotifPeraturan: function () { return { success: true, msg: 'Notifikasi peraturan dikirim (demo)' }; },
     getKalenderLibur: function () { return LIBUR; },
     addLibur: function (args) {
