@@ -99,10 +99,17 @@
     { id: 'REG-001', nama: 'Calon Karyawan Demo', bagian: 'Packing', jabatan: 'Staff Packing', tglDaftar: fmtDate(daysAgo(0)), _sandi: 'passwordpilihansendiri' }
   ];
   var JOBDESK_OPTIONS = {
-    'Packing': ['Staff Packing', 'Kepala Gudang'],
-    'Live': ['Host Live'],
-    'Ecommerce': ['Admin Ecommerce'],
-    'Finance': ['Finance']
+    'Gudang': ['Admin Gudang & Stok', 'Staff Inbound', 'Picker', 'Admin Packing', 'Quality Control Packing', 'Kepala Gudang'],
+    'Live Streaming': ['Live Streamer', 'Moderator Live', 'Operator Live', 'Koordinator Live Streaming'],
+    'Content Creator': ['Content Creator', 'Scriptwriter / Copywriter', 'Video Editor', 'Graphic Designer', 'Fotografer Produk', 'Content Lead'],
+    'Marketplace & Ecommerce': ['Admin Marketplace', 'Customer Service Marketplace', 'Listing Specialist', 'Promo & Campaign Specialist', 'Marketplace Ads Specialist', 'Ecommerce Supervisor'],
+    'Digital Marketing': ['Social Media Specialist', 'Performance Ads Specialist', 'Affiliate & KOL Specialist', 'CRM & Retention Specialist', 'Digital Marketing Lead'],
+    'Customer Service': ['Customer Service Chat', 'Customer Service Komplain & Retur', 'Customer Experience Specialist', 'Customer Service Lead'],
+    'Purchasing & Inventory': ['Purchasing Staff', 'Supplier Coordinator', 'Inventory Control', 'Purchasing Supervisor'],
+    'Operasional & Fulfillment': ['Admin Pesanan', 'Fulfillment Staff', 'Staff Retur & Refund', 'Koordinator Operasional', 'Operations Manager'],
+    'Keuangan & Administrasi': ['Admin Keuangan', 'Accounting Staff', 'Accounts Payable / Receivable', 'Admin Pajak', 'Supervisor Keuangan'],
+    'HR & General Affairs': ['HR Admin', 'Recruitment & People Operations', 'General Affairs Staff', 'HRGA Supervisor'],
+    'Product & Merchandising': ['Product Research', 'Merchandiser', 'Product Development', 'Catalog Specialist', 'Product Lead']
   };
 
   // Payroll run in-memory (per bulan)

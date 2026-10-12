@@ -90,15 +90,17 @@
   </div>
   <div class="form-group">
    <label class="form-label">Bagian <span style="color:#dc2626">*</span></label>
-   <select class="form-input" id="daftar-bagian" onchange="onDaftarBagianChange()">
+   <select class="form-input" id="daftar-bagian" onchange="onDaftarBagianChange()" aria-describedby="daftar-bagian-help">
     <option value="">Memuat...</option>
    </select>
+   <div id="daftar-bagian-help" style="font-size:11px;color:var(--text-muted);margin-top:4px">Pilih kelompok kerja utama kamu.</div>
   </div>
   <div class="form-group">
    <label class="form-label">Jabatan <span style="color:#dc2626">*</span></label>
-   <select class="form-input" id="daftar-jabatan">
+   <select class="form-input" id="daftar-jabatan" disabled aria-describedby="daftar-jabatan-help">
     <option value="">-- Pilih Bagian dulu --</option>
    </select>
+   <div id="daftar-jabatan-help" style="font-size:11px;color:var(--text-muted);margin-top:4px">Pilihan jabatan akan menyesuaikan Bagian.</div>
   </div>
   <div class="form-group">
    <label class="form-label">Kata Sandi <span style="color:#dc2626">*</span></label>
@@ -788,7 +790,7 @@
 <script src="js/supabase-client.js"></script>
 <script src="js/real-backend.js"></script>
 <script src="js/mock-backend.js"></script>
-<script src="js/app.js?v=20260930b"></script>
+<script src="js/app.js?v=20261012b"></script>
 <script src="js/payroll.js?v=20260930b"></script>
 <script src="js/preview.js?v=20260930b"></script>
 </body>

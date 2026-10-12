@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbw6q_5ZaIGrekeBwZ5TKh6X1GpWkFHsa5i6whdwacQkTEa-vvNezHlxFMEQFKZkmm5ffQ/exec';
-var APP_VERSION = '20260930b';
+var APP_VERSION = '20261012b';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -817,48 +817,152 @@ function gantiAkun() {
  document.getElementById('login-username').focus();
 }
 
+var DAFTAR_BAGIAN_ORDER = [
+ 'Gudang',
+ 'Live Streaming',
+ 'Content Creator',
+ 'Marketplace & Ecommerce',
+ 'Digital Marketing',
+ 'Customer Service',
+ 'Purchasing & Inventory',
+ 'Operasional & Fulfillment',
+ 'Keuangan & Administrasi',
+ 'HR & General Affairs',
+ 'Product & Merchandising'
+];
+
+var DEFAULT_DAFTAR_OPTIONS = {
+ 'Gudang': [
+  'Admin Gudang & Stok', 'Staff Inbound', 'Picker', 'Admin Packing',
+  'Quality Control Packing', 'Kepala Gudang'
+ ],
+ 'Live Streaming': [
+  'Live Streamer', 'Moderator Live', 'Operator Live', 'Koordinator Live Streaming'
+ ],
+ 'Content Creator': [
+  'Content Creator', 'Scriptwriter / Copywriter', 'Video Editor',
+  'Graphic Designer', 'Fotografer Produk', 'Content Lead'
+ ],
+ 'Marketplace & Ecommerce': [
+  'Admin Marketplace', 'Customer Service Marketplace', 'Listing Specialist',
+  'Promo & Campaign Specialist', 'Marketplace Ads Specialist', 'Ecommerce Supervisor'
+ ],
+ 'Digital Marketing': [
+  'Social Media Specialist', 'Performance Ads Specialist',
+  'Affiliate & KOL Specialist', 'CRM & Retention Specialist', 'Digital Marketing Lead'
+ ],
+ 'Customer Service': [
+  'Customer Service Chat', 'Customer Service Komplain & Retur',
+  'Customer Experience Specialist', 'Customer Service Lead'
+ ],
+ 'Purchasing & Inventory': [
+  'Purchasing Staff', 'Supplier Coordinator', 'Inventory Control', 'Purchasing Supervisor'
+ ],
+ 'Operasional & Fulfillment': [
+  'Admin Pesanan', 'Fulfillment Staff', 'Staff Retur & Refund',
+  'Koordinator Operasional', 'Operations Manager'
+ ],
+ 'Keuangan & Administrasi': [
+  'Admin Keuangan', 'Accounting Staff', 'Accounts Payable / Receivable',
+  'Admin Pajak', 'Supervisor Keuangan'
+ ],
+ 'HR & General Affairs': [
+  'HR Admin', 'Recruitment & People Operations', 'General Affairs Staff', 'HRGA Supervisor'
+ ],
+ 'Product & Merchandising': [
+  'Product Research', 'Merchandiser', 'Product Development',
+  'Catalog Specialist', 'Product Lead'
+ ]
+};
+
+var DAFTAR_BAGIAN_ALIASES = {
+ 'packing': 'Gudang',
+ 'live': 'Live Streaming',
+ 'ecommerce': 'Marketplace & Ecommerce'
+};
+
 var _daftarOptions = null;
+
+function mergeDaftarOptions(serverData) {
+ var merged = {};
+ DAFTAR_BAGIAN_ORDER.forEach(function(bagian) {
+  merged[bagian] = (DEFAULT_DAFTAR_OPTIONS[bagian] || []).slice();
+ });
+ Object.keys(serverData || {}).forEach(function(bagian) {
+  var cleanBagian = String(bagian || '').trim();
+  var normalizedBagian = cleanBagian.toLowerCase();
+  if (!cleanBagian || normalizedBagian === 'owner' || normalizedBagian === 'finance') return;
+  cleanBagian = DAFTAR_BAGIAN_ALIASES[normalizedBagian] || cleanBagian;
+  if (!merged[cleanBagian]) merged[cleanBagian] = [];
+  var list = Array.isArray(serverData[bagian]) ? serverData[bagian] : [];
+  list.forEach(function(jabatan) {
+   jabatan = String(jabatan || '').trim();
+   if (jabatan && merged[cleanBagian].indexOf(jabatan) === -1) merged[cleanBagian].push(jabatan);
+  });
+ });
+ return merged;
+}
+
+function setDaftarSelectOptions(selectEl, placeholder, values) {
+ selectEl.innerHTML = '';
+ var first = document.createElement('option');
+ first.value = '';
+ first.textContent = placeholder;
+ selectEl.appendChild(first);
+ (values || []).forEach(function(value) {
+  var option = document.createElement('option');
+  option.value = value;
+  option.textContent = value;
+  selectEl.appendChild(option);
+ });
+}
 
 function loadDaftarOptions() {
  var bagianEl = document.getElementById('daftar-bagian');
- if (!bagianEl) return;
+ var jabatanEl = document.getElementById('daftar-jabatan');
+ if (!bagianEl || !jabatanEl) return;
  if (_daftarOptions) { populateDaftarBagian(_daftarOptions); return; }
- bagianEl.innerHTML = '<option value="">Memuat pilihan...</option>';
+ _daftarOptions = mergeDaftarOptions();
+ populateDaftarBagian(_daftarOptions);
+ jabatanEl.disabled = true;
+ bagianEl.setAttribute('aria-busy', 'true');
  gasCall('getDaftarOptions', [], function(r) {
-  if (r && r.success && r.data) {
-   _daftarOptions = r.data;
-   populateDaftarBagian(r.data);
-  } else {
-   bagianEl.innerHTML = '<option value="">Gagal memuat</option>';
-  }
+  if (r && r.success && r.data) _daftarOptions = mergeDaftarOptions(r.data);
+  bagianEl.removeAttribute('aria-busy');
+  populateDaftarBagian(_daftarOptions);
  }, function() {
-  bagianEl.innerHTML = '<option value="">Gagal memuat, coba lagi</option>';
+  bagianEl.removeAttribute('aria-busy');
+  populateDaftarBagian(_daftarOptions);
  });
 }
 
 function populateDaftarBagian(data) {
  var el = document.getElementById('daftar-bagian');
  if (!el) return;
- var html = '<option value="">-- Pilih Bagian --</option>';
- Object.keys(data).sort().forEach(function(bag) {
-  html += '<option value="' + bag + '">' + bag + '</option>';
+ var current = el.value;
+ var keys = Object.keys(data || {});
+ keys.sort(function(a, b) {
+  var ai = DAFTAR_BAGIAN_ORDER.indexOf(a), bi = DAFTAR_BAGIAN_ORDER.indexOf(b);
+  if (ai === -1) ai = 999;
+  if (bi === -1) bi = 999;
+  return ai === bi ? a.localeCompare(b, 'id') : ai - bi;
  });
- el.innerHTML = html;
+ setDaftarSelectOptions(el, '-- Pilih Bagian --', keys);
+ if (current && data[current]) el.value = current;
+ onDaftarBagianChange();
 }
 
 function onDaftarBagianChange() {
  var bagian = document.getElementById('daftar-bagian').value;
  var jabEl = document.getElementById('daftar-jabatan');
  if (!bagian || !_daftarOptions || !_daftarOptions[bagian]) {
-  jabEl.innerHTML = '<option value="">-- Pilih Bagian dulu --</option>';
+  setDaftarSelectOptions(jabEl, '-- Pilih Bagian dulu --', []);
+  jabEl.disabled = true;
   return;
  }
  var jabatanList = _daftarOptions[bagian];
- var html = '<option value="">-- Pilih Jabatan --</option>';
- jabatanList.forEach(function(j) {
-  html += '<option value="' + j + '">' + j + '</option>';
- });
- jabEl.innerHTML = html;
+ setDaftarSelectOptions(jabEl, jabatanList.length ? '-- Pilih Jabatan --' : '-- Jabatan belum tersedia --', jabatanList);
+ jabEl.disabled = !jabatanList.length;
 }
 
 function submitDaftarAkun() {
@@ -889,7 +993,8 @@ function submitDaftarAkun() {
    document.getElementById('daftar-nama').value = '';
    document.getElementById('daftar-email').value = '';
    document.getElementById('daftar-bagian').value = '';
-   document.getElementById('daftar-jabatan').innerHTML = '<option value="">-- Pilih Bagian dulu --</option>';
+   setDaftarSelectOptions(document.getElementById('daftar-jabatan'), '-- Pilih Bagian dulu --', []);
+   document.getElementById('daftar-jabatan').disabled = true;
    document.getElementById('daftar-sandi').value = '';
    document.getElementById('daftar-sandi2').value = '';
    setTimeout(function() { goTo('s-login'); errEl.textContent = ''; }, 2500);
