@@ -17,6 +17,8 @@ assert.doesNotMatch(html, /MODE CAMPURAN|demo-mode-banner/);
 
 assert.match(app, /gasCall\('getMyJobdesk'/);
 assert.match(app, /gasCall\('saveOwnerJobdesk'/);
+assert.match(app, /mergeDaftarOptions\(serverOptions \|\| \{\}\)/);
+assert.match(app, /renderOwnerJobdeskList\(res && \(res\.data \|\| res\.items\) \|\| \[\], options\)/);
 assert.match(app, /gasCall\('savePeraturan'/);
 assert.match(app, /gasCall\('setOfficeSettings'/);
 assert.match(app, /var isOwner = currentUser && currentUser\.bagian === 'Owner'/);
@@ -32,5 +34,7 @@ assert.match(sql, /current_bagian\(\).*<> 'owner'/s);
 assert.match(css, /\.izin-layout\{display:grid/);
 assert.match(css, /\.slip-card-head\{display:flex/);
 assert.match(css, /@media \(min-width:900px\)/);
+assert.match(css, /#s-jobdesk #jobdesk-list\{[\s\S]*max-width:none/);
+assert.match(css, /\.jobdesk-groups-grid\{[\s\S]*display:grid/);
 
 console.log('owner content, office settings, and responsive UI checks passed');

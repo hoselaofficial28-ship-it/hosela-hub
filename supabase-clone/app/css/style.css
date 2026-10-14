@@ -3041,3 +3041,63 @@ body.phone-mode #app-wrap #s-daftar.screen.active{
   -webkit-overflow-scrolling:touch;
   touch-action:pan-y;
 }
+
+/* Jobdesk memakai sumber Bagian/Jabatan yang sama dengan pendaftaran.
+   Di desktop, daftar memanfaatkan seluruh area kerja dan tersusun dua kolom. */
+#s-jobdesk #jobdesk-list{
+  width:100%;
+  max-width:none;
+}
+.jobdesk-list-head{
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:16px;
+  margin:4px 0 14px;
+}
+.jobdesk-list-head h2{
+  margin:0 0 4px;
+  color:var(--text-dark);
+  font-size:18px;
+  line-height:1.3;
+}
+.jobdesk-list-head p{
+  margin:0;
+  color:var(--text-muted);
+  font-size:12px;
+  line-height:1.55;
+}
+.jobdesk-list-stats{
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:flex-end;
+  gap:8px;
+}
+.jobdesk-groups-grid{
+  display:grid;
+  grid-template-columns:minmax(0,1fr);
+  gap:14px;
+  align-items:start;
+}
+.jobdesk-groups-grid .jobdesk-group{
+  margin:0;
+  min-width:0;
+  box-shadow:0 8px 24px rgba(30,58,95,.05);
+}
+@media (min-width:1200px){
+  body:not(.phone-mode) #s-jobdesk #jobdesk-list{
+    max-width:none!important;
+  }
+  body:not(.phone-mode) #s-jobdesk .jobdesk-groups-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+}
+@media (max-width:599px){
+  .jobdesk-list-head{
+    align-items:flex-start;
+    flex-direction:column;
+  }
+  .jobdesk-list-stats{
+    justify-content:flex-start;
+  }
+}

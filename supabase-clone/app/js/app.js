@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbw6q_5ZaIGrekeBwZ5TKh6X1GpWkFHsa5i6whdwacQkTEa-vvNezHlxFMEQFKZkmm5ffQ/exec';
-var APP_VERSION = '20261012g';
+var APP_VERSION = '20261012h';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -905,6 +905,22 @@ function mergeDaftarOptions(serverData) {
  return merged;
 }
 
+function normalizeDaftarBagianName(bagian) {
+ var clean = String(bagian || '').trim();
+ return DAFTAR_BAGIAN_ALIASES[clean.toLowerCase()] || clean;
+}
+
+function getOrderedDaftarBagian(data) {
+ var keys = Object.keys(data || {});
+ keys.sort(function(a, b) {
+  var ai = DAFTAR_BAGIAN_ORDER.indexOf(a), bi = DAFTAR_BAGIAN_ORDER.indexOf(b);
+  if (ai === -1) ai = 999;
+  if (bi === -1) bi = 999;
+  return ai === bi ? a.localeCompare(b, 'id') : ai - bi;
+ });
+ return keys;
+}
+
 function setDaftarSelectOptions(selectEl, placeholder, values) {
  selectEl.innerHTML = '';
  var first = document.createElement('option');
@@ -942,13 +958,7 @@ function populateDaftarBagian(data) {
  var el = document.getElementById('daftar-bagian');
  if (!el) return;
  var current = el.value;
- var keys = Object.keys(data || {});
- keys.sort(function(a, b) {
-  var ai = DAFTAR_BAGIAN_ORDER.indexOf(a), bi = DAFTAR_BAGIAN_ORDER.indexOf(b);
-  if (ai === -1) ai = 999;
-  if (bi === -1) bi = 999;
-  return ai === bi ? a.localeCompare(b, 'id') : ai - bi;
- });
+ var keys = getOrderedDaftarBagian(data);
  setDaftarSelectOptions(el, '-- Pilih Bagian --', keys);
  if (current && data[current]) el.value = current;
  onDaftarBagianChange();
@@ -1323,10 +1333,14 @@ function loadJobdeskList() {
  list.innerHTML = skelCards(isOwner ? 4 : 1);
 
  if (isOwner) {
-   loadOwnerJobdeskOptions();
-   gasCall('getOwnerJobdesks', [], function(res) {
-     renderOwnerJobdeskList(res && (res.data || res.items) || []);
-   }, function(){ list.innerHTML = '<div class="empty-state">Gagal memuat daftar jobdesk Owner.</div>'; });
+   loadOwnerJobdeskOptions(function(options) {
+     gasCall('getOwnerJobdesks', [], function(res) {
+       renderOwnerJobdeskList(res && (res.data || res.items) || [], options);
+     }, function(){
+       renderOwnerJobdeskList([], options);
+       showToast('Link tersimpan belum dapat dimuat. Daftar jabatan tetap ditampilkan.');
+     });
+   });
    return;
  }
 
@@ -1351,19 +1365,26 @@ function jobdeskSafe(value) {
  });
 }
 
-function loadOwnerJobdeskOptions() {
- gasCall('getDaftarOptions', [], function(res) {
-   var options = res && (res.data || res) || {};
+function loadOwnerJobdeskOptions(done) {
+ function applyOptions(serverOptions) {
+   var options = mergeDaftarOptions(serverOptions || {});
+   _daftarOptions = options;
    window._ownerJobdeskOptions = options;
    var bagianEl = document.getElementById('jobdesk-admin-bagian');
-   if (!bagianEl) return;
-   var selected = bagianEl.value;
-   bagianEl.innerHTML = '<option value="">Pilih bagian</option>' + Object.keys(options).map(function(b) {
-     return '<option value="'+jobdeskSafe(b)+'">'+jobdeskSafe(b)+'</option>';
-   }).join('');
-   if (selected && options[selected]) bagianEl.value = selected;
-   updateOwnerJobdeskRoles();
- });
+   if (bagianEl) {
+     var selected = bagianEl.value;
+     bagianEl.innerHTML = '<option value="">Pilih bagian</option>' + getOrderedDaftarBagian(options).map(function(b) {
+       return '<option value="'+jobdeskSafe(b)+'">'+jobdeskSafe(b)+'</option>';
+     }).join('');
+     if (selected && options[selected]) bagianEl.value = selected;
+     updateOwnerJobdeskRoles();
+   }
+   if (typeof done === 'function') done(options);
+ }
+ if (_daftarOptions) { applyOptions(_daftarOptions); return; }
+ gasCall('getDaftarOptions', [], function(res) {
+   applyOptions(res && (res.data || res) || {});
+ }, function() { applyOptions({}); });
 }
 
 function updateOwnerJobdeskRoles() {
@@ -1375,14 +1396,44 @@ function updateOwnerJobdeskRoles() {
  }).join('');
 }
 
-function renderOwnerJobdeskList(items) {
+function renderOwnerJobdeskList(items, options) {
  var list = document.getElementById('jobdesk-list');
  if (!list) return;
- if (!items.length) { list.innerHTML = '<div class="empty-state">Belum ada daftar jabatan.</div>'; return; }
+ options = options || window._ownerJobdeskOptions || mergeDaftarOptions({});
  var grouped = {};
- items.forEach(function(item) { (grouped[item.bagian] = grouped[item.bagian] || []).push(item); });
- var html = '<div class="section-label owner-list-label">Daftar Jobdesk</div>';
- Object.keys(grouped).forEach(function(bagian) {
+ var saved = {};
+ (items || []).forEach(function(item) {
+   var bagian = normalizeDaftarBagianName(item.bagian);
+   var jabatan = String(item.jabatan || '').trim();
+   if (!bagian || !jabatan) return;
+   saved[bagian+'\u0000'+jabatan] = item;
+ });
+ getOrderedDaftarBagian(options).forEach(function(bagian) {
+   grouped[bagian] = (options[bagian] || []).map(function(jabatan) {
+     return saved[bagian+'\u0000'+jabatan] || { bagian:bagian, jabatan:jabatan, link:'' };
+   });
+ });
+ (items || []).forEach(function(item) {
+   var bagian = normalizeDaftarBagianName(item.bagian);
+   var jabatan = String(item.jabatan || '').trim();
+   if (!bagian || !jabatan) return;
+   if (!grouped[bagian]) grouped[bagian] = [];
+   if (!grouped[bagian].some(function(row) { return row.jabatan === jabatan; })) {
+     grouped[bagian].push({ bagian:bagian, jabatan:jabatan, link:item.link || '' });
+   }
+ });
+ var bagianKeys = getOrderedDaftarBagian(grouped);
+ var totalJabatan = 0, totalSiap = 0;
+ bagianKeys.forEach(function(bagian) {
+   totalJabatan += grouped[bagian].length;
+   grouped[bagian].forEach(function(item) {
+     if (/^https?:\/\//i.test(String(item.link || ''))) totalSiap++;
+   });
+ });
+ var html = '<div class="jobdesk-list-head"><div><div class="eyebrow">DAFTAR JOBDESK</div><h2>Dokumen kerja semua tim</h2><p>Bagian dan jabatan mengikuti pilihan pada formulir pendaftaran akun.</p></div>'+
+   '<div class="jobdesk-list-stats"><span class="status-pill status-pill-info">'+bagianKeys.length+' bagian</span><span class="status-pill status-pill-success">'+totalSiap+' / '+totalJabatan+' siap</span></div></div>'+
+   '<div class="jobdesk-groups-grid">';
+ bagianKeys.forEach(function(bagian) {
    html += '<section class="jobdesk-group"><div class="jobdesk-group-head"><h3>'+jobdeskSafe(bagian)+'</h3><span>'+grouped[bagian].length+' jabatan</span></div>';
    grouped[bagian].forEach(function(item) {
      var hasLink = /^https?:\/\//i.test(String(item.link || ''));
@@ -1392,7 +1443,7 @@ function renderOwnerJobdeskList(items) {
    });
    html += '</section>';
  });
- list.innerHTML = html;
+ list.innerHTML = html + '</div>';
 }
 
 function editOwnerJobdeskFromButton(btn) {
