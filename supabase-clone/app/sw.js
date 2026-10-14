@@ -1,10 +1,11 @@
-const APP_VERSION = '20261014o';
+const APP_VERSION = '20261014p';
 const CACHE_NAME = 'hosela-hub-test-' + APP_VERSION;
 const ASSETS = [
   './',
   './index.html',
   './css/style.css',
   './js/app.js',
+  './js/dashboard-reports.js',
   './js/mock-backend.js',
   './js/payroll.js',
   './js/photo-storage.js',

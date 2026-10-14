@@ -25,6 +25,12 @@ var PHOTO_STORAGE_CONFIG = {
   appId: ''
 };
 
+// Saklar fitur. Selama false (penyimpanan belum siap dari sisi Owner), aplikasi
+// TIDAK mengirim foto dan TIDAK menampilkan pesan apa pun — absensi tetap
+// berjalan seperti biasa tanpa tulisan setengah jadi di layar karyawan.
+// Ubah ke true setelah Firebase Storage siap.
+var PHOTO_STORAGE_ENABLED = false;
+
 var PHOTO_STORAGE_PREFIX = 'absensi';
 var PHOTO_STORAGE_MAX_BYTES = 800 * 1024;
 var PHOTO_STORAGE_TOKEN_MS = 50 * 60 * 1000;
@@ -32,6 +38,10 @@ var PHOTO_STORAGE_TOKEN_MS = 50 * 60 * 1000;
 var _photoToken = '';
 var _photoTokenUntil = 0;
 var _photoTokenUid = '';
+
+function photoStorageEnabled() {
+  return !!PHOTO_STORAGE_ENABLED;
+}
 
 function photoStorageConfigured() {
   return !!(PHOTO_STORAGE_CONFIG.apiKey && PHOTO_STORAGE_CONFIG.storageBucket);

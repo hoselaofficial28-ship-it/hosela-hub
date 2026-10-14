@@ -9,9 +9,9 @@ const sw = readFileSync(new URL('../app/sw.js', import.meta.url), 'utf8');
 assert.match(css, /body:not\(\.phone-mode\) #s-daftar\.screen\.active\s*\{[^}]*height:100dvh!important;[^}]*overflow-y:auto!important;/s);
 assert.match(css, /body\.phone-mode #app-wrap #s-daftar\.screen\.active\s*\{[^}]*overflow-y:auto!important;/s);
 assert.match(css, /#s-daftar \.login-body\s*\{[^}]*safe-area-inset-bottom/s);
-assert.match(html, /css\/style\.css\?v=20261014o/);
-assert.match(html, /js\/app\.js\?v=20261014o/);
-assert.match(app, /APP_VERSION = '20261014o'/);
-assert.match(sw, /APP_VERSION = '20261014o'/);
+assert.match(html, /css\/style\.css\?v=20261014p/);
+assert.match(html, /js\/app\.js\?v=20261014p/);
+assert.match(app, /APP_VERSION = '20261014p'/);
+assert.match(sw, /APP_VERSION = '20261014p'/);
 
 console.log('registration mobile scroll: ok');

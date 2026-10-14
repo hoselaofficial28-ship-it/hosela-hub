@@ -3327,3 +3327,264 @@ body.phone-mode #app-wrap #s-daftar.screen.active{
   .peng-header{align-items:flex-start;gap:9px}
   .peng-tgl{white-space:nowrap}
 }
+
+/* ==========================================================================
+   DASHBOARD PC — sidebar penuh + kartu laporan operasional
+   --------------------------------------------------------------------------
+   Hanya berlaku di tampilan PC (min-width:900px dan bukan mode pratinjau HP).
+   Tampilan HP tidak berubah sama sekali: menu bawah tetap 4 tombol dan kartu
+   menu tetap muncul di halaman utama.
+   ========================================================================== */
+.pc-reports{display:none}
+
+@media (min-width:900px){
+  /* Menu dipindah ke sidebar, jadi kartu menu di halaman utama tidak dipakai. */
+  body:not(.phone-mode) #home-menu{display:none!important}
+
+  /* Laporan menempati kolom kiri (kolom kanan tetap: jam, bintang, profil). */
+  body:not(.phone-mode) .pc-reports:not([hidden]){
+    display:block;
+    grid-column:1;
+    grid-row:2;
+    align-self:start;
+    min-width:0;
+  }
+  body:not(.phone-mode) .pc-reports-head{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:16px;
+    margin:0 0 12px;
+  }
+  body:not(.phone-mode) .pc-reports-head h2{
+    margin:4px 0 2px;
+    font-size:19px;
+    font-weight:750;
+    letter-spacing:-.02em;
+    color:#18243a;
+  }
+  body:not(.phone-mode) .pc-reports-head p{
+    margin:0;
+    font-size:12px;
+    color:#6b7890;
+    line-height:1.45;
+  }
+  body:not(.phone-mode) .pc-reports-refresh{
+    width:auto;
+    min-height:38px;
+    padding:8px 14px;
+    font-size:12.5px;
+    flex-shrink:0;
+    box-shadow:none;
+  }
+  body:not(.phone-mode) .pc-reports-grid{
+    display:grid;
+    grid-template-columns:minmax(0,1fr);
+    gap:14px;
+  }
+  body:not(.phone-mode) .pc-card{
+    border:1px solid #dfe8f6;
+    border-radius:20px;
+    background:rgba(255,255,255,.95);
+    padding:18px;
+    min-width:0;
+  }
+  body:not(.phone-mode) .pc-card-head{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:12px;
+    margin-bottom:14px;
+  }
+  body:not(.phone-mode) .pc-card-kicker{
+    font-size:10px;
+    font-weight:800;
+    letter-spacing:.09em;
+    color:#6b7890;
+    text-transform:uppercase;
+  }
+  body:not(.phone-mode) .pc-card-head h3{
+    margin:4px 0 0;
+    font-size:15px;
+    font-weight:750;
+    color:#18243a;
+    line-height:1.3;
+  }
+  body:not(.phone-mode) .pc-link{
+    border:none;
+    background:transparent;
+    color:#1557d8;
+    font-size:12px;
+    font-weight:700;
+    cursor:pointer;
+    padding:4px 0;
+    font-family:inherit;
+    flex-shrink:0;
+  }
+  body:not(.phone-mode) .pc-link:hover{text-decoration:underline}
+  body:not(.phone-mode) .pc-metric-row{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(128px,1fr));
+    gap:10px;
+    margin-bottom:14px;
+  }
+  body:not(.phone-mode) .pc-metric{
+    border:1px solid #e6eefb;
+    background:#f7faff;
+    border-radius:14px;
+    padding:11px 12px;
+    min-width:0;
+  }
+  body:not(.phone-mode) .pc-metric-label{
+    font-size:10.5px;
+    font-weight:700;
+    color:#6b7890;
+    letter-spacing:.02em;
+  }
+  body:not(.phone-mode) .pc-metric-value{
+    font-size:21px;
+    font-weight:800;
+    color:#18243a;
+    letter-spacing:-.02em;
+    margin-top:2px;
+  }
+  body:not(.phone-mode) .pc-metric-sub{
+    font-size:10.5px;
+    color:#6b7890;
+    margin-top:3px;
+    line-height:1.35;
+  }
+  body:not(.phone-mode) .pc-metric-warn{background:#fffaeb;border-color:#fdecc8}
+  body:not(.phone-mode) .pc-metric-warn .pc-metric-value{color:#b54708}
+  body:not(.phone-mode) .pc-metric-danger{background:#fff5f4;border-color:#fecdca}
+  body:not(.phone-mode) .pc-metric-danger .pc-metric-value{color:#b42318}
+  body:not(.phone-mode) .pc-split{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+    gap:12px;
+  }
+  body:not(.phone-mode) .pc-list-box{
+    border:1px solid #e6eefb;
+    border-radius:14px;
+    padding:10px 12px;
+  }
+  body:not(.phone-mode) .pc-card>.pc-list-box{margin-top:10px}
+  body:not(.phone-mode) .pc-list-title{
+    font-size:11px;
+    font-weight:800;
+    color:#283548;
+    margin-bottom:6px;
+  }
+  body:not(.phone-mode) .pc-list-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    padding:7px 0;
+    border-bottom:1px solid #eef3fb;
+  }
+  body:not(.phone-mode) .pc-list-row:last-child{border-bottom:none}
+  body:not(.phone-mode) .pc-list-row b{
+    display:block;
+    font-size:12.5px;
+    font-weight:700;
+    color:#18243a;
+  }
+  body:not(.phone-mode) .pc-list-row small{
+    display:block;
+    font-size:10.5px;
+    color:#6b7890;
+    margin-top:2px;
+  }
+  body:not(.phone-mode) .pc-chip{
+    font-size:10.5px;
+    font-weight:750;
+    padding:4px 9px;
+    border-radius:999px;
+    white-space:nowrap;
+    background:#eef4ff;
+    color:#1557d8;
+  }
+  body:not(.phone-mode) .pc-chip-warn{background:#fffaeb;color:#b54708}
+  body:not(.phone-mode) .pc-chip-danger{background:#fff1f0;color:#b42318}
+  body:not(.phone-mode) .pc-chip-ok{background:#ecfdf3;color:#067647}
+  body:not(.phone-mode) .pc-empty{
+    font-size:11.5px;
+    color:#98a2b3;
+    padding:6px 0;
+    line-height:1.45;
+  }
+  body:not(.phone-mode) .pc-note{
+    font-size:11.5px;
+    border-radius:12px;
+    padding:9px 12px;
+    margin-bottom:12px;
+    line-height:1.45;
+  }
+  body:not(.phone-mode) .pc-note-info{background:#eef4ff;color:#1557d8}
+
+  /* Sidebar: seluruh menu, bisa digulir karena daftarnya panjang. */
+  body:not(.phone-mode) .navbar.pc-nav-full{
+    overflow-y:auto;
+    overflow-x:hidden;
+    padding:92px 12px 18px!important;
+    gap:0!important;
+    align-items:stretch!important;
+    scrollbar-width:thin;
+  }
+  body:not(.phone-mode) .navbar .pc-nav-scroll{
+    display:flex;
+    flex-direction:column;
+    gap:2px;
+    width:100%;
+  }
+  body:not(.phone-mode) .navbar .pc-nav-group{
+    margin:14px 0 4px;
+    padding:0 12px;
+    font-size:9.5px;
+    font-weight:800;
+    letter-spacing:.09em;
+    text-transform:uppercase;
+    color:#98a2b3;
+  }
+  body:not(.phone-mode) .navbar .pc-nav-item{
+    display:flex;
+    align-items:center;
+    gap:11px;
+    width:100%;
+    min-height:42px;
+    height:42px;
+    padding:0 12px;
+    border:none;
+    border-radius:11px;
+    background:transparent;
+    cursor:pointer;
+    text-align:left;
+    font-family:inherit;
+    transition:background .16s;
+  }
+  body:not(.phone-mode) .navbar .pc-nav-item:hover{background:#f1f6ff}
+  body:not(.phone-mode) .navbar .pc-nav-item.active{background:linear-gradient(135deg,#1557d8,#5b93ff)}
+  body:not(.phone-mode) .navbar .pc-nav-item .pc-nav-icon{
+    width:30px;
+    height:30px;
+    flex:0 0 30px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border-radius:9px;
+    background:#eef4ff;
+    color:#1557d8;
+  }
+  body:not(.phone-mode) .navbar .pc-nav-item .pc-nav-icon svg{width:17px;height:17px}
+  body:not(.phone-mode) .navbar .pc-nav-item .pc-nav-text{
+    font-size:13px;
+    font-weight:650;
+    color:#283548;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+  body:not(.phone-mode) .navbar .pc-nav-item.active .pc-nav-icon{background:rgba(255,255,255,.24);color:#fff}
+  body:not(.phone-mode) .navbar .pc-nav-item.active .pc-nav-text{color:#fff;font-weight:750}
+}

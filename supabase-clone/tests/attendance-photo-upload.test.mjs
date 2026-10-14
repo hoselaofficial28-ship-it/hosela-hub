@@ -14,13 +14,19 @@ const migration = readFileSync(new URL('../supabase/migrations/20261014000027_at
 const fakeWindow = { crypto: undefined };
 const mod = new Function(
   'window', 'fetch', 'Blob', 'atob',
-  storageSrc + '\nreturn { photoStoragePath, photoStorageErrorText, photoStorageConfigured, photoStorageDataUrlToBytes, PHOTO_STORAGE_CONFIG, PHOTO_STORAGE_MAX_BYTES };'
+  storageSrc + '\nreturn { photoStoragePath, photoStorageErrorText, photoStorageConfigured, photoStorageEnabled, photoStorageDataUrlToBytes, PHOTO_STORAGE_CONFIG, PHOTO_STORAGE_MAX_BYTES };'
 )(
   fakeWindow,
   function () {},
   class {},
   function (b64) { return Buffer.from(b64, 'base64').toString('binary'); }
 );
+
+// Saklar fitur: selama penyimpanan belum siap, aplikasi TIDAK mengunggah foto
+// dan TIDAK menampilkan pesan apa pun supaya layar karyawan tetap bersih.
+assert.equal(mod.photoStorageEnabled(), false);
+assert.match(storageSrc, /var PHOTO_STORAGE_ENABLED = false;/);
+assert.match(app, /if \(!photoStorageEnabled\(\)\) return;/);
 
 // Config masih kosong di repo (menunggu diisi dari Firebase Console) -> modul
 // harus melaporkan "belum siap", bukan error yang membingungkan.
@@ -56,7 +62,7 @@ assert.match(mod.photoStorageErrorText(500, null), /HTTP 500/);
 // ---------------------------------------------------------------------------
 // 2) Modul dimuat aplikasi tanpa SDK Firebase (aplikasi harus tetap ringan)
 // ---------------------------------------------------------------------------
-assert.match(html, /<script src="js\/photo-storage\.js\?v=20261014o"><\/script>/);
+assert.match(html, /<script src="js\/photo-storage\.js\?v=20261014p"><\/script>/);
 assert.doesNotMatch(html, /firebasejs|firebase-app|firebase-storage/i);
 assert.match(storageSrc, /identitytoolkit\.googleapis\.com\/v1\/accounts:signUp/);
 assert.match(storageSrc, /firebasestorage\.googleapis\.com\/v0\/b\//);
@@ -115,9 +121,9 @@ assert.match(migration, /photo_url\s+= p_url/);
 // ---------------------------------------------------------------------------
 // 6) Versi cache naik serentak (HP tidak boleh memakai file lama)
 // ---------------------------------------------------------------------------
-assert.match(html, /css\/style\.css\?v=20261014o/);
-assert.match(html, /js\/app\.js\?v=20261014o/);
-assert.match(app, /APP_VERSION = '20261014o'/);
-assert.match(sw, /APP_VERSION = '20261014o'/);
+assert.match(html, /css\/style\.css\?v=20261014p/);
+assert.match(html, /js\/app\.js\?v=20261014p/);
+assert.match(app, /APP_VERSION = '20261014p'/);
+assert.match(sw, /APP_VERSION = '20261014p'/);
 
 console.log('penyimpanan foto absensi (Firebase Storage): ok');

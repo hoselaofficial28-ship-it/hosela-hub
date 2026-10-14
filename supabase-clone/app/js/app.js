@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbw6q_5ZaIGrekeBwZ5TKh6X1GpWkFHsa5i6whdwacQkTEa-vvNezHlxFMEQFKZkmm5ffQ/exec';
-var APP_VERSION = '20261014o';
+var APP_VERSION = '20261014p';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -699,6 +699,8 @@ function goTo(id) {
  var el = document.getElementById(id);
  if (!el) return;
  el.classList.add('active');
+ updateDesktopNavActive(id);
+ if (id === 's-home') loadDesktopReports(false);
  try {
   window.scrollTo(0, 0);
   document.documentElement.scrollTop = 0;
@@ -1146,6 +1148,9 @@ function loadHome(forceRefresh) {
  var prevBtn = document.querySelector('.preview-btn');
  if (prevBtn) prevBtn.style.display = (!isTouchDevice && (u.bagian === 'Owner' || u.bagian === 'Finance')) ? 'flex' : 'none';
  document.getElementById('home-menu').innerHTML = renderHomeMenuSections(menus);
+ window._homeMenus = menus;
+ applyDesktopNavigation();
+ loadDesktopReports(true);
  applyLanguageText();
  setTimeout(prefetchCommonData, 450);
 
@@ -1774,6 +1779,176 @@ function closeHomeCategory(fromHistory) {
  }
 }
 
+// ===== Tampilan PC: seluruh menu dipindah ke sidebar + laporan di halaman utama
+var _pcNavOriginalHtml = null;
+var _pcNavApplied = false;
+var _pcReportsLoading = false;
+var _pcReportsLoadedAt = 0;
+
+function pcNavbarEls() {
+ return Array.prototype.slice.call(document.querySelectorAll('.navbar'));
+}
+
+function pcActiveScreenId() {
+ var aktif = document.querySelector('.screen.active');
+ return aktif ? aktif.id : 's-home';
+}
+
+function pcSidebarModel() {
+ return {
+  menus: window._homeMenus || [],
+  activeId: pcActiveScreenId(),
+  urutan: window._homeMenuOrder || [],
+  kategoriDari: menuCategory,
+  labelKategori: categoryLabel,
+  beranda: { id: 's-home', label: 'Beranda', icon: 'home' }
+ };
+}
+
+// Tempel daftar menu lengkap ke kartu sidebar (hanya tampilan PC). Saat kembali
+// ke tampilan HP, navbar aslinya (4 menu bawah) dipulihkan apa adanya.
+function applyDesktopNavigation() {
+ var navs = pcNavbarEls();
+ if (!navs.length) return;
+ if (!isDesktopLayout()) {
+  if (_pcNavOriginalHtml) {
+   navs.forEach(function (nav, i) {
+    if (_pcNavOriginalHtml[i] !== undefined) nav.innerHTML = _pcNavOriginalHtml[i];
+   });
+  }
+  navs.forEach(function (nav) { nav.classList.remove('pc-nav-full'); });
+  _pcNavApplied = false;
+  return;
+ }
+ if (!window._homeMenus || !window._homeMenus.length) return;
+ if (!_pcNavOriginalHtml) {
+  _pcNavOriginalHtml = navs.map(function (nav) { return nav.innerHTML; });
+ }
+ var html = pcRenderSidebarNav(pcSidebarModel());
+ navs.forEach(function (nav) {
+  nav.innerHTML = html;
+  nav.classList.add('pc-nav-full');
+ });
+ _pcNavApplied = true;
+}
+
+function updateDesktopNavActive(activeId) {
+ if (!_pcNavApplied || !activeId) return;
+ pcNavbarEls().forEach(function (nav) {
+  nav.querySelectorAll('.pc-nav-item').forEach(function (btn) {
+   btn.classList.toggle('active', btn.getAttribute('data-screen') === activeId);
+  });
+ });
+}
+
+function pcSetReportHead(kicker, judul, sub) {
+ var k = document.getElementById('pc-reports-kicker');
+ var t = document.getElementById('pc-reports-title');
+ var s = document.getElementById('pc-reports-sub');
+ if (k) k.textContent = kicker;
+ if (t) t.textContent = judul;
+ if (s) s.textContent = sub;
+}
+
+// Laporan halaman utama (tampilan PC saja). Owner/Finance melihat laporan tim,
+// karyawan melihat ringkasan pribadi. Semua data diambil dari aksi yang sudah
+// ada, jadi tidak ada query baru yang perlu dipasang di Supabase.
+function loadDesktopReports(force) {
+ var sec = document.getElementById('pc-reports');
+ var grid = document.getElementById('pc-reports-grid');
+ if (!sec || !grid) return;
+ if (!isDesktopLayout() || !currentUser) { sec.hidden = true; return; }
+ sec.hidden = false;
+ if (_pcReportsLoading) return;
+ if (!force && _pcReportsLoadedAt && (Date.now() - _pcReportsLoadedAt) < 60 * 1000) return;
+ _pcReportsLoading = true;
+
+ var bulanKey = attendanceMonthKey(new Date());
+ var todayKey = pcTodayKey(new Date());
+ var jamSekarang = pcUpdatedText(new Date());
+ var isTeam = currentUser.bagian === 'Owner' || currentUser.bagian === 'Finance';
+ var judul = isTeam ? 'Ringkasan Tim Hari Ini' : 'Ringkasan Saya';
+ var kicker = isTeam ? 'LAPORAN OPERASIONAL' : 'RINGKASAN SAYA';
+
+ pcSetReportHead(kicker, judul, 'Memuat data...');
+ grid.innerHTML = skelCards(3);
+
+ var gagal = [];
+ var selesai = 0;
+ var target = isTeam ? 5 : 3;
+
+ function langkah() {
+  selesai++;
+  if (selesai < target) return;
+  _pcReportsLoading = false;
+  _pcReportsLoadedAt = Date.now();
+  if (gagal.length) {
+   pcSetReportHead(kicker, judul, 'Diperbarui ' + jamSekarang + ' · Sebagian data gagal dimuat: ' + gagal.join(' | '));
+  } else {
+   pcSetReportHead(kicker, judul, 'Diperbarui pukul ' + jamSekarang + ' · ' + labelBulanKey(bulanKey));
+  }
+  render();
+ }
+
+ function ambil(nama, action, args, simpan) {
+  gasCall(action, args, function (res) {
+   try { simpan(res); } catch (e) { gagal.push(nama + ': ' + ((e && e.message) ? e.message : 'gagal dibaca')); }
+   langkah();
+  }, function (err) {
+   gagal.push(nama + ': ' + ((err && err.message) ? err.message : 'koneksi gagal'));
+   langkah();
+  });
+ }
+
+ if (isTeam) {
+  var bag = { matrix: null, rekap: null, izin: [], peng: [], libur: [] };
+  ambil('kehadiran', 'getAbsensiMatrix', [bulanKey], function (r) {
+   bag.matrix = r;
+   if (r && r.success === false) gagal.push('kehadiran: ' + (r.msg || 'gagal dimuat'));
+  });
+  ambil('kinerja bulan ini', 'getRekapBulananSemua', [bulanKey], function (r) {
+   bag.rekap = r;
+   if (r && r.success === false) gagal.push('kinerja: ' + (r.msg || 'gagal dimuat'));
+  });
+  ambil('antrian izin', 'getIzinPending', [], function (r) { bag.izin = r || []; });
+  ambil('pengumuman', 'getPengumuman', [currentUser.bagian], function (r) { bag.peng = r || []; });
+  ambil('kalender libur', 'getKalenderLibur', [], function (r) { bag.libur = r || []; });
+
+  function render() {
+   var liburNama = pcLiburHariIni(bag.libur, todayKey);
+   var sum = pcAttendanceSummary(bag.matrix, todayKey, { liburNama: liburNama });
+   var perf = pcPerformanceSummary(bag.rekap);
+   grid.innerHTML =
+    pcAttendanceCardHtml(sum, { jamSekarang: jamSekarang }) +
+    pcPerformanceCardHtml(perf, labelBulanKey(bulanKey)) +
+    pcActionCardHtml({ izinPending: bag.izin, pengumuman: bag.peng });
+  }
+ } else {
+  var sendiri = { matrix: null, izin: [], slip: [] };
+  ambil('absensi saya', 'getAbsensiMatrixUser', [currentUser.id, bulanKey], function (r) {
+   sendiri.matrix = r;
+   if (r && r.success === false) gagal.push('absensi: ' + (r.msg || 'gagal dimuat'));
+  });
+  ambil('izin saya', 'getIzinKaryawan', [currentUser.id], function (r) { sendiri.izin = r || []; });
+  ambil('slip gaji', 'getPayrollEmployeeSlip', [currentUser.id], function (r) {
+   sendiri.slip = (r && r.data) ? r.data : [];
+  });
+
+  function render() {
+   var sum = pcPersonalSummary(sendiri.matrix, todayKey);
+   var statusText = sum.masuk
+    ? (sum.telat ? 'Masuk ' + sum.masuk + ' — terlambat dari jadwal ' + (sum.jadwal || '08:00') : 'Masuk ' + sum.masuk + ' — tepat waktu')
+    : 'Belum ada absensi hari ini';
+   grid.innerHTML = pcPersonalReportsHtml({
+    attendance: { statusText: statusText, masuk: sum.masuk, pulang: sum.pulang, jadwal: sum.jadwal },
+    performance: { skor: 0, bintang: 0, hadir: sum.hadir, telat: sum.telatCount, absen: sum.absen },
+    izin: sendiri.izin,
+    slip: sendiri.slip
+   });
+  }
+ }
+}
+
 var _homeMenuLayoutDesktop = null;
 window.addEventListener('resize', function() {
  var el = document.getElementById('home-menu');
@@ -1787,6 +1962,8 @@ window.addEventListener('resize', function() {
  _homeMenuLayoutDesktop = nowDesktop;
  _homeCategoryOpen = false;
  el.innerHTML = nowDesktop ? renderHomeMenuSectionList() : renderHomeCategoryIndex();
+ applyDesktopNavigation();
+ loadDesktopReports(true);
 });
 
 function refreshHomeData() {
@@ -3393,6 +3570,9 @@ function updateAttendancePhotoStatus(text, state) {
 function sendAttendancePhoto() {
  var p = _pendingAttendancePhoto;
  if (!p || _attendancePhotoUploading) return;
+ // Fitur belum diaktifkan Owner -> tidak ada unggahan dan tidak ada pesan,
+ // supaya tampilan absensi karyawan tetap bersih.
+ if (!photoStorageEnabled()) return;
  if (!p.eventId) {
   updateAttendancePhotoStatus('Foto belum bisa disimpan: server tidak mengirim ID absensi. Tarik layar untuk memuat ulang, lalu hubungi Owner.', 'bad');
   return;
@@ -3457,6 +3637,9 @@ function attendancePhotoRowHtml(r) {
  if (r.fotoUrl) {
   return '<div style="margin-top:4px"><a href="' + attendancePhotoAttr(r.fotoUrl) + '" target="_blank" rel="noopener" style="font-size:11px;color:var(--blue);font-weight:600">Lihat Foto Absensi</a></div>';
  }
+ // Selama penyimpanan foto belum diaktifkan, jangan tampilkan status foto sama
+ // sekali (biar tidak ada tulisan "belum tersimpan" di layar karyawan).
+ if (!photoStorageEnabled()) return '';
  var bisaKirimUlang = !!(_pendingAttendancePhoto && r.id && _pendingAttendancePhoto.eventId === r.id);
  var teks = r.uploadStatus === 'FAILED'
   ? 'Foto belum tersimpan: ' + (r.uploadError || 'penyebab tidak dicatat')
