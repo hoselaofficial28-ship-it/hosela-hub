@@ -294,17 +294,23 @@ function pcActionCardHtml(data) {
 function pcPersonalReportsHtml(data) {
   var att = (data && data.attendance) || {};
   var perf = (data && data.performance) || {};
+  // Skor KPI hanya ditampilkan kalau memang sudah dibaca dari server; kalau
+  // belum tahu, jangan tulis "0/100" (itu menyesatkan karyawan).
+  var metrik = [
+    pcMetricHtml('Masuk', att.masuk || '-', att.jadwal ? 'jadwal ' + att.jadwal : ''),
+    pcMetricHtml('Pulang', att.pulang || '-', 'tap pulang')
+  ];
+  if (perf.skor !== null && perf.skor !== undefined) {
+    metrik.push(pcMetricHtml('Skor KPI', String(perf.skor) + '/100', (perf.bintang || 0) + ' bintang'));
+  }
+  metrik.push(pcMetricHtml('Hadir bulan ini', String(perf.hadir || 0), (perf.telat || 0) + 'x telat · ' + (perf.absen || 0) + 'x absen'));
+
   var html = '<section class="pc-card pc-card-wide" id="pc-card-personal">' +
     '<div class="pc-card-head"><div><div class="pc-card-kicker">ABSENSI SAYA HARI INI</div>' +
     '<h3>' + pcEscape(att.statusText || 'Belum ada absensi hari ini') + '</h3></div>' +
     '<button type="button" class="pc-link" onclick="goTo(\'s-absensi-camera\')">Absensi Kamera &rarr;</button>' +
     '</div>' +
-    '<div class="pc-metric-row">' +
-    pcMetricHtml('Masuk', att.masuk || '-', att.jadwal ? 'jadwal ' + att.jadwal : '') +
-    pcMetricHtml('Pulang', att.pulang || '-', 'tap pulang') +
-    pcMetricHtml('Skor KPI', String(perf.skor === undefined ? 0 : perf.skor) + '/100', (perf.bintang || 0) + ' bintang') +
-    pcMetricHtml('Hadir bulan ini', String(perf.hadir || 0), (perf.telat || 0) + 'x telat &middot; ' + (perf.absen || 0) + 'x absen') +
-    '</div></section>';
+    '<div class="pc-metric-row">' + metrik.join('') + '</div></section>';
 
   var izin = (data && data.izin) || [];
   var slip = (data && data.slip) || [];

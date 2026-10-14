@@ -127,6 +127,25 @@ assert.match(mod.pcEscape('<b>"x"</b>'), /&lt;b&gt;/);
 const jahat = mod.pcAttendanceSummary({ users: [{ id: 'z', nama: '<img src=x onerror=alert(1)>', bagian: 'G', days: { 14: cell({ masuk: '09:00', telat: true }) } }] }, '2026-10-14', {});
 assert.ok(mod.pcAttendanceCardHtml(jahat, {}).indexOf('<img src=x') === -1, 'nama karyawan harus di-escape');
 
+// Kartu pribadi: skor KPI tidak boleh ditulis 0 kalau belum terbaca dari server
+const pribadiTanpaSkor = mod.pcPersonalReportsHtml({
+  attendance: { statusText: 'Masuk 07:55 — tepat waktu', masuk: '07:55', pulang: '', jadwal: '08:00' },
+  performance: { skor: null, bintang: 0, hadir: 12, telat: 1, absen: 0 },
+  izin: [], slip: []
+});
+assert.ok(pribadiTanpaSkor.indexOf('Skor KPI') === -1, 'skor KPI kosong tidak ditampilkan');
+assert.match(pribadiTanpaSkor, /Masuk 07:55/);
+assert.match(pribadiTanpaSkor, /Hadir bulan ini/);
+const pribadiDenganSkor = mod.pcPersonalReportsHtml({
+  attendance: { statusText: 'Masuk 08:30 — terlambat', masuk: '08:30', pulang: '', jadwal: '08:00' },
+  performance: { skor: 88, bintang: 4, hadir: 18, telat: 2, absen: 0 },
+  izin: [{ jenis: 'SAKIT', tanggal: '1 Okt 2026', status: 'DISETUJUI' }],
+  slip: [{ bulan: '2026-09', totalGaji: 4500000, dipublishPada: '1 Okt 2026' }]
+});
+assert.match(pribadiDenganSkor, /Skor KPI/);
+assert.match(pribadiDenganSkor, /88\/100/);
+assert.match(pribadiDenganSkor, /Rp 4\.500\.000/);
+
 // ---------------------------------------------------------------------------
 // 2) Halaman & skrip tersambung
 // ---------------------------------------------------------------------------

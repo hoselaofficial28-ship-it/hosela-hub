@@ -1170,6 +1170,7 @@ function loadHome(forceRefresh) {
  }
 
  gasCall('getHomeData', [u.id, u.bagian], function(d) {
+ window._lastHomeData = d;
  // Pengumuman — index 0 adalah terbaru (sudah di-reverse di GAS)
  if (d.pengumuman && d.pengumuman.length > 0) {
  var latestPeng = d.pengumuman[0];
@@ -1936,12 +1937,17 @@ function loadDesktopReports(force) {
 
   function render() {
    var sum = pcPersonalSummary(sendiri.matrix, todayKey);
+   var prof = (window._lastHomeData && window._lastHomeData.profile) || {};
    var statusText = sum.masuk
     ? (sum.telat ? 'Masuk ' + sum.masuk + ' — terlambat dari jadwal ' + (sum.jadwal || '08:00') : 'Masuk ' + sum.masuk + ' — tepat waktu')
     : 'Belum ada absensi hari ini';
    grid.innerHTML = pcPersonalReportsHtml({
     attendance: { statusText: statusText, masuk: sum.masuk, pulang: sum.pulang, jadwal: sum.jadwal },
-    performance: { skor: 0, bintang: 0, hadir: sum.hadir, telat: sum.telatCount, absen: sum.absen },
+    performance: {
+     skor: (prof.skor === undefined || prof.skor === null) ? null : prof.skor,
+     bintang: prof.bintang || 0,
+     hadir: sum.hadir, telat: sum.telatCount, absen: sum.absen
+    },
     izin: sendiri.izin,
     slip: sendiri.slip
    });
