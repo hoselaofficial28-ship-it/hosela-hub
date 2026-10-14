@@ -8,9 +8,9 @@ const sw = readFileSync(new URL('../app/sw.js', import.meta.url), 'utf8');
 
 assert.match(backend, /email not confirmed/i);
 assert.match(backend, /konfirmasi email Supabase masih aktif/);
-assert.match(html, /css\/style\.css\?v=20261012i/);
-assert.match(html, /js\/app\.js\?v=20261012i/);
-assert.match(app, /APP_VERSION = '20261012i'/);
-assert.match(sw, /APP_VERSION = '20261012i'/);
+assert.match(html, /css\/style\.css\?v=20261012j/);
+assert.match(html, /js\/app\.js\?v=20261012j/);
+assert.match(app, /APP_VERSION = '20261012j'/);
+assert.match(sw, /APP_VERSION = '20261012j'/);
 
 console.log('login email confirmation handling: ok');

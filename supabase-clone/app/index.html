@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=20261012i">
+<link rel="stylesheet" href="css/style.css?v=20261012j">
 
 
 
@@ -362,22 +362,30 @@
  <div class="header-row"><button class="back-btn" onclick="goTo('s-home')">?</button><div><h1>Peraturan</h1><p>Tata tertib kantor Hosela</p></div></div>
  <div class="gold-line"></div>
  </div>
- <div class="content">
- <section class="owner-editor" id="peraturan-owner-panel" style="display:none" aria-labelledby="peraturan-owner-title">
-  <div class="owner-editor-head"><div><div class="eyebrow">KHUSUS OWNER</div><h2 id="peraturan-owner-title">Kelola Tata Tertib</h2><p>Tambah aturan baru atau pilih aturan lama untuk diperbarui.</p></div></div>
-  <input type="hidden" id="peraturan-edit-id">
-  <div class="owner-form-grid">
-   <div class="form-group"><label class="form-label" for="peraturan-kategori">Kategori</label><input type="text" class="form-input" id="peraturan-kategori" placeholder="Contoh: Kehadiran"></div>
-   <div class="form-group owner-form-span"><label class="form-label" for="peraturan-isi">Isi peraturan</label><textarea class="form-input" id="peraturan-isi" rows="4" placeholder="Tulis tata tertib dengan jelas..."></textarea></div>
+ <div class="content peraturan-page-content">
+  <section class="peraturan-drive-card" id="peraturan-drive-card" aria-live="polite">
+   <div class="skeleton skel-text"></div><div class="skeleton skel-text-sm"></div>
+  </section>
+  <div class="peraturan-owner-grid" id="peraturan-owner-tools" style="display:none">
+   <section class="owner-editor peraturan-drive-editor" aria-labelledby="peraturan-drive-owner-title">
+    <div class="owner-editor-head"><div><div class="eyebrow">DOKUMEN UTAMA</div><h2 id="peraturan-drive-owner-title">Link Google Drive</h2><p>Pasang dokumen peraturan kantor yang selalu dapat dibuka oleh seluruh tim.</p></div><span class="status-pill status-pill-info">Khusus Owner</span></div>
+    <div class="form-group"><label class="form-label" for="peraturan-drive-link">Link dokumen Google Drive</label><input type="url" class="form-input" id="peraturan-drive-link" placeholder="https://drive.google.com/..."><div class="field-help">Atur akses Drive menjadi “Siapa saja yang memiliki link dapat melihat”.</div></div>
+    <button class="btn btn-primary peraturan-drive-save" id="peraturan-drive-save-btn" onclick="savePeraturanDriveLink()">Simpan Link Drive</button>
+   </section>
+   <section class="owner-editor" id="peraturan-owner-panel" aria-labelledby="peraturan-owner-title">
+    <div class="owner-editor-head"><div><div class="eyebrow">ATURAN RINGKAS</div><h2 id="peraturan-owner-title">Kelola Tata Tertib</h2><p>Tambahkan poin penting agar dapat dibaca cepat tanpa membuka dokumen.</p></div></div>
+    <input type="hidden" id="peraturan-edit-id">
+    <div class="owner-form-grid peraturan-form-grid">
+     <div class="form-group"><label class="form-label" for="peraturan-kategori">Kategori</label><input type="text" class="form-input" id="peraturan-kategori" placeholder="Contoh: Kehadiran"></div>
+     <div class="form-group"><label class="form-label" for="peraturan-isi">Isi peraturan</label><textarea class="form-input" id="peraturan-isi" rows="4" placeholder="Tulis tata tertib dengan jelas..."></textarea></div>
+    </div>
+    <div class="owner-editor-actions"><button class="btn btn-primary" id="peraturan-save-btn" onclick="savePeraturan()">Tambah Peraturan</button><button class="btn btn-secondary" id="peraturan-cancel-btn" style="display:none" onclick="cancelEditPeraturan()">Batal Edit</button></div>
+   </section>
   </div>
-  <div class="owner-editor-actions"><button class="btn btn-primary" id="peraturan-save-btn" onclick="savePeraturan()">Tambah Peraturan</button><button class="btn btn-secondary" id="peraturan-cancel-btn" style="display:none" onclick="cancelEditPeraturan()">Batal Edit</button></div>
- </section>
- <div id="peraturan-notif-btn" style="display:none;margin-bottom:10px">
- <button class="btn btn-gold" style="width:100%;padding:10px;font-size:12px" onclick="kirimNotifPeraturan()"> Kirim Notif Peraturan Baru ke Tim</button>
- </div>
- <div id="peraturan-content">
- <div class="empty-state"><div class="empty-icon"></div>Memuat...</div>
- </div>
+  <section class="peraturan-rules-card" aria-labelledby="peraturan-list-title">
+   <div class="peraturan-rules-head"><div><div class="eyebrow">RINGKASAN</div><h2 id="peraturan-list-title">Poin tata tertib</h2><p>Aturan penting yang perlu dipahami seluruh anggota tim.</p></div><div id="peraturan-notif-btn" style="display:none"><button class="btn btn-gold" onclick="kirimNotifPeraturan()">Kirim Notifikasi ke Tim</button></div></div>
+   <div id="peraturan-content"><div class="empty-state"><div class="empty-icon"></div>Memuat...</div></div>
+  </section>
  </div>
 </div>
 
@@ -837,8 +845,8 @@
 <script src="js/supabase-client.js"></script>
 <script src="js/real-backend.js"></script>
 <script src="js/mock-backend.js"></script>
-<script src="js/app.js?v=20261012i"></script>
-<script src="js/payroll.js?v=20261012i"></script>
+<script src="js/app.js?v=20261012j"></script>
+<script src="js/payroll.js?v=20261012j"></script>
 <script src="js/preview.js?v=20260930b"></script>
 </body>
 </html>

@@ -9,6 +9,8 @@ const sql = readFileSync(new URL('../supabase/migrations/20261012000024_owner_co
 
 assert.match(html, /id="jobdesk-owner-panel"/);
 assert.match(html, /id="peraturan-owner-panel"/);
+assert.match(html, /id="peraturan-drive-link"/);
+assert.match(html, /id="peraturan-drive-card"/);
 assert.match(html, /id="office-setting-card"/);
 assert.match(html, /class="content izin-page-content"/);
 assert.match(html, /class="content slip-page-content"/);
@@ -22,6 +24,8 @@ assert.match(app, /renderOwnerJobdeskList\(res && \(res\.data \|\| res\.items\) 
 assert.match(app, /k\.indexOf\('hh_sb_session'\) !== 0/);
 assert.match(app, /window\.sb\.auth\.getSession\(\)/);
 assert.match(app, /gasCall\('savePeraturan'/);
+assert.match(app, /PERATURAN_DRIVE_CATEGORY = 'DOKUMEN PERATURAN'/);
+assert.match(app, /function savePeraturanDriveLink\(\)/);
 assert.match(app, /gasCall\('setOfficeSettings'/);
 assert.match(app, /var isOwner = currentUser && currentUser\.bagian === 'Owner'/);
 
@@ -38,5 +42,6 @@ assert.match(css, /\.slip-card-head\{display:flex/);
 assert.match(css, /@media \(min-width:900px\)/);
 assert.match(css, /#s-jobdesk #jobdesk-list\{[\s\S]*max-width:none/);
 assert.match(css, /\.jobdesk-groups-grid\{[\s\S]*display:grid/);
+assert.match(css, /\.peraturan-drive-card\{[\s\S]*display:grid/);
 
 console.log('owner content, office settings, and responsive UI checks passed');

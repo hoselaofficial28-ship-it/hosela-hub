@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbw6q_5ZaIGrekeBwZ5TKh6X1GpWkFHsa5i6whdwacQkTEa-vvNezHlxFMEQFKZkmm5ffQ/exec';
-var APP_VERSION = '20261012i';
+var APP_VERSION = '20261012j';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -2570,20 +2570,45 @@ function _updateMenuBadge(menuLabel, count) {
  });
 }
 
+var PERATURAN_DRIVE_CATEGORY = 'DOKUMEN PERATURAN';
+
+function getPeraturanDriveItem(data) {
+ return (data || []).find(function(item) {
+  return String(item.kategori || '').trim().toUpperCase() === PERATURAN_DRIVE_CATEGORY;
+ }) || null;
+}
+
+function renderPeraturanDriveCard(item, isOwner) {
+ var card = document.getElementById('peraturan-drive-card');
+ if (!card) return;
+ var link = item && /^https?:\/\//i.test(String(item.isi || '')) ? String(item.isi) : '';
+ var editor = document.getElementById('peraturan-drive-link');
+ if (editor) editor.value = link;
+ card.className = 'peraturan-drive-card' + (link ? ' has-document' : ' is-empty');
+ card.innerHTML = '<div class="peraturan-drive-icon">'+uiIcon('book')+'</div><div class="peraturan-drive-copy">'+
+   '<div class="eyebrow">DOKUMEN RESMI</div><h2>Peraturan Kantor Hosela</h2><p>'+
+   (link ? 'Buka dokumen Google Drive untuk membaca peraturan kantor versi terbaru.' : (isOwner ? 'Belum ada link dokumen. Masukkan link Google Drive pada panel Owner di bawah.' : 'Dokumen peraturan belum tersedia. Silakan hubungi Owner.'))+
+   '</p></div>'+
+   (link ? '<a class="btn btn-primary peraturan-open-btn" href="'+jobdeskSafe(link)+'" target="_blank" rel="noopener noreferrer">Buka Peraturan Kantor</a>' : '<span class="status-pill status-pill-muted">Belum tersedia</span>');
+}
+
 function loadPeraturan() {
  var el = document.getElementById('peraturan-content');
  el.innerHTML = skelCards(4);
  var isOwner = currentUser && currentUser.bagian === 'Owner';
  var notifBtn = document.getElementById('peraturan-notif-btn');
- var ownerPanel = document.getElementById('peraturan-owner-panel');
+ var ownerTools = document.getElementById('peraturan-owner-tools');
  if (notifBtn) notifBtn.style.display = isOwner ? 'block' : 'none';
- if (ownerPanel) ownerPanel.style.display = isOwner ? 'block' : 'none';
+ if (ownerTools) ownerTools.style.display = isOwner ? 'grid' : 'none';
  gasCall('getPeraturan', [], function(data) {
  window._peraturanData = data || [];
- if (!data || !data.length) { el.innerHTML = '<div class="empty-state">Belum ada peraturan</div>'; return; }
+ var driveItem = getPeraturanDriveItem(data);
+ renderPeraturanDriveCard(driveItem, isOwner);
+ var rules = (data || []).filter(function(item) { return item !== driveItem; });
+ if (!rules.length) { el.innerHTML = '<div class="empty-state">Belum ada poin tata tertib ringkas.</div>'; return; }
  var grouped = {};
  var order = [];
- data.forEach(function(p) {
+ rules.forEach(function(p) {
  if (!grouped[p.kategori]) { grouped[p.kategori] = []; order.push(p.kategori); }
  grouped[p.kategori].push(p);
  });
@@ -2597,7 +2622,23 @@ function loadPeraturan() {
  });
  });
  el.innerHTML = html;
- }, function(){ el.innerHTML = '<div class="empty-state">Gagal memuat peraturan</div>'; });
+ }, function(){ renderPeraturanDriveCard(null, isOwner); el.innerHTML = '<div class="empty-state">Gagal memuat peraturan</div>'; });
+}
+
+function savePeraturanDriveLink() {
+ var input = document.getElementById('peraturan-drive-link');
+ var link = (input && input.value || '').trim();
+ var btn = document.getElementById('peraturan-drive-save-btn');
+ var drivePattern = /^https:\/\/(drive|docs)\.google\.com\//i;
+ if (!drivePattern.test(link)) { showToast('Masukkan link Google Drive yang valid'); return; }
+ var existing = getPeraturanDriveItem(window._peraturanData || []);
+ btn.disabled = true; btn.textContent = 'Menyimpan...';
+ gasCall('savePeraturan', [existing && existing.id || null, PERATURAN_DRIVE_CATEGORY, link], function(res) {
+  btn.disabled = false; btn.textContent = 'Simpan Link Drive';
+  if (!res || res.success === false) { showToast((res && res.msg) || 'Gagal menyimpan link Drive'); return; }
+  showToast('Link peraturan kantor berhasil disimpan');
+  loadPeraturan();
+ }, function() { btn.disabled = false; btn.textContent = 'Simpan Link Drive'; showToast('Koneksi gagal'); });
 }
 
 function editPeraturan(id) {
