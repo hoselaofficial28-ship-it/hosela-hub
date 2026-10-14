@@ -3338,14 +3338,13 @@ body.phone-mode #app-wrap #s-daftar.screen.active{
 .pc-reports{display:none}
 
 @media (min-width:900px){
-  /* Isi tiap menu memakai lebar kolom konten. Sebelumnya isi dibatasi 1160px
-     sehingga sisa separuh kanan kosong (tabel/daftar kelihatan mentok ke kiri).
-     Batas atas 1560px + dipusatkan supaya di monitor sangat lebar tetap rapi. */
+  /* Isi tiap menu memakai SELURUH lebar kolom konten: tanpa batas 1160px dan
+     tanpa dipusatkan. Ini yang bikin semua elemen (header, kartu, tabel, daftar)
+     punya garis kiri yang sama — tidak ada zigzag dan tidak ada ruang kosong. */
   body:not(.phone-mode) .screen.active>.content>*{
-    width:100%;
-    max-width:1560px!important;
-    margin-left:auto!important;
-    margin-right:auto!important;
+    max-width:none!important;
+    margin-left:0!important;
+    margin-right:0!important;
   }
   /* Kolom isian tidak perlu selebar layar; dibatasi supaya tetap nyaman dibaca.
      Catatan: pakai `.content .card` (keturunan), BUKAN `.content>*>.card` —
@@ -3392,12 +3391,18 @@ body.phone-mode #app-wrap #s-daftar.screen.active{
     align-self:start;
     min-width:0;
   }
+  /* Judul laporan dibuat sebagai kartu (bukan teks melayang di tepi kolom),
+     supaya garis kiri judul sejajar dengan kartu-kartu di bawahnya. */
   body:not(.phone-mode) .pc-reports-head{
     display:flex;
     align-items:flex-start;
     justify-content:space-between;
     gap:16px;
-    margin:0 0 12px;
+    margin:0 0 14px;
+    padding:16px 20px;
+    border:1px solid #dfe8f6;
+    border-radius:20px;
+    background:rgba(255,255,255,.95);
   }
   body:not(.phone-mode) .pc-reports-head h2{
     margin:4px 0 2px;
@@ -3429,7 +3434,7 @@ body.phone-mode #app-wrap #s-daftar.screen.active{
     border:1px solid #dfe8f6;
     border-radius:20px;
     background:rgba(255,255,255,.95);
-    padding:18px;
+    padding:18px 20px;
     min-width:0;
   }
   body:not(.phone-mode) .pc-card-head{
