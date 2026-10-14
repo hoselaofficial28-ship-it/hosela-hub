@@ -1,94 +1,61 @@
 // ============================================================================
-// Hosela Hub — Penyimpanan Foto Absensi (Firebase Storage, TANPA SDK)
+// Hosela Hub — Penyimpanan Foto Absensi (Supabase Storage)
 // ============================================================================
-// Sengaja tidak memakai SDK Firebase: aplikasi ini web statis mobile-first dan
-// aturan project melarang menambah library besar. Yang dipakai hanya REST
-// resmi Google (3 endpoint):
-//   1) Masuk anonim  : POST https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=<apiKey>
-//   2) Unggah foto   : POST https://firebasestorage.googleapis.com/v0/b/<bucket>/o?name=<path>
-//   3) Tautan foto   : https://firebasestorage.googleapis.com/v0/b/<bucket>/o/<path>?alt=media&token=<token>
-//
-// Isi PHOTO_STORAGE_CONFIG dari Firebase Console (Project settings -> Your apps
-// -> Web app -> SDK setup and configuration). Nilai config ini memang PUBLIK
-// karena tampil di browser; keamanan dijaga Storage Rules — lihat
-// docs/clone-supabase/08-SETUP-FIREBASE-FOTO.md.
-//
-// Selama config masih kosong, photoStorageConfigured() = false dan aplikasi
-// tetap jalan normal (foto tidak dikirim, status ditampilkan apa adanya).
+// Foto masuk ke bucket PRIVAT `attendance-photos`. Browser hanya memakai sesi
+// Supabase karyawan yang sudah login; tidak ada kredensial admin di frontend.
+// Path selalu diawali user id agar policy Storage dapat memastikan karyawan
+// hanya mengunggah dan membuka fotonya sendiri. Owner/Finance dapat membaca
+// semua foto melalui policy SQL.
 // ============================================================================
 
-var PHOTO_STORAGE_CONFIG = {
-  apiKey: '',
-  authDomain: '',
-  projectId: '',
-  storageBucket: '',
-  appId: ''
-};
-
-// Saklar fitur. Selama false (penyimpanan belum siap dari sisi Owner), aplikasi
-// TIDAK mengirim foto dan TIDAK menampilkan pesan apa pun — absensi tetap
-// berjalan seperti biasa tanpa tulisan setengah jadi di layar karyawan.
-// Ubah ke true setelah Firebase Storage siap.
-var PHOTO_STORAGE_ENABLED = false;
-
-var PHOTO_STORAGE_PREFIX = 'absensi';
-var PHOTO_STORAGE_MAX_BYTES = 800 * 1024;
-var PHOTO_STORAGE_TOKEN_MS = 50 * 60 * 1000;
-
-var _photoToken = '';
-var _photoTokenUntil = 0;
-var _photoTokenUid = '';
+var PHOTO_STORAGE_BUCKET = 'attendance-photos';
+var PHOTO_STORAGE_ENABLED = true;
+var PHOTO_STORAGE_MAX_BYTES = 180 * 1024;
 
 function photoStorageEnabled() {
   return !!PHOTO_STORAGE_ENABLED;
 }
 
 function photoStorageConfigured() {
-  return !!(PHOTO_STORAGE_CONFIG.apiKey && PHOTO_STORAGE_CONFIG.storageBucket);
+  return !!(window.sb && window.sb.storage);
 }
 
 function photoStoragePad2(n) {
   return (n < 10 ? '0' : '') + n;
 }
 
-// Path di dalam bucket: absensi/<tahun-bulan>/<stempel>_<TIPE>_<userId>.jpg
-// Dikelompokkan per bulan supaya mudah ditelusuri dan mudah diarsipkan nanti.
-function photoStoragePath(userId, tipe, takenAt) {
+// Path: <user-id>/<tahun-bulan>/<stempel>_<TIPE>_<event-id>.jpg
+// Folder pertama wajib user id karena dipakai policy Storage Supabase.
+function photoStoragePath(userId, tipe, takenAt, eventId) {
   var d = takenAt ? new Date(takenAt) : new Date();
   if (!d || isNaN(d.getTime())) d = new Date();
   var bulan = d.getFullYear() + '-' + photoStoragePad2(d.getMonth() + 1);
   var stamp = '' + d.getFullYear() + photoStoragePad2(d.getMonth() + 1) + photoStoragePad2(d.getDate()) +
-    '-' + photoStoragePad2(d.getHours()) + photoStoragePad2(d.getMinutes()) + photoStoragePad2(d.getSeconds());
+    '-' + photoStoragePad2(d.getHours()) + photoStoragePad2(d.getMinutes()) + photoStoragePad2(d.getSeconds()) +
+    '-' + String(d.getMilliseconds()).padStart(3, '0');
   var tipeBersih = String(tipe || 'MASUK').toUpperCase().replace(/[^A-Z]/g, '') || 'MASUK';
-  var uid = String(userId || 'tanpa-id').replace(/[^A-Za-z0-9-]/g, '').slice(0, 36) || 'tanpa-id';
-  return PHOTO_STORAGE_PREFIX + '/' + bulan + '/' + stamp + '_' + tipeBersih + '_' + uid + '.jpg';
+  var uid = String(userId || '').toLowerCase().replace(/[^a-f0-9-]/g, '').slice(0, 36);
+  var eid = String(eventId || '').toLowerCase().replace(/[^a-f0-9-]/g, '').slice(0, 36);
+  if (!uid) uid = 'tanpa-id';
+  if (!eid) eid = 'tanpa-event';
+  return uid + '/' + bulan + '/' + stamp + '_' + tipeBersih + '_' + eid + '.jpg';
 }
 
-// Pesan error ditampilkan APA ADANYA (termasuk kode aslinya) supaya penyebabnya
-// bisa ditelusuri, sesuai aturan Ko: jangan menyamarkan sebab sebenarnya.
-function photoStorageErrorText(status, payload) {
-  var code = '';
-  if (payload && payload.error && payload.error.message) code = String(payload.error.message);
-  else if (payload && payload.error && typeof payload.error === 'string') code = String(payload.error);
-  else if (payload && payload.error && payload.error.code) code = String(payload.error.code);
-
-  var map = {
-    OPERATION_NOT_ALLOWED: 'Masuk anonim (Anonymous) belum diaktifkan di Firebase Authentication.',
-    ADMIN_ONLY_OPERATION: 'Metode masuk anonim tidak diizinkan di project Firebase ini.',
-    API_KEY_INVALID: 'API key Firebase tidak valid.',
-    API_KEY_HTTP_REFERRER_BLOCKED: 'API key Firebase diblokir untuk alamat web ini (cek pembatasan HTTP referrer).',
-    STORAGE_UNAUTHORIZED: 'Akses penyimpanan ditolak — Storage Rules belum mengizinkan unggah.',
-    STORAGE_BUCKET_NOT_FOUND: 'Bucket penyimpanan Firebase tidak ditemukan.',
-    STORAGE_QUOTA_EXCEEDED: 'Kuota penyimpanan Firebase habis.',
-    STORAGE_UNKNOWN: 'Penyimpanan Firebase menolak permintaan.',
-    UNAUTHORIZED: 'Tidak diizinkan menulis ke penyimpanan (Storage Rules).'
-  };
-  if (code && map[code]) return map[code] + ' [' + code + ']';
-  if (status === 404) return 'Alamat penyimpanan tidak ditemukan (nama bucket kemungkinan salah). [HTTP 404]';
-  if (status === 401 || status === 403) return 'Akses penyimpanan ditolak: ' + (code || 'tidak diizinkan') + ' [HTTP ' + status + ']';
-  if (status === 413) return 'Foto ditolak karena terlalu besar. [HTTP 413]';
-  if (code) return 'Gagal menyimpan foto: ' + code + (status ? ' [HTTP ' + status + ']' : '');
-  return 'Gagal menyimpan foto: HTTP ' + status;
+function photoStorageErrorText(err) {
+  var msg = String((err && err.message) || err || 'Penyebab tidak diketahui');
+  if (/row-level security|unauthorized|permission|403/i.test(msg)) {
+    return 'Akses Supabase Storage ditolak. Pastikan bucket dan policy foto absensi sudah dipasang. [' + msg + ']';
+  }
+  if (/bucket.*not found|not found.*bucket|404/i.test(msg)) {
+    return 'Bucket foto absensi belum tersedia di Supabase. [' + msg + ']';
+  }
+  if (/maximum allowed size|payload too large|413/i.test(msg)) {
+    return 'Foto ditolak karena melewati batas ukuran 180 KB. [' + msg + ']';
+  }
+  if (/duplicate|already exists|409/i.test(msg)) {
+    return 'Nama foto sudah pernah dipakai. Ambil ulang foto lalu kirim kembali. [' + msg + ']';
+  }
+  return 'Gagal menyimpan foto ke Supabase: ' + msg;
 }
 
 function photoStorageDataUrlToBytes(dataUrl) {
@@ -113,78 +80,60 @@ function photoStorageSha256(bytes, cb) {
   } catch (e) { cb(''); }
 }
 
-// Masuk anonim: token berlaku 1 jam, kami simpan 50 menit agar tidak kedaluwarsa
-// di tengah proses unggah. Tidak ada layar login dan tidak ada izin Google yang
-// perlu diklik karyawan.
-function photoStorageSignIn(cb) {
-  if (!photoStorageConfigured()) { cb(new Error('Konfigurasi penyimpanan foto (Firebase) belum diisi.'), ''); return; }
-  if (_photoToken && Date.now() < _photoTokenUntil) { cb(null, _photoToken); return; }
-  fetch('https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=' + encodeURIComponent(PHOTO_STORAGE_CONFIG.apiKey), {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ returnSecureToken: true })
-  }).then(function (res) {
-    return res.text().then(function (text) {
-      var body = null;
-      try { body = JSON.parse(text); } catch (e) { body = null; }
-      return { status: res.status, body: body };
-    });
-  }).then(function (r) {
-    if (!r.body || !r.body.idToken) { cb(new Error(photoStorageErrorText(r.status, r.body)), ''); return; }
-    _photoToken = r.body.idToken;
-    _photoTokenUid = r.body.localId || '';
-    _photoTokenUntil = Date.now() + PHOTO_STORAGE_TOKEN_MS;
-    cb(null, _photoToken);
-  }).catch(function (err) {
-    cb(new Error('Tidak bisa menghubungi penyimpanan Firebase: ' + ((err && err.message) ? err.message : 'jaringan bermasalah')), '');
-  });
-}
-
-// Unggah foto. opts = { userId, tipe, dataUrl, takenAt }
-// done(err, { path, url, mime, size, sha256 })
+// opts = { userId, eventId, tipe, dataUrl, takenAt }
+// done(err, { path, url, mime, size, sha256, provider })
 function photoStorageUpload(opts, done) {
   if (!photoStorageConfigured()) {
-    done(new Error('Konfigurasi penyimpanan foto (Firebase) belum diisi.'), null);
+    done(new Error('Koneksi Supabase Storage belum tersedia.'), null);
     return;
   }
   var parsed = photoStorageDataUrlToBytes(opts && opts.dataUrl);
   if (!parsed) { done(new Error('Format foto tidak dikenali (bukan data:image/...).'), null); return; }
+  if (parsed.mime !== 'image/jpeg') { done(new Error('Format foto harus JPEG.'), null); return; }
   if (parsed.bytes.length > PHOTO_STORAGE_MAX_BYTES) {
-    done(new Error('Foto terlalu besar: ' + Math.round(parsed.bytes.length / 1024) + ' KB, maksimal ' +
-      Math.round(PHOTO_STORAGE_MAX_BYTES / 1024) + ' KB.'), null);
+    done(new Error('Foto masih terlalu besar: ' + Math.round(parsed.bytes.length / 1024) +
+      ' KB, maksimal ' + Math.round(PHOTO_STORAGE_MAX_BYTES / 1024) + ' KB.'), null);
     return;
   }
 
-  var path = photoStoragePath(opts.userId, opts.tipe, opts.takenAt);
-  var bucket = PHOTO_STORAGE_CONFIG.storageBucket;
-
+  var path = photoStoragePath(opts.userId, opts.tipe, opts.takenAt, opts.eventId);
   photoStorageSha256(parsed.bytes, function (sha) {
-    photoStorageSignIn(function (err, token) {
-      if (err) { done(err, null); return; }
-      var endpoint = 'https://firebasestorage.googleapis.com/v0/b/' + encodeURIComponent(bucket) +
-        '/o?name=' + encodeURIComponent(path);
-      fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': parsed.mime },
-        body: new Blob([parsed.bytes], { type: parsed.mime })
-      }).then(function (res) {
-        return res.text().then(function (text) {
-          var body = null;
-          try { body = JSON.parse(text); } catch (e) { body = null; }
-          return { status: res.status, body: body };
-        });
-      }).then(function (r) {
-        if (r.status >= 200 && r.status < 300 && r.body && r.body.name) {
-          var downloadToken = String(r.body.downloadTokens || '').split(',')[0];
-          var link = 'https://firebasestorage.googleapis.com/v0/b/' + encodeURIComponent(bucket) +
-            '/o/' + encodeURIComponent(r.body.name) + '?alt=media' + (downloadToken ? '&token=' + encodeURIComponent(downloadToken) : '');
-          done(null, { path: r.body.name, url: link, mime: parsed.mime, size: parsed.bytes.length, sha256: sha });
-          return;
-        }
-        done(new Error(photoStorageErrorText(r.status, r.body)), null);
-      }).catch(function (e) {
-        done(new Error('Unggah foto gagal: ' + ((e && e.message) ? e.message : 'jaringan bermasalah')), null);
+    var blob = new Blob([parsed.bytes], { type: parsed.mime });
+    window.sb.storage.from(PHOTO_STORAGE_BUCKET).upload(path, blob, {
+      cacheControl: '3600',
+      contentType: parsed.mime,
+      // Nama berbasis event tetap sama saat kirim ulang. Upsert membuat retry
+      // aman bila file sudah masuk tetapi RPC metadata sempat gagal.
+      upsert: true
+    }).then(function (r) {
+      if (r.error) { done(new Error(photoStorageErrorText(r.error)), null); return; }
+      done(null, {
+        path: (r.data && r.data.path) || path,
+        url: '',
+        mime: parsed.mime,
+        size: parsed.bytes.length,
+        sha256: sha,
+        provider: 'SUPABASE'
       });
+    }).catch(function (err) {
+      done(new Error(photoStorageErrorText(err)), null);
     });
+  });
+}
+
+// Bucket privat: tautan dibuat hanya saat pengguna yang berhak menekan
+// "Lihat Foto", dan otomatis kedaluwarsa setelah 2 menit.
+function photoStorageCreateSignedUrl(path, done) {
+  if (!photoStorageConfigured()) { done(new Error('Koneksi Supabase Storage belum tersedia.'), ''); return; }
+  var safePath = String(path || '').trim();
+  if (!safePath) { done(new Error('Lokasi foto tidak tersedia.'), ''); return; }
+  window.sb.storage.from(PHOTO_STORAGE_BUCKET).createSignedUrl(safePath, 120).then(function (r) {
+    if (r.error || !r.data || !r.data.signedUrl) {
+      done(new Error(photoStorageErrorText(r.error || 'Tautan foto tidak berhasil dibuat.')), '');
+      return;
+    }
+    done(null, r.data.signedUrl);
+  }).catch(function (err) {
+    done(new Error(photoStorageErrorText(err)), '');
   });
 }

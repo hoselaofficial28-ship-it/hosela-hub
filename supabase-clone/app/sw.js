@@ -1,5 +1,5 @@
-const APP_VERSION = '20261015d';
-const CACHE_NAME = 'hosela-hub-test-' + APP_VERSION;
+const APP_VERSION = '20261015e';
+const CACHE_NAME = 'hosela-hub-' + APP_VERSION;
 const ASSETS = [
   './',
   './index.html',

@@ -6,124 +6,98 @@ const app = readFileSync(new URL('../app/js/app.js', import.meta.url), 'utf8');
 const backend = readFileSync(new URL('../app/js/real-backend.js', import.meta.url), 'utf8');
 const sw = readFileSync(new URL('../app/sw.js', import.meta.url), 'utf8');
 const storageSrc = readFileSync(new URL('../app/js/photo-storage.js', import.meta.url), 'utf8');
-const migration = readFileSync(new URL('../supabase/migrations/20261014000027_attendance_photo_storage.sql', import.meta.url), 'utf8');
+const migration = readFileSync(new URL('../supabase/migrations/20261014000038_supabase_attendance_photo_storage.sql', import.meta.url), 'utf8');
+const cleanup = readFileSync(new URL('../supabase/functions/cleanup-attendance-photos/index.ts', import.meta.url), 'utf8');
 
-// ---------------------------------------------------------------------------
-// 1) Uji fungsi murni modul penyimpanan (tanpa browser, tanpa jaringan)
-// ---------------------------------------------------------------------------
-const fakeWindow = { crypto: undefined };
+// Fungsi murni modul penyimpanan, tanpa browser/jaringan.
+const fakeWindow = { crypto: undefined, sb: { storage: {} } };
 const mod = new Function(
-  'window', 'fetch', 'Blob', 'atob',
-  storageSrc + '\nreturn { photoStoragePath, photoStorageErrorText, photoStorageConfigured, photoStorageEnabled, photoStorageDataUrlToBytes, PHOTO_STORAGE_CONFIG, PHOTO_STORAGE_MAX_BYTES };'
+  'window', 'Blob', 'atob',
+  storageSrc + '\nreturn { photoStoragePath, photoStorageErrorText, photoStorageConfigured, photoStorageEnabled, photoStorageDataUrlToBytes, PHOTO_STORAGE_BUCKET, PHOTO_STORAGE_MAX_BYTES };'
 )(
   fakeWindow,
-  function () {},
   class {},
   function (b64) { return Buffer.from(b64, 'base64').toString('binary'); }
 );
 
-// Saklar fitur: selama penyimpanan belum siap, aplikasi TIDAK mengunggah foto
-// dan TIDAK menampilkan pesan apa pun supaya layar karyawan tetap bersih.
-assert.equal(mod.photoStorageEnabled(), false);
-assert.match(storageSrc, /var PHOTO_STORAGE_ENABLED = false;/);
-assert.match(app, /if \(!photoStorageEnabled\(\)\) return;/);
+assert.equal(mod.photoStorageEnabled(), true);
+assert.equal(mod.photoStorageConfigured(), true);
+assert.equal(mod.PHOTO_STORAGE_BUCKET, 'attendance-photos');
+assert.equal(mod.PHOTO_STORAGE_MAX_BYTES, 180 * 1024);
+assert.match(storageSrc, /var PHOTO_STORAGE_ENABLED = true;/);
 
-// Config masih kosong di repo (menunggu diisi dari Firebase Console) -> modul
-// harus melaporkan "belum siap", bukan error yang membingungkan.
-assert.equal(mod.photoStorageConfigured(), false);
-assert.equal(mod.PHOTO_STORAGE_CONFIG.apiKey, '');
-assert.equal(mod.PHOTO_STORAGE_CONFIG.storageBucket, '');
-assert.equal(mod.PHOTO_STORAGE_MAX_BYTES, 800 * 1024);
-
-// Path foto: dikelompokkan per bulan, tidak bisa keluar dari folder "absensi"
-// walau userId/tipe berisi karakter aneh (cegah path traversal).
-const path = mod.photoStoragePath('11111111-2222-3333-4444-555555555555', 'MASUK', '2026-10-14T01:30:12.000Z');
-assert.match(path, /^absensi\/\d{4}-\d{2}\/\d{8}-\d{6}_MASUK_11111111-2222-3333-4444-555555555555\.jpg$/);
+const path = mod.photoStoragePath(
+  '11111111-2222-3333-4444-555555555555',
+  'MASUK',
+  '2026-10-14T01:30:12.000Z',
+  'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee'
+);
+assert.match(path, /^11111111-2222-3333-4444-555555555555\/\d{4}-\d{2}\/\d{8}-\d{6}-\d{3}_MASUK_aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee\.jpg$/);
 const nakal = mod.photoStoragePath('../../etc/passwd', 'MASUK<script>', 'bukan-tanggal');
-assert.match(nakal, /^absensi\/\d{4}-\d{2}\//);
-assert.ok(nakal.indexOf('..') === -1, 'path tidak boleh mengandung ..');
-assert.ok(nakal.indexOf('<') === -1, 'path tidak boleh mengandung karakter HTML');
-assert.ok(!/\s/.test(nakal), 'path tidak boleh mengandung spasi');
+assert.match(nakal, /^[a-f0-9-]+\/\d{4}-\d{2}\//);
+assert.ok(!nakal.includes('..'));
+assert.ok(!nakal.includes('<'));
+assert.ok(!/\s/.test(nakal));
 
-// Data URL -> bytes
 assert.equal(mod.photoStorageDataUrlToBytes('bukan-data-url'), null);
 assert.equal(mod.photoStorageDataUrlToBytes('data:text/plain;base64,YWJj'), null);
 const parsed = mod.photoStorageDataUrlToBytes('data:image/jpeg;base64,' + Buffer.from('abc').toString('base64'));
 assert.equal(parsed.mime, 'image/jpeg');
 assert.equal(parsed.bytes.length, 3);
 
-// Pesan error memuat kode asli (Ko: jangan samarkan penyebab sebenarnya)
-assert.match(mod.photoStorageErrorText(400, { error: { message: 'OPERATION_NOT_ALLOWED' } }), /Anonymous/);
-assert.match(mod.photoStorageErrorText(400, { error: { message: 'OPERATION_NOT_ALLOWED' } }), /OPERATION_NOT_ALLOWED/);
-assert.match(mod.photoStorageErrorText(403, { error: { message: 'STORAGE_UNAUTHORIZED' } }), /Storage Rules/);
-assert.match(mod.photoStorageErrorText(404, null), /bucket/);
-assert.match(mod.photoStorageErrorText(500, null), /HTTP 500/);
+assert.match(mod.photoStorageErrorText({ message: 'new row violates row-level security policy' }), /policy/);
+assert.match(mod.photoStorageErrorText({ message: 'Bucket not found' }), /Bucket/);
+assert.match(mod.photoStorageErrorText({ message: 'Payload too large 413' }), /180 KB/);
 
-// ---------------------------------------------------------------------------
-// 2) Modul dimuat aplikasi tanpa SDK Firebase (aplikasi harus tetap ringan)
-// ---------------------------------------------------------------------------
-assert.match(html, /<script src="js\/photo-storage\.js\?v=20261015d"><\/script>/);
+// Memakai klien Supabase yang sudah ada; tidak menambah Firebase SDK/library.
+assert.match(html, /<script src="js\/photo-storage\.js\?v=20261015e"><\/script>/);
 assert.doesNotMatch(html, /firebasejs|firebase-app|firebase-storage/i);
-assert.match(storageSrc, /identitytoolkit\.googleapis\.com\/v1\/accounts:signUp/);
-assert.match(storageSrc, /firebasestorage\.googleapis\.com\/v0\/b\//);
+assert.match(storageSrc, /window\.sb\.storage\.from\(PHOTO_STORAGE_BUCKET\)\.upload/);
+assert.match(storageSrc, /createSignedUrl\(safePath, 120\)/);
 assert.match(sw, /'\.\/js\/photo-storage\.js'/);
 
-// ---------------------------------------------------------------------------
-// 3) Alur di aplikasi: tap dulu -> foto diunggah -> metadata dicatat -> bisa retry
-// ---------------------------------------------------------------------------
+// Tap disimpan dahulu, lalu foto, metadata, dan retry.
 assert.match(html, /id="attendance-photo-status"/);
-// base64 foto TIDAK boleh dikirim ke database (database hanya simpan metadata)
 assert.match(app, /gasCall\('submitAbsensiCamera', \[currentUser\.id, currentUser\.nama, tipe, '', _attendanceLocation\.lat/);
 assert.match(app, /function sendAttendancePhoto\(\)/);
-assert.match(app, /photoStorageUpload\(\{ userId: currentUser\.id, tipe: p\.tipe, dataUrl: p\.dataUrl, takenAt: p\.takenAt \}/);
-assert.match(app, /gasCall\('attachAbsensiPhoto', \[p\.eventId, up\.path, up\.url, up\.mime, up\.size, up\.sha256, 'FIREBASE', p\.takenAt\]/);
-assert.match(app, /function markAttendancePhotoFailed\(message\)/);
-assert.match(app, /'Foto GAGAL disimpan: ' \+ pesan/);
-assert.match(app, /gasCall\('markAbsensiPhotoFailed', \[p\.eventId, pesan\.slice\(0, 500\)\]/);
+assert.match(app, /eventId: p\.eventId/);
+assert.match(app, /up\.provider \|\| 'SUPABASE'/);
+assert.match(app, /function encodeAttendancePhoto\(sourceCanvas\)/);
+assert.match(app, /var targetBytes = 110 \* 1024/);
+assert.match(app, /var hardLimit = 180 \* 1024/);
+assert.match(app, /function openAttendancePhoto\(path\)/);
 assert.match(app, /function retryAttendancePhoto\(eventId\)/);
 assert.match(app, /Kirim Ulang Foto/);
-assert.match(app, /Foto sudah tidak ada di perangkat ini, tidak bisa dikirim ulang/);
-assert.match(app, /_pendingAttendancePhoto = _attendancePhotoData \? \{/);
-assert.match(app, /photoStorageConfigured\(\)/);
-assert.match(app, /Lihat Foto Absensi/);
 
-// ---------------------------------------------------------------------------
-// 4) Backend: RPC baru dipanggil, kolom foto ikut dibaca
-// ---------------------------------------------------------------------------
+// Backend tetap mencatat metadata lewat RPC dan membaca kolom foto.
 assert.match(backend, /attachAbsensiPhoto: async function \(args\)/);
 assert.match(backend, /window\.sb\.rpc\('attach_absensi_photo'/);
+assert.match(backend, /p_provider: args\[6\] \|\| 'SUPABASE'/);
 assert.match(backend, /markAbsensiPhotoFailed: async function \(args\)/);
-assert.match(backend, /window\.sb\.rpc\('mark_absensi_photo_failed'/);
-assert.match(backend, /select\('id,tanggal,jam,tipe,status,jarak_kantor_meter,catatan,photo_url,photo_path,upload_status,upload_error,photo_provider'\)/);
-assert.match(backend, /fotoUrl: row\.photo_url/);
+assert.match(backend, /photo_url,photo_path,upload_status,upload_error,photo_provider/);
 
-// ---------------------------------------------------------------------------
-// 5) Migration: kolom + RPC dengan pemeriksaan hak akses
-// ---------------------------------------------------------------------------
-assert.match(migration, /alter table public\.attendance_events[\s\S]*?add column if not exists photo_provider text/);
-assert.match(migration, /add column if not exists photo_path text/);
-assert.match(migration, /add column if not exists photo_url text/);
-assert.match(migration, /add column if not exists captured_at timestamptz/);
-assert.match(migration, /add column if not exists uploaded_at timestamptz/);
+// Bucket privat, batas ukuran, policy kepemilikan, dan URL non-permanen.
+assert.match(migration, /'attendance-photos', 'attendance-photos', false, 184320/);
+assert.match(migration, /create policy "attendance photo upload sendiri"/);
+assert.match(migration, /\(storage\.foldername\(name\)\)\[1\] = auth\.uid\(\)::text/);
+assert.match(migration, /create policy "attendance photo baca sesuai akses"/);
+assert.match(migration, /or public\.is_payroll_admin\(\)/);
 assert.match(migration, /create or replace function public\.attach_absensi_photo\(/);
 assert.match(migration, /v_row\.user_id <> v_uid/);
-assert.match(migration, /v_row\.upload_status = 'UPLOADED'/);
-assert.match(migration, /v_row\.status <> 'DITERIMA'/);
-assert.match(migration, /p_url !~ '\^https:\/\/firebasestorage\\\.googleapis\\\.com\/'/);
-assert.match(migration, /grant execute on function public\.attach_absensi_photo\(uuid, text, text, text, integer, text, text, timestamptz\) to authenticated/);
-assert.match(migration, /create or replace function public\.mark_absensi_photo_failed\(/);
-assert.match(migration, /grant execute on function public\.mark_absensi_photo_failed\(uuid, text\) to authenticated/);
-// Foto TIDAK disimpan sebagai berkas di database (hanya metadata + tautan)
+assert.match(migration, /v_provider = 'SUPABASE'/);
+assert.match(migration, /split_part\(btrim\(p_path\), '\/', 1\) <> v_uid::text/);
+assert.match(migration, /Foto privat tidak boleh menyimpan URL permanen/);
 assert.doesNotMatch(migration, /bytea/);
-assert.match(migration, /Foto TIDAK disimpan di PostgreSQL/);
-assert.match(migration, /photo_url\s+= p_url/);
 
-// ---------------------------------------------------------------------------
-// 6) Versi cache naik serentak (HP tidak boleh memakai file lama)
-// ---------------------------------------------------------------------------
-assert.match(html, /css\/style\.css\?v=20261015d/);
-assert.match(html, /js\/app\.js\?v=20261015d/);
-assert.match(app, /APP_VERSION = '20261015d'/);
-assert.match(sw, /APP_VERSION = '20261015d'/);
+// Pembersih menghapus lewat Storage API dan menandai metadata EXPIRED.
+assert.match(cleanup, /30 \* 24 \* 60 \* 60 \* 1000/);
+assert.match(cleanup, /bucket\.remove\(batch\)/);
+assert.match(cleanup, /upload_status: 'EXPIRED'/);
 
-console.log('penyimpanan foto absensi (Firebase Storage): ok');
+// Versi cache serentak agar HP tidak mempertahankan kode Firebase lama.
+assert.match(html, /css\/style\.css\?v=20261015e/);
+assert.match(html, /js\/app\.js\?v=20261015e/);
+assert.match(app, /APP_VERSION = '20261015e'/);
+assert.match(sw, /APP_VERSION = '20261015e'/);
+
+console.log('penyimpanan foto absensi (Supabase Storage): ok');

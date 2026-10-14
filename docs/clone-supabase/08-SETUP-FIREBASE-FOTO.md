@@ -1,5 +1,9 @@
 # 08 — Setup Penyimpanan Foto Absensi (Firebase Storage)
 
+> **ARSIP / TIDAK DIPAKAI.** Pada 14 Oktober 2026 keputusan diubah ke Supabase
+> Storage agar tidak perlu billing Firebase. Panduan aktif ada di
+> `09-SETUP-SUPABASE-FOTO.md`.
+
 Panduan untuk Ko. Ikuti urutannya; semua langkah di bawah dilakukan **sekali saja**,
 setelah itu sistem menyimpan foto sendiri terus-menerus (tidak ada izin Google yang
 kedaluwarsa, tidak ada login tambahan untuk karyawan).
@@ -113,6 +117,31 @@ File ini menambah kolom foto (`photo_path`, `photo_url`, `captured_at`, `uploade
 dan 3 fungsi: `attach_absensi_photo`, `mark_absensi_photo_failed`,
 `get_absensi_photo_stats`.
 
+## Langkah G — Hapus foto otomatis setelah 30 hari
+
+Pakai **Object Lifecycle Management** pada bucket, bukan timer di HP karyawan.
+Aturan siap pakai tersimpan di:
+
+```
+docs/clone-supabase/firebase-storage-lifecycle-30-days.json
+```
+
+Aturan itu hanya menyentuh objek dengan awalan `absensi/`, lalu menghapusnya saat
+umur objek mencapai 30 hari. Folder lain di bucket tidak ikut terhapus.
+
+Cara menerapkan dari Google Cloud Console:
+
+1. Buka **Cloud Storage → Buckets** lalu pilih bucket Firebase yang digunakan.
+2. Buka tab **Lifecycle** → **Add a rule**.
+3. Action: **Delete object**.
+4. Condition: **Age = 30 days** dan **Name matches prefix = `absensi/`**.
+5. Simpan, lalu pastikan ringkasan aturan hanya menyebut prefix `absensi/`.
+
+Perubahan aturan dapat memerlukan waktu sampai 24 jam. Penghapusan juga berjalan
+asinkron, jadi foto mungkin tidak hilang tepat pada detik umur 30 hari. Jika soft
+delete bucket aktif (umumnya 7 hari), foto yang dihapus tidak lagi tampil normal,
+tetapi masih dapat dipulihkan selama masa soft delete.
+
 ---
 
 ## Cara memastikan sudah jalan
@@ -145,10 +174,17 @@ tercatat di kolom `upload_error` supaya bisa ditelusuri.
 
 ## Biaya dan kuota
 
-- Paket Blaze punya kuota gratis **5 GB penyimpanan + 1 GB unduhan/hari**.
-- Ukuran nyata: 1 foto ± 70 KB. 15 karyawan × 2 tap/hari ≈ 2,1 MB/hari ≈ **63 MB/bulan**.
-- Artinya **± 6 tahun** pemakaian masih di dalam kuota gratis. Kalau kuota terlewat,
-  tarifnya ± $0,026 per GB per bulan (≈ Rp 400/GB) — bukan angka yang mengagetkan.
+- Sejak 3 Februari 2026, Cloud Storage for Firebase **wajib memakai paket Blaze**.
+- Bucket baru `*.firebasestorage.app` mengikuti harga Google Cloud Storage. Kuota
+  Always Free hanya tersedia di `us-central1`, `us-east1`, dan `us-west1`; bucket
+  Jakarta/Singapura tetap sangat murah, tetapi jangan dianggap otomatis gratis.
+- Ukuran nyata: 1 foto ± 70 KB. 15 karyawan × 2 tap/hari ≈ 2,1 MB/hari ≈ **63 MB**
+  untuk retensi 30 hari.
+- Batas terburuk aplikasi adalah 800 KB/foto: 15 karyawan × 2 tap × 30 hari ≈
+  **720 MB**. Jadi kapasitas penyimpanan tetap sangat cukup.
+- Harga Standard Storage Jakarta saat panduan diperbarui sekitar **US$0,022/GiB/bulan**,
+  belum termasuk operasi dan transfer data. Pada 63 MB, biaya penyimpanannya hanya
+  sekitar US$0,0014/bulan; operasi unggahnya juga hanya pecahan sen untuk skala ini.
 - Saran: di **Google Cloud Console → Billing → Budgets & alerts**, pasang peringatan
   anggaran **$1** supaya Ko dapat email kalau ada pemakaian tidak wajar.
 

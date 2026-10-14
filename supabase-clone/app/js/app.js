@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbw6q_5ZaIGrekeBwZ5TKh6X1GpWkFHsa5i6whdwacQkTEa-vvNezHlxFMEQFKZkmm5ffQ/exec';
-var APP_VERSION = '20261015d';
+var APP_VERSION = '20261015e';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -3499,7 +3499,10 @@ function captureAttendancePhoto() {
  var canvas = document.getElementById('attendance-canvas');
  var img = document.getElementById('attendance-photo-preview');
  if (!video || !canvas || !video.videoWidth) { showToast('Kamera belum siap'); return; }
- var scale = Math.min(1, 720 / video.videoWidth);
+ // Lebar 640 px cukup untuk mengenali wajah, tetapi jauh lebih hemat daripada
+ // menyimpan resolusi kamera asli. JPEG dikompres adaptif sampai sekitar
+ // 40–110 KB; kualitas tidak diturunkan di bawah batas yang membuat wajah pecah.
+ var scale = Math.min(1, 640 / video.videoWidth);
  canvas.width = Math.round(video.videoWidth * scale);
  canvas.height = Math.round(video.videoHeight * scale);
  var ctx = canvas.getContext('2d');
@@ -3510,12 +3513,48 @@ function captureAttendancePhoto() {
  }
  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
  ctx.restore();
- _attendancePhotoData = canvas.toDataURL('image/jpeg', 0.58);
+ _attendancePhotoData = encodeAttendancePhoto(canvas);
  _attendancePhotoTakenAt = new Date().toISOString();
  if (img) { img.src = _attendancePhotoData; img.style.display = 'block'; }
  video.style.display = 'none';
  stopAttendanceCamera();
+ var ukuranKb = Math.round(attendanceDataUrlByteLength(_attendancePhotoData) / 1024);
+ updateAttendancePhotoStatus('Foto siap dikirim (' + ukuranKb + ' KB).', 'ok');
  syncAttendanceSubmitState();
+}
+
+function attendanceDataUrlByteLength(dataUrl) {
+ var base64 = String(dataUrl || '').split(',')[1] || '';
+ if (!base64) return 0;
+ var padding = base64.endsWith('==') ? 2 : (base64.endsWith('=') ? 1 : 0);
+ return Math.max(0, Math.floor(base64.length * 3 / 4) - padding);
+}
+
+function encodeAttendancePhoto(sourceCanvas) {
+ var targetBytes = 110 * 1024;
+ var hardLimit = 180 * 1024;
+ var quality = 0.66;
+ var data = sourceCanvas.toDataURL('image/jpeg', quality);
+ while (attendanceDataUrlByteLength(data) > targetBytes && quality > 0.42) {
+  quality = Math.max(0.42, quality - 0.06);
+  data = sourceCanvas.toDataURL('image/jpeg', quality);
+ }
+ // Foto dengan latar sangat ramai kadang masih besar. Kecilkan sedikit sekali
+ // sebagai jaring pengaman, bukan langsung merusak kualitas JPEG.
+ if (attendanceDataUrlByteLength(data) > hardLimit) {
+  var compact = document.createElement('canvas');
+  var compactScale = Math.min(1, 560 / sourceCanvas.width);
+  compact.width = Math.round(sourceCanvas.width * compactScale);
+  compact.height = Math.round(sourceCanvas.height * compactScale);
+  compact.getContext('2d').drawImage(sourceCanvas, 0, 0, compact.width, compact.height);
+  quality = 0.50;
+  data = compact.toDataURL('image/jpeg', quality);
+  while (attendanceDataUrlByteLength(data) > hardLimit && quality > 0.36) {
+   quality = Math.max(0.36, quality - 0.05);
+   data = compact.toDataURL('image/jpeg', quality);
+  }
+ }
+ return data;
 }
 
 function stopAttendanceCamera() {
@@ -3603,7 +3642,7 @@ function submitAttendanceCamera() {
  setTimeout(doSubmitAttendance, 0);
 }
 
-// ===== Unggah foto absensi ke penyimpanan (Firebase Storage) =================
+// ===== Unggah foto absensi ke penyimpanan (Supabase Storage) =================
 // Alur: tap absensi diterima server -> foto diunggah ke penyimpanan
 // (js/photo-storage.js) -> metadata + tautan dicatat lewat RPC attachAbsensiPhoto.
 // Kalau gagal, penyebab ASLI ditampilkan dan foto bisa dikirim ulang selama
@@ -3633,18 +3672,18 @@ function sendAttendancePhoto() {
   return;
  }
  if (!photoStorageConfigured()) {
-  updateAttendancePhotoStatus('Foto belum tersimpan: penyimpanan foto belum diaktifkan Owner (konfigurasi Firebase masih kosong).', '');
+  updateAttendancePhotoStatus('Foto belum tersimpan: koneksi Supabase Storage belum tersedia.', '');
   return;
  }
  _attendancePhotoUploading = true;
  updateAttendancePhotoStatus('Menyimpan foto ke penyimpanan... Mohon tunggu.', '');
- photoStorageUpload({ userId: currentUser.id, tipe: p.tipe, dataUrl: p.dataUrl, takenAt: p.takenAt }, function(err, up) {
+ photoStorageUpload({ userId: currentUser.id, eventId: p.eventId, tipe: p.tipe, dataUrl: p.dataUrl, takenAt: p.takenAt }, function(err, up) {
   if (err) {
    _attendancePhotoUploading = false;
    markAttendancePhotoFailed(err.message);
    return;
   }
-  gasCall('attachAbsensiPhoto', [p.eventId, up.path, up.url, up.mime, up.size, up.sha256, 'FIREBASE', p.takenAt], function(r) {
+  gasCall('attachAbsensiPhoto', [p.eventId, up.path, up.url, up.mime, up.size, up.sha256, up.provider || 'SUPABASE', p.takenAt], function(r) {
    _attendancePhotoUploading = false;
    if (!r || r.success === false) {
     markAttendancePhotoFailed((r && r.msg) || 'Gagal mencatat tautan foto ke database.');
@@ -3687,14 +3726,38 @@ function attendancePhotoAttr(url) {
  return String(url || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
+function openAttendancePhoto(path) {
+ var popup = null;
+ try { popup = window.open('', '_blank'); } catch (e) { popup = null; }
+ photoStorageCreateSignedUrl(path, function(err, signedUrl) {
+  if (err || !signedUrl) {
+   if (popup) popup.close();
+   showToast((err && err.message) || 'Foto tidak dapat dibuka');
+   return;
+  }
+  if (popup) {
+   popup.opener = null;
+   popup.location.replace(signedUrl);
+  } else {
+   window.location.href = signedUrl;
+  }
+ });
+}
+
 function attendancePhotoRowHtml(r) {
  if (!r || r.status !== 'DITERIMA') return '';
+ if (r.provider === 'SUPABASE' && r.photoPath) {
+  return '<div style="margin-top:4px"><button type="button" class="btn btn-secondary attendance-retry-btn" onclick="openAttendancePhoto(\'' + attendancePhotoAttr(r.photoPath) + '\')">Lihat Foto Absensi</button></div>';
+ }
  if (r.fotoUrl) {
   return '<div style="margin-top:4px"><a href="' + attendancePhotoAttr(r.fotoUrl) + '" target="_blank" rel="noopener" style="font-size:11px;color:var(--blue);font-weight:600">Lihat Foto Absensi</a></div>';
  }
  // Selama penyimpanan foto belum diaktifkan, jangan tampilkan status foto sama
  // sekali (biar tidak ada tulisan "belum tersimpan" di layar karyawan).
  if (!photoStorageEnabled()) return '';
+ if (r.uploadStatus === 'EXPIRED') {
+  return '<div style="margin-top:4px;font-size:11px;color:var(--text-muted);font-weight:600">Foto otomatis dihapus setelah 30 hari.</div>';
+ }
  var bisaKirimUlang = !!(_pendingAttendancePhoto && r.id && _pendingAttendancePhoto.eventId === r.id);
  var teks = r.uploadStatus === 'FAILED'
   ? 'Foto belum tersimpan: ' + (r.uploadError || 'penyebab tidak dicatat')

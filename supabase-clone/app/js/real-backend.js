@@ -98,7 +98,7 @@
 
     // args lama: [userId, nama, tipe, photoData, lat, lng, accuracy, clientTime]
     // photoData TIDAK dikirim ke sini (base64 besar tidak boleh masuk database).
-    // Alurnya: tap disimpan dulu -> foto diunggah ke penyimpanan Firebase
+    // Alurnya: tap disimpan dulu -> foto diunggah ke Supabase Storage privat
     // (js/photo-storage.js) -> metadata + tautan disimpan lewat
     // attachAbsensiPhoto di bawah.
     submitAbsensiCamera: async function (args) {
@@ -119,7 +119,7 @@
         p_mime: args[3] || 'image/jpeg',
         p_size: (args[4] === undefined || args[4] === null) ? null : args[4],
         p_sha256: args[5] || null,
-        p_provider: args[6] || 'FIREBASE',
+        p_provider: args[6] || 'SUPABASE',
         p_captured_at: args[7] || null
       });
       if (r.error) return { success: false, msg: r.error.message };
