@@ -72,6 +72,8 @@ Jangan menyimpan base64 foto di PostgreSQL setelah upload berhasil.
 
 Rekomendasi akses Drive: service account khusus, lalu folder foto dibagikan ke email service account. Simpan private key di Supabase secrets, bukan `.env` frontend.
 
+> **Diubah 2026-10-14:** jalur Google Drive di atas **tidak dipakai**. Service account tidak punya kuota penyimpanan di Drive pribadi (Gmail), dan solusi resmi Google (Shared Drive) hanya ada di Google Workspace. Foto absensi kamera sekarang disimpan di **Firebase Storage** (`app/js/photo-storage.js`, unggah REST tanpa SDK) dan yang perlu diisi adalah konfigurasi publik Firebase di file itu — lihat `08-SETUP-FIREBASE-FOTO.md` dan `DECISION-LOG.md`. Kolom metadata `drive_*` dipertahankan sebagai jalur cadangan.
+
 ## Keamanan/RLS minimum
 
 - Karyawan: baca profil sendiri, absensi sendiri, izin sendiri, notifikasi sendiri, KPI sendiri, slip sendiri.

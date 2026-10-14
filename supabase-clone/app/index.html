@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=20261014n">
+<link rel="stylesheet" href="css/style.css?v=20261014o">
 
 
 
@@ -629,7 +629,8 @@
  </div>
  <div id="attendance-location-status" class="camera-status">Lokasi belum dibaca</div>
  <button class="btn btn-primary" id="attendance-submit-btn" onclick="submitAttendanceCamera()" disabled>Kirim Absensi</button>
- <div class="camera-note">Absensi akan ditolak jika lokasi berada di luar radius kantor. Data foto disimpan di Google Drive, bukan di cell Sheet.</div>
+ <div id="attendance-photo-status" class="camera-status" style="display:none"></div>
+ <div class="camera-note">Absensi akan ditolak jika lokasi berada di luar radius kantor. Foto disimpan di penyimpanan file (Firebase Storage), bukan di database — yang dicatat di database hanya tautannya.</div>
  </div>
  <div class="card">
  <div class="card-title"><div class="card-dot"></div>Status Hari Ini</div>
@@ -844,10 +845,11 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="js/supabase-client.js"></script>
+<script src="js/photo-storage.js?v=20261014o"></script>
 <script src="js/real-backend.js"></script>
 <script src="js/mock-backend.js"></script>
-<script src="js/app.js?v=20261014n"></script>
-<script src="js/payroll.js?v=20261014n"></script>
+<script src="js/app.js?v=20261014o"></script>
+<script src="js/payroll.js?v=20261014o"></script>
 <script src="js/preview.js?v=20260930b"></script>
 </body>
 </html>

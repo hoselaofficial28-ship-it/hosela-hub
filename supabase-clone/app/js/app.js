@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbw6q_5ZaIGrekeBwZ5TKh6X1GpWkFHsa5i6whdwacQkTEa-vvNezHlxFMEQFKZkmm5ffQ/exec';
-var APP_VERSION = '20261014n';
+var APP_VERSION = '20261014o';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -3040,8 +3040,14 @@ function submitReviewTelat(id, safeId) {
 
 var _attendanceStream = null;
 var _attendancePhotoData = '';
+var _attendancePhotoTakenAt = '';
 var _attendanceLocation = null;
 var _attendanceSubmitting = false;
+// Foto yang sudah diambil tapi belum berhasil tersimpan di penyimpanan. Disimpan
+// di memori saja (bukan database) supaya tombol "Kirim Ulang Foto" bisa dipakai
+// kalau unggahan gagal. Konsekuensinya: kalau halaman di-refresh, foto hilang.
+var _pendingAttendancePhoto = null;
+var _attendancePhotoUploading = false;
 
 function loadAbsensiCamera() {
  _attendancePhotoData = '';
@@ -3061,6 +3067,7 @@ function loadAbsensiCamera() {
  if (officeCard) officeCard.style.display = isOwner ? 'block' : 'none';
  if (isOwner) loadOfficeSettings();
  updateAttendanceLocationStatus('Membaca lokasi...', '');
+ updateAttendancePhotoStatus('', '');
  getAttendanceLocation();
  loadAttendanceToday();
 }
@@ -3272,6 +3279,7 @@ function captureAttendancePhoto() {
  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
  ctx.restore();
  _attendancePhotoData = canvas.toDataURL('image/jpeg', 0.58);
+ _attendancePhotoTakenAt = new Date().toISOString();
  if (img) { img.src = _attendancePhotoData; img.style.display = 'block'; }
  video.style.display = 'none';
  stopAttendanceCamera();
@@ -3306,7 +3314,7 @@ function submitAttendanceCamera() {
  }
  function doSubmitAttendance() {
  if (btn) { btn.textContent = 'Mengirim...'; btn.disabled = true; btn.classList.add('btn-loading'); }
- gasCall('submitAbsensiCamera', [currentUser.id, currentUser.nama, tipe, _attendancePhotoData, _attendanceLocation.lat, _attendanceLocation.lng, _attendanceLocation.accuracy, new Date().toISOString()], function(res) {
+ gasCall('submitAbsensiCamera', [currentUser.id, currentUser.nama, tipe, '', _attendanceLocation.lat, _attendanceLocation.lng, _attendanceLocation.accuracy, new Date().toISOString()], function(res) {
  finishAttendanceSubmit(res);
  }, function() {
  gasCall('getAbsensiCameraToday', [currentUser.id], function(check) {
@@ -3345,12 +3353,116 @@ function submitAttendanceCamera() {
  var bulanKey = attendanceMonthKey(new Date());
  clearAttendanceMatrixCache(currentUser.id, bulanKey);
  showToast('Absensi diterima. Catatan kehadiran diperbarui.');
+ // Foto jangan dibuang: simpan di memori untuk diunggah ke penyimpanan. Kalau
+ // unggahan gagal, tombol "Kirim Ulang Foto" memakai data ini.
+ _pendingAttendancePhoto = _attendancePhotoData ? {
+  eventId: res.id || '',
+  tipe: tipe,
+  dataUrl: _attendancePhotoData,
+  takenAt: _attendancePhotoTakenAt || new Date().toISOString()
+ } : null;
  _attendancePhotoData = '';
+ _attendancePhotoTakenAt = '';
  syncAttendanceSubmitState();
+ sendAttendancePhoto();
  loadAttendanceToday();
  refreshAttendanceMatrixIfOpen(currentUser.id, bulanKey);
  }
  setTimeout(doSubmitAttendance, 0);
+}
+
+// ===== Unggah foto absensi ke penyimpanan (Firebase Storage) =================
+// Alur: tap absensi diterima server -> foto diunggah ke penyimpanan
+// (js/photo-storage.js) -> metadata + tautan dicatat lewat RPC attachAbsensiPhoto.
+// Kalau gagal, penyebab ASLI ditampilkan dan foto bisa dikirim ulang selama
+// halaman belum di-refresh (foto disimpan di memori, bukan database).
+function updateAttendancePhotoStatus(text, state) {
+ var el = document.getElementById('attendance-photo-status');
+ if (!el) return;
+ if (!text) {
+  el.style.display = 'none';
+  el.textContent = '';
+  el.className = 'camera-status';
+  return;
+ }
+ el.style.display = 'block';
+ el.className = 'camera-status' + (state ? ' ' + state : '');
+ el.textContent = text;
+}
+
+function sendAttendancePhoto() {
+ var p = _pendingAttendancePhoto;
+ if (!p || _attendancePhotoUploading) return;
+ if (!p.eventId) {
+  updateAttendancePhotoStatus('Foto belum bisa disimpan: server tidak mengirim ID absensi. Tarik layar untuk memuat ulang, lalu hubungi Owner.', 'bad');
+  return;
+ }
+ if (!photoStorageConfigured()) {
+  updateAttendancePhotoStatus('Foto belum tersimpan: penyimpanan foto belum diaktifkan Owner (konfigurasi Firebase masih kosong).', '');
+  return;
+ }
+ _attendancePhotoUploading = true;
+ updateAttendancePhotoStatus('Menyimpan foto ke penyimpanan... Mohon tunggu.', '');
+ photoStorageUpload({ userId: currentUser.id, tipe: p.tipe, dataUrl: p.dataUrl, takenAt: p.takenAt }, function(err, up) {
+  if (err) {
+   _attendancePhotoUploading = false;
+   markAttendancePhotoFailed(err.message);
+   return;
+  }
+  gasCall('attachAbsensiPhoto', [p.eventId, up.path, up.url, up.mime, up.size, up.sha256, 'FIREBASE', p.takenAt], function(r) {
+   _attendancePhotoUploading = false;
+   if (!r || r.success === false) {
+    markAttendancePhotoFailed((r && r.msg) || 'Gagal mencatat tautan foto ke database.');
+    return;
+   }
+   _pendingAttendancePhoto = null;
+   updateAttendancePhotoStatus('Foto absensi tersimpan.', 'ok');
+   showToast('Foto absensi tersimpan');
+   loadAttendanceToday();
+  }, function() {
+   _attendancePhotoUploading = false;
+   markAttendancePhotoFailed('Foto terkirim ke penyimpanan, tapi tautannya gagal dicatat ke database (koneksi ke server terputus).');
+  });
+ });
+}
+
+function markAttendancePhotoFailed(message) {
+ var p = _pendingAttendancePhoto;
+ var pesan = String(message || 'Penyebab tidak diketahui');
+ updateAttendancePhotoStatus('Foto GAGAL disimpan: ' + pesan, 'bad');
+ showToast('Foto absensi belum tersimpan');
+ if (p && p.eventId) {
+  gasCall('markAbsensiPhotoFailed', [p.eventId, pesan.slice(0, 500)], function() { loadAttendanceToday(); }, function() { loadAttendanceToday(); });
+ }
+}
+
+function retryAttendancePhoto(eventId) {
+ if (!_pendingAttendancePhoto) {
+  showToast('Foto sudah tidak ada di perangkat ini, tidak bisa dikirim ulang');
+  return;
+ }
+ if (eventId && _pendingAttendancePhoto.eventId && eventId !== _pendingAttendancePhoto.eventId) {
+  showToast('Foto yang tersimpan di perangkat bukan untuk absensi ini');
+  return;
+ }
+ sendAttendancePhoto();
+}
+
+function attendancePhotoAttr(url) {
+ return String(url || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function attendancePhotoRowHtml(r) {
+ if (!r || r.status !== 'DITERIMA') return '';
+ if (r.fotoUrl) {
+  return '<div style="margin-top:4px"><a href="' + attendancePhotoAttr(r.fotoUrl) + '" target="_blank" rel="noopener" style="font-size:11px;color:var(--blue);font-weight:600">Lihat Foto Absensi</a></div>';
+ }
+ var bisaKirimUlang = !!(_pendingAttendancePhoto && r.id && _pendingAttendancePhoto.eventId === r.id);
+ var teks = r.uploadStatus === 'FAILED'
+  ? 'Foto belum tersimpan: ' + (r.uploadError || 'penyebab tidak dicatat')
+  : 'Foto belum tersimpan (menunggu dikirim)';
+ return '<div style="margin-top:4px;font-size:11px;color:#b42318;font-weight:600">' + attendancePhotoAttr(teks) + '</div>' +
+  (bisaKirimUlang ? '<button type="button" class="btn btn-secondary attendance-retry-btn" onclick="retryAttendancePhoto(\'' + esc(r.id) + '\')">Kirim Ulang Foto</button>' : '');
 }
 
 function loadAttendanceToday() {
@@ -3364,7 +3476,7 @@ function loadAttendanceToday() {
  return;
  }
  el.innerHTML = data.map(function(r) {
- return '<div class="attendance-row"><div><b>'+r.tipe+'</b><div style="color:var(--text-muted);margin-top:2px">'+r.jam+'</div></div><span class="badge '+(r.status==='DITERIMA'?'badge-green':'badge-red')+'">'+r.status+'</span></div>';
+ return '<div class="attendance-row"><div><b>'+r.tipe+'</b><div style="color:var(--text-muted);margin-top:2px">'+r.jam+'</div>'+attendancePhotoRowHtml(r)+'</div><span class="badge '+(r.status==='DITERIMA'?'badge-green':'badge-red')+'">'+r.status+'</span></div>';
  }).join('');
  }, function() { el.innerHTML = '<div class="empty-state">Gagal memuat status hari ini</div>'; });
 }

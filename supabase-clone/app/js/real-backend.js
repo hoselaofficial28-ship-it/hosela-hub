@@ -92,13 +92,39 @@
     },
 
     // args lama: [userId, nama, tipe, photoData, lat, lng, accuracy, clientTime]
-    // Foto (photoData) BELUM disambung ke Google Drive -- cuma metadata tap yang
-    // tersimpan untuk sekarang, foto diabaikan di sisi ini sampai Edge Function
-    // upload dibangun.
+    // photoData TIDAK dikirim ke sini (base64 besar tidak boleh masuk database).
+    // Alurnya: tap disimpan dulu -> foto diunggah ke penyimpanan Firebase
+    // (js/photo-storage.js) -> metadata + tautan disimpan lewat
+    // attachAbsensiPhoto di bawah.
     submitAbsensiCamera: async function (args) {
       var tipe = args[2], lat = args[4], lng = args[5], accuracy = args[6];
       var r = await window.sb.rpc('submit_absensi_camera', {
         p_tipe: tipe, p_lat: lat, p_lng: lng, p_akurasi: Math.round(accuracy || 0)
+      });
+      if (r.error) return { success: false, msg: r.error.message };
+      return r.data;
+    },
+
+    // args: [eventId, path, url, mime, size, sha256, provider, capturedAt]
+    attachAbsensiPhoto: async function (args) {
+      var r = await window.sb.rpc('attach_absensi_photo', {
+        p_event_id: args[0],
+        p_path: args[1],
+        p_url: args[2],
+        p_mime: args[3] || 'image/jpeg',
+        p_size: (args[4] === undefined || args[4] === null) ? null : args[4],
+        p_sha256: args[5] || null,
+        p_provider: args[6] || 'FIREBASE',
+        p_captured_at: args[7] || null
+      });
+      if (r.error) return { success: false, msg: r.error.message };
+      return r.data;
+    },
+
+    // args: [eventId, errorText]
+    markAbsensiPhotoFailed: async function (args) {
+      var r = await window.sb.rpc('mark_absensi_photo_failed', {
+        p_event_id: args[0], p_error: args[1] || 'Penyebab tidak diketahui'
       });
       if (r.error) return { success: false, msg: r.error.message };
       return r.data;
@@ -109,12 +135,12 @@
       var today = new Date();
       var tgl = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
       var r = await window.sb.from('attendance_events')
-        .select('id,tanggal,jam,tipe,status,jarak_kantor_meter,catatan')
+        .select('id,tanggal,jam,tipe,status,jarak_kantor_meter,catatan,photo_url,photo_path,upload_status,upload_error,photo_provider')
         .eq('user_id', userId).eq('tanggal', tgl)
         .order('created_at', { ascending: false });
       if (r.error) return { success: false, data: [] };
       return { success: true, data: (r.data || []).map(function (row) {
-        return { id: row.id, tanggal: row.tanggal, jam: row.jam, tipe: row.tipe, status: row.status, distance: row.jarak_kantor_meter, jarak: row.jarak_kantor_meter, catatan: row.catatan };
+        return { id: row.id, tanggal: row.tanggal, jam: row.jam, tipe: row.tipe, status: row.status, distance: row.jarak_kantor_meter, jarak: row.jarak_kantor_meter, catatan: row.catatan, fotoUrl: row.photo_url, photoPath: row.photo_path, uploadStatus: row.upload_status, uploadError: row.upload_error, provider: row.photo_provider };
       }) };
     },
 

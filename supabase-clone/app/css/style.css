@@ -883,6 +883,11 @@ textarea.form-input{line-height:1.45}
 .attendance-row{display:flex;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid var(--gray-border);font-size:12px}
 .attendance-row:last-child{border-bottom:none}
 .attendance-row b{color:var(--text-dark)}
+/* Tombol kirim ulang foto: sengaja kecil dan tidak selebar kartu supaya tidak
+   bersaing dengan tombol utama, tapi tetap mudah dipencet di HP (>= 40px). */
+.attendance-retry-btn{width:auto;margin-top:6px;padding:6px 10px;font-size:12px;min-height:34px;border-radius:8px;box-shadow:none}
+.attendance-row .attendance-retry-btn{display:inline-block}
+@media (max-width:599px){.attendance-retry-btn{min-height:40px;padding:8px 12px;font-size:12px}}
 .home-clock-card{
   margin:-4px 0 14px;
   padding:18px;
