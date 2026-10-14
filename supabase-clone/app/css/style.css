@@ -3341,11 +3341,25 @@ body.phone-mode #app-wrap #s-daftar.screen.active{
   /* Menu dipindah ke sidebar, jadi kartu menu di halaman utama tidak dipakai. */
   body:not(.phone-mode) #home-menu{display:none!important}
 
-  /* Laporan menempati kolom kiri (kolom kanan tetap: jam, bintang, profil). */
+  /* PENTING: kartu kolom kanan (jam, bintang, profil) tidak boleh ikut melar
+     mengikuti tinggi kolom laporan di sebelahnya — kalau tidak, kartu jam jadi
+     kotak kosong raksasa. align-self:start membuat tingginya tetap seperti
+     semula, sisanya dibiarkan kosong. */
+  body:not(.phone-mode) .home-clock-card,
+  body:not(.phone-mode) #reward-section,
+  body:not(.phone-mode) #profile-card,
+  body:not(.phone-mode) .ann-banner{
+    align-self:start!important;
+  }
+
+  /* Laporan menempati kolom kiri. Barisnya sengaja dibuat merentang banyak
+     (span 30) supaya tinggi laporan dibagi rata ke baris-baris itu — kalau
+     hanya span 2, seluruh tinggi laporan menumpuk di satu baris dan kartu jam /
+     bintang di kolom kanan jadi berjarak jauh (atau melar jadi kotak kosong). */
   body:not(.phone-mode) .pc-reports:not([hidden]){
     display:block;
     grid-column:1;
-    grid-row:2;
+    grid-row:2 / span 30;
     align-self:start;
     min-width:0;
   }

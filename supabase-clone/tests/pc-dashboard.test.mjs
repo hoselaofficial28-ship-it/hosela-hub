@@ -152,7 +152,7 @@ assert.match(pribadiDenganSkor, /Rp 4\.500\.000/);
 assert.match(html, /<section class="pc-reports" id="pc-reports" hidden/);
 assert.match(html, /id="pc-reports-grid"/);
 assert.match(html, /onclick="loadDesktopReports\(true\)"/);
-assert.match(html, /<script src="js\/dashboard-reports\.js\?v=20261014p"><\/script>/);
+assert.match(html, /<script src="js\/dashboard-reports\.js\?v=20261014q"><\/script>/);
 assert.match(sw, /'\.\/js\/dashboard-reports\.js'/);
 
 // ---------------------------------------------------------------------------
@@ -182,13 +182,18 @@ assert.match(css, /body:not\(\.phone-mode\) \.navbar\.pc-nav-full\{[\s\S]*?overf
 assert.match(css, /body:not\(\.phone-mode\) \.navbar \.pc-nav-item\.active\{background:linear-gradient/);
 assert.match(css, /body:not\(\.phone-mode\) \.pc-card\{[\s\S]*?border-radius:20px/);
 assert.match(css, /body:not\(\.phone-mode\) \.pc-metric-row\{[\s\S]*?grid-template-columns:repeat\(auto-fit/);
+// Kartu kolom kanan tidak boleh melar setinggi kolom laporan (kartu jam jadi
+// kotak kosong raksasa kalau align-self dibiarkan stretch), dan laporan harus
+// merentang baris seperti kartu menu dulu supaya kolom kanan tetap rapat.
+assert.match(css, /body:not\(\.phone-mode\) \.pc-reports:not\(\[hidden\]\)\{[\s\S]*?grid-row:2 \/ span 8/);
+assert.match(css, /body:not\(\.phone-mode\) \.home-clock-card,\s*\n\s*body:not\(\.phone-mode\) #reward-section,\s*\n\s*body:not\(\.phone-mode\) #profile-card,[\s\S]*?align-self:start!important/);
 
 // ---------------------------------------------------------------------------
 // 5) Versi cache naik serentak
 // ---------------------------------------------------------------------------
-assert.match(html, /css\/style\.css\?v=20261014p/);
-assert.match(html, /js\/app\.js\?v=20261014p/);
-assert.match(app, /APP_VERSION = '20261014p'/);
-assert.match(sw, /APP_VERSION = '20261014p'/);
+assert.match(html, /css\/style\.css\?v=20261014q/);
+assert.match(html, /js\/app\.js\?v=20261014q/);
+assert.match(app, /APP_VERSION = '20261014q'/);
+assert.match(sw, /APP_VERSION = '20261014q'/);
 
 console.log('dashboard PC (sidebar penuh + laporan kinerja): ok');
