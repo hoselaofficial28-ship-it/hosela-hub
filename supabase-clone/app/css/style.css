@@ -2965,7 +2965,9 @@ body.phone-mode #app-wrap #s-home.screen.active{
   body:not(.phone-mode) #s-setting-gaji.screen.active>.header,
   body:not(.phone-mode) #s-payroll.screen.active>.header,
   body:not(.phone-mode) #s-slip-gaji.screen.active>.header{
-    margin:13px 22px 0!important;
+    /* Kiri 0 supaya bar judul lurus dengan kartu isi di bawahnya (dulu 22px
+       sehingga judulnya menjorok ke dalam dan terlihat zigzag). */
+    margin:13px 22px 0 0!important;
   }
   body:not(.phone-mode) #s-tambah-pengumuman.screen.active>.content,
   body:not(.phone-mode) #s-peraturan.screen.active>.content,

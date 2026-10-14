@@ -152,7 +152,7 @@ assert.match(pribadiDenganSkor, /Rp 4\.500\.000/);
 assert.match(html, /<section class="pc-reports" id="pc-reports" hidden/);
 assert.match(html, /id="pc-reports-grid"/);
 assert.match(html, /onclick="loadDesktopReports\(true\)"/);
-assert.match(html, /<script src="js\/dashboard-reports\.js\?v=20261014u"><\/script>/);
+assert.match(html, /<script src="js\/dashboard-reports\.js\?v=20261014v"><\/script>/);
 assert.match(sw, /'\.\/js\/dashboard-reports\.js'/);
 
 // ---------------------------------------------------------------------------
@@ -207,13 +207,17 @@ assert.doesNotMatch(css, /\.content \.card \.form-group \.form-input\{\s*\n\s*ma
 assert.match(css, /body:not\(\.phone-mode\) #s-kalender>\.content>\.card\{\s*\n\s*display:grid/);
 // Judul laporan dibuat kartu supaya garis kirinya sejajar dengan kartu di bawahnya.
 assert.match(css, /body:not\(\.phone-mode\) \.pc-reports-head\{[\s\S]*?padding:16px 20px;[\s\S]*?border:1px solid #dfe8f6;/);
+// Bar judul menu tidak boleh menjorok: margin kiri harus 0 supaya lurus dengan
+// kartu isi di bawahnya (ini yang bikin judul halaman "Slip Gaji" terlihat zigzag).
+assert.match(css, /#s-slip-gaji\.screen\.active>\.header\{[\s\S]{0,220}?margin:13px 22px 0 0!important/);
+assert.doesNotMatch(css, /#s-slip-gaji\.screen\.active>\.header\{[\s\S]{0,220}?margin:13px 22px 0!important/);
 
 // ---------------------------------------------------------------------------
 // 5) Versi cache naik serentak
 // ---------------------------------------------------------------------------
-assert.match(html, /css\/style\.css\?v=20261014u/);
-assert.match(html, /js\/app\.js\?v=20261014u/);
-assert.match(app, /APP_VERSION = '20261014u'/);
-assert.match(sw, /APP_VERSION = '20261014u'/);
+assert.match(html, /css\/style\.css\?v=20261014v/);
+assert.match(html, /js\/app\.js\?v=20261014v/);
+assert.match(app, /APP_VERSION = '20261014v'/);
+assert.match(sw, /APP_VERSION = '20261014v'/);
 
 console.log('dashboard PC (sidebar penuh + laporan kinerja): ok');
