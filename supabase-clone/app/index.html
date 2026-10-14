@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=20261014m">
+<link rel="stylesheet" href="css/style.css?v=20261014n">
 
 
 
@@ -594,14 +594,17 @@
  </div>
  <div class="content camera-page-content">
  <section class="owner-editor office-setting-card" id="office-setting-card" style="display:none" aria-labelledby="office-setting-title">
-  <div class="owner-editor-head"><div><div class="eyebrow">KHUSUS OWNER</div><h2 id="office-setting-title">Lokasi Kantor</h2><p>Titik ini menjadi pusat validasi absensi seluruh karyawan.</p></div><span class="status-pill" id="office-setting-state">Belum diset</span></div>
+  <div class="owner-editor-head"><div><div class="eyebrow">KHUSUS OWNER</div><h2 id="office-setting-title">Lokasi Kantor</h2><p>Titik ini menjadi pusat validasi absensi seluruh karyawan.</p></div><div class="office-setting-head-actions"><span class="status-pill" id="office-setting-state">Belum diset</span><button type="button" class="btn btn-secondary office-toggle-btn" id="office-toggle-btn" aria-expanded="true" aria-controls="office-editor-body" onclick="toggleOfficeSettings()">Tutup</button></div></div>
+  <div class="office-summary" id="office-summary" hidden></div>
+  <div class="office-editor-body" id="office-editor-body">
   <div class="owner-form-grid office-form-grid">
    <div class="form-group"><label class="form-label" for="office-lat">Latitude</label><input type="number" step="any" class="form-input" id="office-lat" placeholder="-6.200000"></div>
    <div class="form-group"><label class="form-label" for="office-lng">Longitude</label><input type="number" step="any" class="form-input" id="office-lng" placeholder="106.800000"></div>
    <div class="form-group"><label class="form-label" for="office-radius">Radius diterima (meter)</label><input type="number" min="20" max="2000" class="form-input" id="office-radius" value="120"></div>
   </div>
   <div class="owner-editor-actions"><button class="btn btn-secondary" onclick="useCurrentLocationForOffice()">Gunakan Lokasi Saya</button><button class="btn btn-primary" id="office-save-btn" onclick="saveOfficeSettings()">Simpan Lokasi Kantor</button></div>
-  <div class="field-help">Lakukan pengaturan ini saat Owner berada di kantor agar titik koordinat akurat.</div>
+  <div class="field-help" id="office-location-hint">Lakukan pengaturan ini saat Owner berada di kantor agar titik koordinat akurat.</div>
+  </div>
  </section>
  <div class="card camera-card">
  <div class="camera-preview">
@@ -843,8 +846,8 @@
 <script src="js/supabase-client.js"></script>
 <script src="js/real-backend.js"></script>
 <script src="js/mock-backend.js"></script>
-<script src="js/app.js?v=20261014m"></script>
-<script src="js/payroll.js?v=20261014m"></script>
+<script src="js/app.js?v=20261014n"></script>
+<script src="js/payroll.js?v=20261014n"></script>
 <script src="js/preview.js?v=20260930b"></script>
 </body>
 </html>

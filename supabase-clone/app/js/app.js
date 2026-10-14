@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbw6q_5ZaIGrekeBwZ5TKh6X1GpWkFHsa5i6whdwacQkTEa-vvNezHlxFMEQFKZkmm5ffQ/exec';
-var APP_VERSION = '20261014m';
+var APP_VERSION = '20261014n';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -3072,24 +3072,85 @@ function loadOfficeSettings() {
    var data = res && (res.data || res) || {};
    var lat = data.OFFICE_LAT || '';
    var lng = data.OFFICE_LNG || '';
+   var radius = data.OFFICE_RADIUS_M || 120;
    document.getElementById('office-lat').value = lat;
    document.getElementById('office-lng').value = lng;
-   document.getElementById('office-radius').value = data.OFFICE_RADIUS_M || 120;
+   document.getElementById('office-radius').value = radius;
+   var ready = lat !== '' && lng !== '';
    if (state) {
-     var ready = lat !== '' && lng !== '';
      state.className = 'status-pill '+(ready ? 'status-pill-success' : 'status-pill-warning');
      state.textContent = ready ? 'Sudah diset' : 'Belum diset';
    }
- }, function(){ if (state) { state.className = 'status-pill status-pill-danger'; state.textContent = 'Gagal dimuat'; } });
+   renderOfficeSummary(ready ? lat : '', ready ? lng : '', radius);
+   setOfficeSettingsCollapsed(ready);
+ }, function(){
+   if (state) { state.className = 'status-pill status-pill-danger'; state.textContent = 'Gagal dimuat'; }
+   renderOfficeSummary('', '', 120);
+   setOfficeSettingsCollapsed(false);
+ });
+}
+
+// Ringkasan singkat lokasi kantor yang tampil saat panel editor ditutup.
+function renderOfficeSummary(lat, lng, radius) {
+ var el = document.getElementById('office-summary');
+ if (!el) return;
+ el.textContent = '';
+ var ready = lat !== '' && lat !== null && typeof lat !== 'undefined' && lng !== '' && lng !== null && typeof lng !== 'undefined';
+ var item = document.createElement('span');
+ item.className = 'office-summary-item';
+ if (ready) {
+   item.textContent = 'Titik kantor: ' + lat + ', ' + lng;
+   var radiusItem = document.createElement('span');
+   radiusItem.className = 'office-summary-item';
+   radiusItem.textContent = 'Radius diterima: ' + (radius || 120) + ' m';
+   el.appendChild(item);
+   el.appendChild(radiusItem);
+   return;
+ }
+ item.className = 'office-summary-item office-summary-empty';
+ item.textContent = 'Lokasi kantor belum diset. Isi koordinat lalu tekan Simpan Lokasi Kantor.';
+ el.appendChild(item);
+}
+
+// Panel pengaturan lokasi bisa ditutup supaya halaman absensi tetap ringkas.
+function setOfficeSettingsCollapsed(collapsed) {
+ var card = document.getElementById('office-setting-card');
+ var body = document.getElementById('office-editor-body');
+ var summary = document.getElementById('office-summary');
+ var btn = document.getElementById('office-toggle-btn');
+ if (!card || !body) return;
+ var isCollapsed = !!collapsed;
+ card.classList.toggle('is-collapsed', isCollapsed);
+ body.hidden = isCollapsed;
+ if (summary) summary.hidden = !isCollapsed;
+ if (btn) {
+   btn.textContent = isCollapsed ? 'Ubah' : 'Tutup';
+   btn.setAttribute('aria-expanded', isCollapsed ? 'false' : 'true');
+ }
+}
+
+function toggleOfficeSettings() {
+ var body = document.getElementById('office-editor-body');
+ if (!body) return;
+ setOfficeSettingsCollapsed(!body.hidden);
 }
 
 function useCurrentLocationForOffice() {
  if (!navigator.geolocation) { showToast('Browser tidak mendukung lokasi'); return; }
  showToast('Sedang membaca lokasi Owner...');
  navigator.geolocation.getCurrentPosition(function(pos) {
+   var acc = Math.round(pos.coords.accuracy || 0);
    document.getElementById('office-lat').value = Number(pos.coords.latitude).toFixed(7);
    document.getElementById('office-lng').value = Number(pos.coords.longitude).toFixed(7);
-   showToast('Koordinat terisi. Tekan Simpan Lokasi Kantor.');
+   var hint = document.getElementById('office-location-hint');
+   if (hint) {
+     hint.textContent = acc > 0
+       ? ('Akurasi bacaan: ±' + acc + ' meter' + (acc > 100 ? ' — terlalu kasar, coba lagi di luar ruangan atau pakai HP.' : ' — koordinat siap disimpan.'))
+       : 'Akurasi bacaan tidak tersedia dari perangkat ini.';
+   }
+   showToast(acc > 100
+     ? ('Akurasi ±' + acc + ' m (kurang teliti). Ulangi di tempat terbuka.')
+     : ('Koordinat terisi (akurasi ±' + acc + ' m). Tekan Simpan Lokasi Kantor.'));
  }, function(){ showToast('Lokasi gagal dibaca. Pastikan GPS dan izin lokasi aktif.'); }, {
    enableHighAccuracy: true, timeout: 20000, maximumAge: 0
  });
