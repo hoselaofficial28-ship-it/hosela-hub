@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbw6q_5ZaIGrekeBwZ5TKh6X1GpWkFHsa5i6whdwacQkTEa-vvNezHlxFMEQFKZkmm5ffQ/exec';
-var APP_VERSION = '20261014v';
+var APP_VERSION = '20261014w';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -1139,6 +1139,9 @@ function loadHome(forceRefresh) {
  }
  if (u.bagian === 'Owner') {
  menus.push({id:'s-manage-users', icon:'users', bg:'#fef3c7', label:'Pendaftar & Akses', sub:'Pantau dan kelola akun'});
+ // Owner sebelumnya TIDAK punya cara melihat/menyetujui pengajuan izin (menu itu
+ // hanya ada untuk Finance). Ko minta bisa melihatnya sendiri.
+ menus.push({id:'s-kelola-izin', icon:'check', bg:'#d1fae5', label:'Kelola Izin', sub:'Setujui pengajuan karyawan'});
  menus.push({id:'s-laporan-absensi', icon:'chart', bg:'#e0f2fe', label:'Laporan Absensi', sub:'Rekap kehadiran'});
  menus.push({id:'s-sanksi-manual', icon:'scale', bg:'#fce7f3', label:'Penghargaan & Denda', sub:'Denda dan penghargaan manual'});
  menus.push({id:'s-review-telat', icon:'check', bg:'#fff7ed', label:'Review Telat', sub:'Toleransi izin telat'});
