@@ -152,7 +152,7 @@ assert.match(pribadiDenganSkor, /Rp 4\.500\.000/);
 assert.match(html, /<section class="pc-reports" id="pc-reports" hidden/);
 assert.match(html, /id="pc-reports-grid"/);
 assert.match(html, /onclick="loadDesktopReports\(true\)"/);
-assert.match(html, /<script src="js\/dashboard-reports\.js\?v=20261014r"><\/script>/);
+assert.match(html, /<script src="js\/dashboard-reports\.js\?v=20261014s"><\/script>/);
 assert.match(sw, /'\.\/js\/dashboard-reports\.js'/);
 
 // ---------------------------------------------------------------------------
@@ -198,13 +198,20 @@ assert.match(css, /body:not\(\.phone-mode\) \.home-clock-card,\s*\n\s*body:not\(
 // Semua layar menu memakai grid 2 kolom (sidebar + isi), kecuali layar sebelum login.
 assert.match(css, /body:not\(\.phone-mode\) \.screen\.active:not\(#s-login\):not\(#s-daftar\):not\(#s-paksa-ganti-pin\)\{\s*\n\s*grid-template-columns:294px minmax\(0,1fr\)!important/);
 assert.match(css, /body:not\(\.phone-mode\) \.screen\.active:not\(#s-login\):not\(#s-daftar\):not\(#s-paksa-ganti-pin\)>\.content\{\s*\n\s*grid-column:2!important/);
+// Isi menu memakai lebar kolom (dulu mentok 1160px → separuh kanan kosong) dan
+// kolom isian dibatasi lebarnya. Catatan: `.content .card` (keturunan) benar,
+// `>*>.card` salah karena berarti cucu.
+assert.match(css, /body:not\(\.phone-mode\) \.screen\.active>\.content>\*\{\s*\n\s*width:100%;\s*\n\s*max-width:1560px!important/);
+assert.match(css, /body:not\(\.phone-mode\) \.screen\.active>\.content \.card \.form-group \.form-input,/);
+assert.match(css, /max-width:680px;/);
+assert.match(css, /body:not\(\.phone-mode\) #s-kalender>\.content>\.card\{\s*\n\s*display:grid/);
 
 // ---------------------------------------------------------------------------
 // 5) Versi cache naik serentak
 // ---------------------------------------------------------------------------
-assert.match(html, /css\/style\.css\?v=20261014r/);
-assert.match(html, /js\/app\.js\?v=20261014r/);
-assert.match(app, /APP_VERSION = '20261014r'/);
-assert.match(sw, /APP_VERSION = '20261014r'/);
+assert.match(html, /css\/style\.css\?v=20261014s/);
+assert.match(html, /js\/app\.js\?v=20261014s/);
+assert.match(app, /APP_VERSION = '20261014s'/);
+assert.match(sw, /APP_VERSION = '20261014s'/);
 
 console.log('dashboard PC (sidebar penuh + laporan kinerja): ok');

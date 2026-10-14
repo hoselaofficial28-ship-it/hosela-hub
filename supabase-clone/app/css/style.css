@@ -3338,6 +3338,35 @@ body.phone-mode #app-wrap #s-daftar.screen.active{
 .pc-reports{display:none}
 
 @media (min-width:900px){
+  /* Isi tiap menu memakai lebar kolom konten. Sebelumnya isi dibatasi 1160px
+     sehingga sisa separuh kanan kosong (tabel/daftar kelihatan mentok ke kiri).
+     Batas atas 1560px + dipusatkan supaya di monitor sangat lebar tetap rapi. */
+  body:not(.phone-mode) .screen.active>.content>*{
+    width:100%;
+    max-width:1560px!important;
+    margin-left:auto!important;
+    margin-right:auto!important;
+  }
+  /* Kolom isian tidak perlu selebar layar; dibatasi supaya tetap nyaman dibaca.
+     Catatan: pakai `.content .card` (keturunan), BUKAN `.content>*>.card` —
+     tanda `>*` di situ berarti cucu, bukan anak langsung, sehingga tidak kena. */
+  body:not(.phone-mode) .screen.active>.content .card .form-group .form-input,
+  body:not(.phone-mode) .screen.active>.content .owner-editor .form-group .form-input{
+    max-width:680px;
+  }
+  /* Kartu formulir "Tambah Hari Libur": isiannya disusun berdampingan di PC
+     supaya tidak menyisakan ruang kosong besar di sebelah kanan. */
+  body:not(.phone-mode) #s-kalender>.content>.card{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+    gap:14px;
+    align-items:end;
+  }
+  body:not(.phone-mode) #s-kalender>.content>.card>.card-title,
+  body:not(.phone-mode) #s-kalender>.content>.card>.btn{
+    grid-column:1 / -1;
+  }
+
   /* Menu dipindah ke sidebar, jadi kartu menu di halaman utama tidak dipakai. */
   body:not(.phone-mode) #home-menu{display:none!important}
 
