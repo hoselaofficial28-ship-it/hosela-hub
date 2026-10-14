@@ -8,10 +8,10 @@ const sw = readFileSync(new URL('../app/sw.js', import.meta.url), 'utf8');
 
 assert.match(backend, /email not confirmed/i);
 assert.match(backend, /konfirmasi email Supabase masih aktif/);
-assert.match(html, /css\/style\.css\?v=20261015b/);
-assert.match(html, /js\/app\.js\?v=20261015b/);
-assert.match(app, /APP_VERSION = '20261015b'/);
-assert.match(sw, /APP_VERSION = '20261015b'/);
+assert.match(html, /css\/style\.css\?v=20261015c/);
+assert.match(html, /js\/app\.js\?v=20261015c/);
+assert.match(app, /APP_VERSION = '20261015c'/);
+assert.match(sw, /APP_VERSION = '20261015c'/);
 assert.match(html, /family=Inter:wght@300;400;500;600;700;800;900/);
 assert.doesNotMatch(html, /Plus\+Jakarta\+Sans/);
 

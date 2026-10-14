@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbw6q_5ZaIGrekeBwZ5TKh6X1GpWkFHsa5i6whdwacQkTEa-vvNezHlxFMEQFKZkmm5ffQ/exec';
-var APP_VERSION = '20261015b';
+var APP_VERSION = '20261015c';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -4321,7 +4321,7 @@ function processAttendanceAppRecap() {
  if (!res || !res.success) { showToast((res && res.msg) || 'Gagal proses rekap'); return; }
  clearAttendanceMatrixCache(null, bulanKey);
  cacheClear('getRekapBulananSemua' + JSON.stringify([bulanKey]));
- showToast('Rekap diperbarui: '+(res.rekapRows || 0)+' minggu · SP dihitung: '+(res.spEntries || 0));
+ showToast('Rekap diperbarui: '+(res.rekapRows || 0)+' minggu · SP: '+(res.spEntries || 0)+' · Sanksi Berulang: '+(res.sanksiBerulang || 0));
  loadAttendanceMatrix(true);
  }, function() {
  if (btn) { btn.textContent = 'Proses ke Rekap Resmi'; btn.disabled = false; }
