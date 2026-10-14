@@ -59,7 +59,8 @@ assert.ok(mig028.indexOf("'public.process_absensi_lengkap(text)'") !== -1, '028 
 assert.match(backend, /processAbsensiAppToRekap: async function \(args\) \{[\s\S]{0,600}?rpc\('process_absensi_lengkap'/);
 assert.doesNotMatch(backend, /processAbsensiAppToRekap: async function \(args\) \{[\s\S]{0,600}?rpc\('process_absensi_app_to_rekap'/, 'masih memanggil rekap lama');
 assert.match(app, /SEKALIGUS menghitung SP & denda SP/);
-assert.match(app, /'Rekap diperbarui: '\+\(res\.rekapRows \|\| 0\)\+' minggu · SP dihitung: '\+\(res\.spEntries \|\| 0\)/);
+// Pesan hasil proses sekarang juga menampilkan jumlah Sanksi Berulang (SB).
+assert.match(app, /'Rekap diperbarui: '\+\(res\.rekapRows \|\| 0\)\+' minggu · SP: '\+\(res\.spEntries \|\| 0\)\+' · Sanksi Berulang: '/);
 
 // ---------------------------------------------------------------------------
 // 3) Keputusan tercatat
