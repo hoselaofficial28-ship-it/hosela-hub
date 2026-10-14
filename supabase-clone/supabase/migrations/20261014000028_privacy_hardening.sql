@@ -47,16 +47,6 @@ begin
   if auth.uid() is null then
     raise exception 'Harus login' using errcode = '28000';
   end if;
-  -- Ko 2026-10-14: wajib login. Tanpa ini, `<> auth.uid()` bernilai NULL saat
-  -- belum login sehingga penjagaan di bawahnya tidak pernah aktif (lubang keamanan).
-  if auth.uid() is null then
-    raise exception 'Harus login' using errcode = '28000';
-  end if;
-  -- Ko 2026-10-14: wajib login. Tanpa ini, `<> auth.uid()` bernilai NULL saat
-  -- belum login sehingga penjagaan di bawahnya tidak pernah aktif (lubang keamanan).
-  if auth.uid() is null then
-    raise exception 'Harus login' using errcode = '28000';
-  end if;
   select pd.* into v_detail from public.payroll_details pd where pd.id = p_payroll_detail_id;
   if v_detail.id is null then
     return jsonb_build_object('success', false, 'msg', 'Detail payroll tidak ditemukan');
@@ -106,16 +96,6 @@ begin
   if auth.uid() is null then
     raise exception 'Harus login' using errcode = '28000';
   end if;
-  -- Ko 2026-10-14: wajib login. Tanpa ini, `<> auth.uid()` bernilai NULL saat
-  -- belum login sehingga penjagaan di bawahnya tidak pernah aktif (lubang keamanan).
-  if auth.uid() is null then
-    raise exception 'Harus login' using errcode = '28000';
-  end if;
-  -- Ko 2026-10-14: wajib login. Tanpa ini, `<> auth.uid()` bernilai NULL saat
-  -- belum login sehingga penjagaan di bawahnya tidak pernah aktif (lubang keamanan).
-  if auth.uid() is null then
-    raise exception 'Harus login' using errcode = '28000';
-  end if;
   if v_uid <> auth.uid() and not public.is_payroll_admin() then
     raise exception 'Akses ditolak' using errcode = '42501';
   end if;
@@ -146,16 +126,6 @@ returns jsonb
 language plpgsql stable security definer set search_path = public as $$
 declare v_uid uuid := coalesce(p_user_id, auth.uid()); v_status text; v_detail_id uuid;
 begin
-  -- Ko 2026-10-14: wajib login. Tanpa ini, `<> auth.uid()` bernilai NULL saat
-  -- belum login sehingga penjagaan di bawahnya tidak pernah aktif (lubang keamanan).
-  if auth.uid() is null then
-    raise exception 'Harus login' using errcode = '28000';
-  end if;
-  -- Ko 2026-10-14: wajib login. Tanpa ini, `<> auth.uid()` bernilai NULL saat
-  -- belum login sehingga penjagaan di bawahnya tidak pernah aktif (lubang keamanan).
-  if auth.uid() is null then
-    raise exception 'Harus login' using errcode = '28000';
-  end if;
   -- Ko 2026-10-14: wajib login. Tanpa ini, `<> auth.uid()` bernilai NULL saat
   -- belum login sehingga penjagaan di bawahnya tidak pernah aktif (lubang keamanan).
   if auth.uid() is null then
@@ -193,16 +163,6 @@ begin
   if auth.uid() is null then
     raise exception 'Harus login' using errcode = '28000';
   end if;
-  -- Ko 2026-10-14: wajib login. Tanpa ini, `<> auth.uid()` bernilai NULL saat
-  -- belum login sehingga penjagaan di bawahnya tidak pernah aktif (lubang keamanan).
-  if auth.uid() is null then
-    raise exception 'Harus login' using errcode = '28000';
-  end if;
-  -- Ko 2026-10-14: wajib login. Tanpa ini, `<> auth.uid()` bernilai NULL saat
-  -- belum login sehingga penjagaan di bawahnya tidak pernah aktif (lubang keamanan).
-  if auth.uid() is null then
-    raise exception 'Harus login' using errcode = '28000';
-  end if;
   return query
 select
     p.id, p.nama, p.jabatan, p.bagian, p.bintang, p.skor, p.final_score,
@@ -226,16 +186,6 @@ create or replace function public.get_ide()
 returns table(id uuid, judul text, deskripsi text, tgl timestamptz, status text, feedback text, nama text, bagian text)
 language plpgsql stable security definer set search_path = public as $$
 begin
-  -- Ko 2026-10-14: wajib login. Tanpa ini, `<> auth.uid()` bernilai NULL saat
-  -- belum login sehingga penjagaan di bawahnya tidak pernah aktif (lubang keamanan).
-  if auth.uid() is null then
-    raise exception 'Harus login' using errcode = '28000';
-  end if;
-  -- Ko 2026-10-14: wajib login. Tanpa ini, `<> auth.uid()` bernilai NULL saat
-  -- belum login sehingga penjagaan di bawahnya tidak pernah aktif (lubang keamanan).
-  if auth.uid() is null then
-    raise exception 'Harus login' using errcode = '28000';
-  end if;
   -- Ko 2026-10-14: wajib login. Tanpa ini, `<> auth.uid()` bernilai NULL saat
   -- belum login sehingga penjagaan di bawahnya tidak pernah aktif (lubang keamanan).
   if auth.uid() is null then
@@ -270,24 +220,6 @@ declare
   v_bintang integer;
   v_final_score integer;
 begin
-  -- Ko 2026-10-14: wajib login. Tanpa ini, `<> auth.uid()` bernilai NULL saat
-  -- belum login sehingga penjagaan di bawahnya tidak pernah aktif (lubang keamanan).
-  if auth.uid() is null then
-    raise exception 'Harus login' using errcode = '28000';
-  end if;
-  -- Hanya boleh untuk dirimu sendiri; Owner/Finance boleh semua (tugas payroll).
-  if coalesce(p_user_id, auth.uid()) <> auth.uid() and not public.is_payroll_admin() then
-    raise exception 'Akses ditolak: hanya boleh melihat data sendiri' using errcode = '42501';
-  end if;
-  -- Ko 2026-10-14: wajib login. Tanpa ini, `<> auth.uid()` bernilai NULL saat
-  -- belum login sehingga penjagaan di bawahnya tidak pernah aktif (lubang keamanan).
-  if auth.uid() is null then
-    raise exception 'Harus login' using errcode = '28000';
-  end if;
-  -- Hanya boleh untuk dirimu sendiri; Owner/Finance boleh semua (tugas payroll).
-  if coalesce(p_user_id, auth.uid()) <> auth.uid() and not public.is_payroll_admin() then
-    raise exception 'Akses ditolak: hanya boleh melihat data sendiri' using errcode = '42501';
-  end if;
   -- Ko 2026-10-14: wajib login. Tanpa ini, `<> auth.uid()` bernilai NULL saat
   -- belum login sehingga penjagaan di bawahnya tidak pernah aktif (lubang keamanan).
   if auth.uid() is null then
@@ -427,65 +359,79 @@ begin
 end $$;
 
 -- ---------------------------------------------------------------------------
--- 4) Beri izin (khusus sudah login) untuk fungsi yang MEMANG dipakai aplikasi
+-- 4) Beri izin (khusus sudah login) untuk fungsi yang MEMANG dipakai aplikasi.
+--    Diberi penjagaan to_regprocedure(): kalau fungsinya belum ada di database
+--    (mis. fungsi foto dari migrasi lain yang belum dijalankan), perintah itu
+--    DILEWATI dengan aman — bukan membuat seluruh migrasi gagal.
 -- ---------------------------------------------------------------------------
-grant execute on function public.add_libur(date, text) to authenticated;
-grant execute on function public.add_pengumuman(text, text, text, text) to authenticated;
-grant execute on function public.approve_izin(uuid, text) to authenticated;
-grant execute on function public.approve_registrasi(uuid) to authenticated;
-grant execute on function public.attach_absensi_photo(uuid, text, text, text, integer, text, text, timestamptz) to authenticated;
-grant execute on function public.calc_hari_kerja_efektif(text) to authenticated;
-grant execute on function public.confirm_payroll(uuid) to authenticated;
-grant execute on function public.create_payroll_draft(text) to authenticated;
-grant execute on function public.deactivate_salary_user(uuid) to authenticated;
-grant execute on function public.get_absensi_rekap(uuid) to authenticated;
-grant execute on function public.get_all_absensi_rekap() to authenticated;
-grant execute on function public.get_all_users() to authenticated;
-grant execute on function public.get_daftar_options() to authenticated;
-grant execute on function public.get_ide() to authenticated;
-grant execute on function public.get_izin_pending() to authenticated;
-grant execute on function public.get_my_jobdesk() to authenticated;
-grant execute on function public.get_my_profile() to authenticated;
-grant execute on function public.get_office_settings() to authenticated;
-grant execute on function public.get_owner_accounts() to authenticated;
-grant execute on function public.get_owner_jobdesks() to authenticated;
-grant execute on function public.get_papan_peringkat() to authenticated;
-grant execute on function public.get_payroll_detail(uuid) to authenticated;
-grant execute on function public.get_payroll_employee_slip(uuid) to authenticated;
-grant execute on function public.get_payroll_employee_slip_detail(uuid, uuid) to authenticated;
-grant execute on function public.get_payroll_preview(text) to authenticated;
-grant execute on function public.get_registrasi_pending() to authenticated;
-grant execute on function public.get_rekap_bulanan_semua(text) to authenticated;
-grant execute on function public.get_salary_users(text) to authenticated;
-grant execute on function public.hapus_libur(uuid) to authenticated;
-grant execute on function public.hapus_notifikasi(uuid) to authenticated;
-grant execute on function public.hapus_semua_notifikasi() to authenticated;
-grant execute on function public.import_attendance_legacy_to_events(text) to authenticated;
-grant execute on function public.mark_absensi_photo_failed(uuid, text) to authenticated;
-grant execute on function public.process_absensi_app_to_rekap(text) to authenticated;
-grant execute on function public.publish_payroll(uuid) to authenticated;
-grant execute on function public.resolve_login_email(text) to authenticated;
-grant execute on function public.save_rule(uuid, text, text) to authenticated;
-grant execute on function public.set_office_settings(numeric, numeric, integer) to authenticated;
-grant execute on function public.set_user_access(uuid, boolean) to authenticated;
-grant execute on function public.submit_absensi_camera(text, numeric, numeric, integer) to authenticated;
-grant execute on function public.submit_izin(date, text, text, text) to authenticated;
-grant execute on function public.submit_kpi_laporan(text, jsonb) to authenticated;
-grant execute on function public.tandai_dibaca(uuid) to authenticated;
-grant execute on function public.tandai_menu_dibaca(text) to authenticated;
-grant execute on function public.tolak_registrasi(uuid) to authenticated;
-grant execute on function public.trigger_notif_peraturan(text) to authenticated;
-grant execute on function public.update_absensi_matrix_day(uuid, date, text, text, text) to authenticated;
-grant execute on function public.update_payroll_adjustment(uuid, integer, integer, text) to authenticated;
-grant execute on function public.update_salary_users_batch(text, jsonb) to authenticated;
-grant execute on function public.update_user_salary(uuid, integer, text, text, integer) to authenticated;
-grant execute on function public.upsert_jobdesk_link(text, text, text) to authenticated;
-grant execute on function public.calc_hari_kerja_efektif(text) to authenticated;
-
--- Catatan: fungsi internal (berawalan garis bawah), fungsi hitung murni (calc_*),
--- dan get_effective_salary_setting/get_total_denda_bulan/hitung_bintang TIDAK diberi
--- izin ke authenticated — semuanya hanya dipakai dari dalam fungsi lain yang
--- berjalan sebagai pemilik database, jadi karyawan tidak bisa memanggilnya.
+do $$
+declare
+  daftar text[] := array[
+      'public.add_libur(date,text)',
+      'public.add_pengumuman(text,text,text,text)',
+      'public.approve_izin(uuid,text)',
+      'public.approve_registrasi(uuid)',
+      'public.attach_absensi_photo(uuid,text,text,text,integer,text,text,timestamptz)',
+      'public.calc_hari_kerja_efektif(text)',
+      'public.confirm_payroll(uuid)',
+      'public.create_payroll_draft(text)',
+      'public.deactivate_salary_user(uuid)',
+      'public.get_absensi_rekap(uuid)',
+      'public.get_all_absensi_rekap()',
+      'public.get_all_users()',
+      'public.get_daftar_options()',
+      'public.get_ide()',
+      'public.get_izin_pending()',
+      'public.get_my_jobdesk()',
+      'public.get_my_profile()',
+      'public.get_office_settings()',
+      'public.get_owner_accounts()',
+      'public.get_owner_jobdesks()',
+      'public.get_papan_peringkat()',
+      'public.get_payroll_detail(uuid)',
+      'public.get_payroll_employee_slip(uuid)',
+      'public.get_payroll_employee_slip_detail(uuid,uuid)',
+      'public.get_payroll_preview(text)',
+      'public.get_registrasi_pending()',
+      'public.get_rekap_bulanan_semua(text)',
+      'public.get_salary_users(text)',
+      'public.hapus_libur(uuid)',
+      'public.hapus_notifikasi(uuid)',
+      'public.hapus_semua_notifikasi()',
+      'public.import_attendance_legacy_to_events(text)',
+      'public.mark_absensi_photo_failed(uuid,text)',
+      'public.process_absensi_app_to_rekap(text)',
+      'public.publish_payroll(uuid)',
+      'public.resolve_login_email(text)',
+      'public.save_rule(uuid,text,text)',
+      'public.set_office_settings(numeric,numeric,integer)',
+      'public.set_user_access(uuid,boolean)',
+      'public.submit_absensi_camera(text,numeric,numeric,integer)',
+      'public.submit_izin(date,text,text,text)',
+      'public.submit_kpi_laporan(text,jsonb)',
+      'public.tandai_dibaca(uuid)',
+      'public.tandai_menu_dibaca(text)',
+      'public.tolak_registrasi(uuid)',
+      'public.trigger_notif_peraturan(text)',
+      'public.update_absensi_matrix_day(uuid,date,text,text,text)',
+      'public.update_payroll_adjustment(uuid,integer,integer,text)',
+      'public.update_salary_users_batch(text,jsonb)',
+      'public.update_user_salary(uuid,integer,text,text,integer)',
+      'public.upsert_jobdesk_link(text,text,text)',
+      'public.calc_hari_kerja_efektif(text)',
+      'X_SELESAI'
+  ];
+  nama text;
+begin
+  foreach nama in array daftar loop
+    if nama = 'X_SELESAI' then
+      continue;
+    end if;
+    if to_regprocedure(nama) is not null then
+      execute format('grant execute on function %s to authenticated', nama);
+    end if;
+  end loop;
+end $$;
 
 -- ---------------------------------------------------------------------------
 -- 5) Segarkan cache izin di server API supaya perubahan langsung berlaku.

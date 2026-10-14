@@ -54,13 +54,17 @@ assert.match(mig, /revoke execute on function %s from public, anon/);
 assert.match(mig, /grant execute on function %s to service_role/);
 assert.match(mig, /if r\.nama in \('resolve_login_email', 'get_daftar_options'\) then\s*\n\s*continue;/);
 assert.match(mig, /notify pgrst, 'reload schema'/);
+// Pemberian izin harus tahan terhadap fungsi yang belum ada di database
+// (pernah gagal: attach_absensi_photo dari migrasi foto yang belum dijalankan).
+assert.match(mig, /if to_regprocedure\(nama\) is not null then/);
+assert.match(mig, /execute format\('grant execute on function %s to authenticated', nama\)/);
 // Fungsi sensitif TIDAK boleh diberi izin ke authenticated (cukup dipakai internal)
 for (const fn of ['get_effective_salary_setting', 'get_total_denda_bulan', 'hitung_bintang']) {
-  assert.doesNotMatch(mig, new RegExp('grant execute on function public\\.' + fn + '\\('), 'jangan beri izin ke authenticated: ' + fn);
+  assert.doesNotMatch(mig, new RegExp("'public\\." + fn + "\\("), 'jangan beri izin ke authenticated: ' + fn);
 }
 // Fungsi yang dipakai aplikasi tetap diberi izin (kalau tidak, aplikasi mati setelah PUBLIC dicabut)
 for (const fn of ['get_absensi_rekap', 'get_all_users', 'get_salary_users', 'submit_izin', 'approve_izin', 'get_payroll_employee_slip', 'calc_hari_kerja_efektif']) {
-  assert.match(mig, new RegExp('grant execute on function public\\.' + fn + '\\('), 'grant hilang: ' + fn);
+  assert.match(mig, new RegExp("'public\\." + fn + "\\("), 'daftar grant hilang: ' + fn);
 }
 
 // ---------------------------------------------------------------------------
