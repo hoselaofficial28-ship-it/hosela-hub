@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbw6q_5ZaIGrekeBwZ5TKh6X1GpWkFHsa5i6whdwacQkTEa-vvNezHlxFMEQFKZkmm5ffQ/exec';
-var APP_VERSION = '20261012h';
+var APP_VERSION = '20261012i';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -262,7 +262,7 @@ function ensureFreshRuntime() {
  if (current === APP_VERSION) return;
  localStorage.setItem(key, APP_VERSION);
  Object.keys(localStorage).forEach(function(k) {
- if (k.indexOf('hh_') === 0 && k !== key && k !== 'hh_username' && k !== 'hh_session') localStorage.removeItem(k);
+ if (k.indexOf('hh_') === 0 && k !== key && k !== 'hh_username' && k !== 'hh_session' && k.indexOf('hh_sb_session') !== 0) localStorage.removeItem(k);
  });
  if (window.caches && caches.keys) {
  caches.keys().then(function(keys) { keys.forEach(function(k) { caches.delete(k); }); });
@@ -811,6 +811,7 @@ function showPinLoading(loading) {
 function gantiAkun() {
  localStorage.removeItem('hh_username');
  clearLoginSession();
+ if (window.sb && window.sb.auth) window.sb.auth.signOut().catch(function(){});
  _prefetchStarted = false;
  _homeLoaded = false;
  _homeLoadedUserId = '';
@@ -2712,6 +2713,7 @@ function doLogout() {
  _homeLoadedUserId = '';
  _prefetchStarted = false;
  clearLoginSession();
+ if (window.sb && window.sb.auth) window.sb.auth.signOut().catch(function(){});
  localStorage.removeItem('hh_username');
  goTo('s-login');
  document.getElementById('login-password').value = '';
@@ -3855,6 +3857,23 @@ function showToast(msg) {
  setTimeout(function(){ t.classList.remove('show'); }, 2500);
 }
 
+function openInitialLogin() {
+ goTo('s-login');
+ var savedUsername = localStorage.getItem('hh_username');
+ if (savedUsername) {
+  document.getElementById('login-username').value = savedUsername;
+  document.getElementById('login-password').focus();
+ }
+}
+
+function restoreVerifiedLogin(session) {
+ currentUser = session.user;
+ if (session.username) localStorage.setItem('hh_username', session.username);
+ _navHistory = [];
+ history.replaceState({ screen: 's-home' }, '', '#home');
+ goTo('s-home');
+}
+
 window.onload = function() {
  setupPWAInstall();
  warmUpGAS();
@@ -3862,19 +3881,26 @@ window.onload = function() {
  document.getElementById('loading').style.display = 'none';
  var session = getLoginSession();
  if (session && session.user) {
- currentUser = session.user;
- if (session.username) localStorage.setItem('hh_username', session.username);
- _navHistory = [];
- history.replaceState({ screen: 's-home' }, '', '#home');
- goTo('s-home');
+ if (!window.sb || !window.sb.auth || !window.sb.auth.getSession) {
+  clearLoginSession();
+  openInitialLogin();
+  return;
+ }
+ window.sb.auth.getSession().then(function(result) {
+  if (result && !result.error && result.data && result.data.session) {
+   restoreVerifiedLogin(session);
+   return;
+  }
+  clearLoginSession();
+  openInitialLogin();
+  showToast('Sesi login berakhir. Silakan masuk kembali.');
+ }).catch(function() {
+  clearLoginSession();
+  openInitialLogin();
+ });
  return;
  }
- goTo('s-login');
- var savedUsername = localStorage.getItem('hh_username');
- if (savedUsername) {
- document.getElementById('login-username').value = savedUsername;
- document.getElementById('login-password').focus();
- }
+ openInitialLogin();
  }, 450);
 
 };

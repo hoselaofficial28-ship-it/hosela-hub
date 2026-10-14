@@ -19,6 +19,8 @@ assert.match(app, /gasCall\('getMyJobdesk'/);
 assert.match(app, /gasCall\('saveOwnerJobdesk'/);
 assert.match(app, /mergeDaftarOptions\(serverOptions \|\| \{\}\)/);
 assert.match(app, /renderOwnerJobdeskList\(res && \(res\.data \|\| res\.items\) \|\| \[\], options\)/);
+assert.match(app, /k\.indexOf\('hh_sb_session'\) !== 0/);
+assert.match(app, /window\.sb\.auth\.getSession\(\)/);
 assert.match(app, /gasCall\('savePeraturan'/);
 assert.match(app, /gasCall\('setOfficeSettings'/);
 assert.match(app, /var isOwner = currentUser && currentUser\.bagian === 'Owner'/);
