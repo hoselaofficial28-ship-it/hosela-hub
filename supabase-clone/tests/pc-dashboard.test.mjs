@@ -152,7 +152,7 @@ assert.match(pribadiDenganSkor, /Rp 4\.500\.000/);
 assert.match(html, /<section class="pc-reports" id="pc-reports" hidden/);
 assert.match(html, /id="pc-reports-grid"/);
 assert.match(html, /onclick="loadDesktopReports\(true\)"/);
-assert.match(html, /<script src="js\/dashboard-reports\.js\?v=20261014t"><\/script>/);
+assert.match(html, /<script src="js\/dashboard-reports\.js\?v=20261014u"><\/script>/);
 assert.match(sw, /'\.\/js\/dashboard-reports\.js'/);
 
 // ---------------------------------------------------------------------------
@@ -202,8 +202,8 @@ assert.match(css, /body:not\(\.phone-mode\) \.screen\.active:not\(#s-login\):not
 // dan sebagian dipusatkan → garis kiri tidak lurus/zigzag). Kolom isian dibatasi.
 // Catatan: `.content .card` (keturunan) benar, `>*>.card` salah karena berarti cucu.
 assert.match(css, /body:not\(\.phone-mode\) \.screen\.active>\.content>\*\{\s*\n\s*max-width:none!important;\s*\n\s*margin-left:0!important/);
-assert.match(css, /body:not\(\.phone-mode\) \.screen\.active>\.content \.card \.form-group \.form-input,/);
-assert.match(css, /max-width:680px;/);
+// Kolom isian TIDAK dibatasi lebarnya (Ko minta isian di-fullkan mengikuti kartu).
+assert.doesNotMatch(css, /\.content \.card \.form-group \.form-input\{\s*\n\s*max-width:680px/);
 assert.match(css, /body:not\(\.phone-mode\) #s-kalender>\.content>\.card\{\s*\n\s*display:grid/);
 // Judul laporan dibuat kartu supaya garis kirinya sejajar dengan kartu di bawahnya.
 assert.match(css, /body:not\(\.phone-mode\) \.pc-reports-head\{[\s\S]*?padding:16px 20px;[\s\S]*?border:1px solid #dfe8f6;/);
@@ -211,9 +211,9 @@ assert.match(css, /body:not\(\.phone-mode\) \.pc-reports-head\{[\s\S]*?padding:1
 // ---------------------------------------------------------------------------
 // 5) Versi cache naik serentak
 // ---------------------------------------------------------------------------
-assert.match(html, /css\/style\.css\?v=20261014t/);
-assert.match(html, /js\/app\.js\?v=20261014t/);
-assert.match(app, /APP_VERSION = '20261014t'/);
-assert.match(sw, /APP_VERSION = '20261014t'/);
+assert.match(html, /css\/style\.css\?v=20261014u/);
+assert.match(html, /js\/app\.js\?v=20261014u/);
+assert.match(app, /APP_VERSION = '20261014u'/);
+assert.match(sw, /APP_VERSION = '20261014u'/);
 
 console.log('dashboard PC (sidebar penuh + laporan kinerja): ok');

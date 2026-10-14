@@ -3346,13 +3346,8 @@ body.phone-mode #app-wrap #s-daftar.screen.active{
     margin-left:0!important;
     margin-right:0!important;
   }
-  /* Kolom isian tidak perlu selebar layar; dibatasi supaya tetap nyaman dibaca.
-     Catatan: pakai `.content .card` (keturunan), BUKAN `.content>*>.card` —
-     tanda `>*` di situ berarti cucu, bukan anak langsung, sehingga tidak kena. */
-  body:not(.phone-mode) .screen.active>.content .card .form-group .form-input,
-  body:not(.phone-mode) .screen.active>.content .owner-editor .form-group .form-input{
-    max-width:680px;
-  }
+  /* Catatan: kolom isian (input/select) TIDAK dibatasi lebarnya — mengikuti lebar
+     kartunya supaya sejajar dengan kotak catatan dan tombol di kartu yang sama. */
   /* Kartu formulir "Tambah Hari Libur": isiannya disusun berdampingan di PC
      supaya tidak menyisakan ruang kosong besar di sebelah kanan. */
   body:not(.phone-mode) #s-kalender>.content>.card{
