@@ -152,7 +152,7 @@ assert.match(pribadiDenganSkor, /Rp 4\.500\.000/);
 assert.match(html, /<section class="pc-reports" id="pc-reports" hidden/);
 assert.match(html, /id="pc-reports-grid"/);
 assert.match(html, /onclick="loadDesktopReports\(true\)"/);
-assert.match(html, /<script src="js\/dashboard-reports\.js\?v=20261014q"><\/script>/);
+assert.match(html, /<script src="js\/dashboard-reports\.js\?v=20261014r"><\/script>/);
 assert.match(sw, /'\.\/js\/dashboard-reports\.js'/);
 
 // ---------------------------------------------------------------------------
@@ -172,6 +172,14 @@ assert.match(app, /pcPerformanceSummary\(bag\.rekap\)/);
 assert.match(app, /pcPersonalSummary\(sendiri\.matrix, todayKey\)/);
 assert.match(app, /Sebagian data gagal dimuat: /);
 
+// Sidebar harus tetap tampil di SEMUA menu, termasuk layar yang belum punya
+// kartu navbar sendiri (Catatan Kehadiran, Payroll, dst).
+assert.match(app, /var PC_SIDEBAR_SKIP = \['s-login', 's-daftar', 's-paksa-ganti-pin'\]/);
+assert.match(app, /function pcEnsureSidebars\(\)/);
+assert.match(app, /nav\.setAttribute\('data-pc-sidebar', '1'\)/);
+assert.match(app, /function pcRemoveInjectedSidebars\(\)/);
+assert.match(app, /pcEnsureSidebars\(\);\r?\n var navs = pcNavbarEls\(\);/);
+
 // ---------------------------------------------------------------------------
 // 4) CSS: laporan hanya di PC, kartu menu disembunyikan, sidebar bisa digulir
 // ---------------------------------------------------------------------------
@@ -184,16 +192,19 @@ assert.match(css, /body:not\(\.phone-mode\) \.pc-card\{[\s\S]*?border-radius:20p
 assert.match(css, /body:not\(\.phone-mode\) \.pc-metric-row\{[\s\S]*?grid-template-columns:repeat\(auto-fit/);
 // Kartu kolom kanan tidak boleh melar setinggi kolom laporan (kartu jam jadi
 // kotak kosong raksasa kalau align-self dibiarkan stretch), dan laporan harus
-// merentang baris seperti kartu menu dulu supaya kolom kanan tetap rapat.
-assert.match(css, /body:not\(\.phone-mode\) \.pc-reports:not\(\[hidden\]\)\{[\s\S]*?grid-row:2 \/ span 8/);
+// merentang baris supaya kolom kanan tetap rapat.
+assert.match(css, /body:not\(\.phone-mode\) \.pc-reports:not\(\[hidden\]\)\{[\s\S]*?grid-row:2 \/ span 30/);
 assert.match(css, /body:not\(\.phone-mode\) \.home-clock-card,\s*\n\s*body:not\(\.phone-mode\) #reward-section,\s*\n\s*body:not\(\.phone-mode\) #profile-card,[\s\S]*?align-self:start!important/);
+// Semua layar menu memakai grid 2 kolom (sidebar + isi), kecuali layar sebelum login.
+assert.match(css, /body:not\(\.phone-mode\) \.screen\.active:not\(#s-login\):not\(#s-daftar\):not\(#s-paksa-ganti-pin\)\{\s*\n\s*grid-template-columns:294px minmax\(0,1fr\)!important/);
+assert.match(css, /body:not\(\.phone-mode\) \.screen\.active:not\(#s-login\):not\(#s-daftar\):not\(#s-paksa-ganti-pin\)>\.content\{\s*\n\s*grid-column:2!important/);
 
 // ---------------------------------------------------------------------------
 // 5) Versi cache naik serentak
 // ---------------------------------------------------------------------------
-assert.match(html, /css\/style\.css\?v=20261014q/);
-assert.match(html, /js\/app\.js\?v=20261014q/);
-assert.match(app, /APP_VERSION = '20261014q'/);
-assert.match(sw, /APP_VERSION = '20261014q'/);
+assert.match(html, /css\/style\.css\?v=20261014r/);
+assert.match(html, /js\/app\.js\?v=20261014r/);
+assert.match(app, /APP_VERSION = '20261014r'/);
+assert.match(sw, /APP_VERSION = '20261014r'/);
 
 console.log('dashboard PC (sidebar penuh + laporan kinerja): ok');

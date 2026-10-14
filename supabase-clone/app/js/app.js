@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbw6q_5ZaIGrekeBwZ5TKh6X1GpWkFHsa5i6whdwacQkTEa-vvNezHlxFMEQFKZkmm5ffQ/exec';
-var APP_VERSION = '20261014q';
+var APP_VERSION = '20261014r';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -1781,13 +1781,38 @@ function closeHomeCategory(fromHistory) {
 }
 
 // ===== Tampilan PC: seluruh menu dipindah ke sidebar + laporan di halaman utama
-var _pcNavOriginalHtml = null;
 var _pcNavApplied = false;
 var _pcReportsLoading = false;
 var _pcReportsLoadedAt = 0;
 
+// Layar yang memang tidak boleh punya sidebar (sebelum login / wajib ganti sandi).
+var PC_SIDEBAR_SKIP = ['s-login', 's-daftar', 's-paksa-ganti-pin'];
+
 function pcNavbarEls() {
  return Array.prototype.slice.call(document.querySelectorAll('.navbar'));
+}
+
+// Sebagian layar (Catatan Kehadiran, Payroll, dll) belum punya kartu navbar sama
+// sekali sehingga sidebar-nya hilang saat dibuka. Di tampilan PC kita tambahkan
+// navbar kosong di layar itu supaya sidebar tampil sama seperti di beranda.
+function pcEnsureSidebars() {
+ Array.prototype.slice.call(document.querySelectorAll('.screen')).forEach(function (s) {
+  if (PC_SIDEBAR_SKIP.indexOf(s.id) !== -1) return;
+  var punya = Array.prototype.some.call(s.children, function (c) {
+   return c.classList && c.classList.contains('navbar');
+  });
+  if (punya) return;
+  var nav = document.createElement('div');
+  nav.className = 'navbar pc-nav-injected';
+  nav.setAttribute('data-pc-sidebar', '1');
+  s.appendChild(nav);
+ });
+}
+
+function pcRemoveInjectedSidebars() {
+ Array.prototype.slice.call(document.querySelectorAll('.navbar[data-pc-sidebar]')).forEach(function (nav) {
+  if (nav.parentNode) nav.parentNode.removeChild(nav);
+ });
 }
 
 function pcActiveScreenId() {
@@ -1807,24 +1832,27 @@ function pcSidebarModel() {
 }
 
 // Tempel daftar menu lengkap ke kartu sidebar (hanya tampilan PC). Saat kembali
-// ke tampilan HP, navbar aslinya (4 menu bawah) dipulihkan apa adanya.
+// ke tampilan HP, navbar aslinya (4 menu bawah) dipulihkan apa adanya dan navbar
+// tambahan dibuang supaya bar bawah HP tidak jadi kosong.
 function applyDesktopNavigation() {
- var navs = pcNavbarEls();
- if (!navs.length) return;
  if (!isDesktopLayout()) {
-  if (_pcNavOriginalHtml) {
-   navs.forEach(function (nav, i) {
-    if (_pcNavOriginalHtml[i] !== undefined) nav.innerHTML = _pcNavOriginalHtml[i];
-   });
-  }
-  navs.forEach(function (nav) { nav.classList.remove('pc-nav-full'); });
+  pcRemoveInjectedSidebars();
+  pcNavbarEls().forEach(function (nav) {
+   if (nav.__pcOriginalHtml !== undefined) nav.innerHTML = nav.__pcOriginalHtml;
+   nav.classList.remove('pc-nav-full');
+  });
   _pcNavApplied = false;
   return;
  }
  if (!window._homeMenus || !window._homeMenus.length) return;
- if (!_pcNavOriginalHtml) {
-  _pcNavOriginalHtml = navs.map(function (nav) { return nav.innerHTML; });
- }
+ pcEnsureSidebars();
+ var navs = pcNavbarEls();
+ if (!navs.length) return;
+ navs.forEach(function (nav) {
+  if (nav.__pcOriginalHtml === undefined && !nav.getAttribute('data-pc-sidebar')) {
+   nav.__pcOriginalHtml = nav.innerHTML;
+  }
+ });
  var html = pcRenderSidebarNav(pcSidebarModel());
  navs.forEach(function (nav) {
   nav.innerHTML = html;

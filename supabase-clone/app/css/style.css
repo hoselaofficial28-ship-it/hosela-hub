@@ -3537,6 +3537,31 @@ body.phone-mode #app-wrap #s-daftar.screen.active{
   }
   body:not(.phone-mode) .pc-note-info{background:#eef4ff;color:#1557d8}
 
+  /* Sidebar tampil di SEMUA menu (bukan cuma beranda): isi menu selalu berada di
+     kolom ke-2, kolom pertama tetap dipakai kartu sidebar. Layar sebelum login
+     dan layar wajib ganti sandi dikecualikan (memang tanpa sidebar). */
+  body:not(.phone-mode) .screen.active:not(#s-login):not(#s-daftar):not(#s-paksa-ganti-pin){
+    grid-template-columns:294px minmax(0,1fr)!important;
+    grid-template-rows:74px minmax(0,1fr)!important;
+  }
+  body:not(.phone-mode) .screen.active:not(#s-login):not(#s-daftar):not(#s-paksa-ganti-pin)>.content{
+    grid-column:2!important;
+    grid-row:2!important;
+    min-height:0!important;
+    overflow:auto!important;
+    padding:22px 22px 42px 0!important;
+  }
+  body:not(.phone-mode) .screen.active:not(#s-login):not(#s-daftar):not(#s-paksa-ganti-pin)>.header,
+  body:not(.phone-mode) .screen.active:not(#s-login):not(#s-daftar):not(#s-paksa-ganti-pin)>.home-hero{
+    grid-column:2!important;
+    grid-row:1!important;
+  }
+  /* Sidebar tidak ikut menggulir bersama isi menu. */
+  body:not(.phone-mode) .screen.active>.navbar.pc-nav-full{
+    grid-column:1!important;
+    align-self:start!important;
+  }
+
   /* Sidebar: seluruh menu, bisa digulir karena daftarnya panjang. */
   body:not(.phone-mode) .navbar.pc-nav-full{
     overflow-y:auto;
