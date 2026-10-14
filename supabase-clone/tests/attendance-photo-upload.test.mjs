@@ -62,7 +62,7 @@ assert.match(mod.photoStorageErrorText(500, null), /HTTP 500/);
 // ---------------------------------------------------------------------------
 // 2) Modul dimuat aplikasi tanpa SDK Firebase (aplikasi harus tetap ringan)
 // ---------------------------------------------------------------------------
-assert.match(html, /<script src="js\/photo-storage\.js\?v=20261015c"><\/script>/);
+assert.match(html, /<script src="js\/photo-storage\.js\?v=20261015d"><\/script>/);
 assert.doesNotMatch(html, /firebasejs|firebase-app|firebase-storage/i);
 assert.match(storageSrc, /identitytoolkit\.googleapis\.com\/v1\/accounts:signUp/);
 assert.match(storageSrc, /firebasestorage\.googleapis\.com\/v0\/b\//);
@@ -121,9 +121,9 @@ assert.match(migration, /photo_url\s+= p_url/);
 // ---------------------------------------------------------------------------
 // 6) Versi cache naik serentak (HP tidak boleh memakai file lama)
 // ---------------------------------------------------------------------------
-assert.match(html, /css\/style\.css\?v=20261015c/);
-assert.match(html, /js\/app\.js\?v=20261015c/);
-assert.match(app, /APP_VERSION = '20261015c'/);
-assert.match(sw, /APP_VERSION = '20261015c'/);
+assert.match(html, /css\/style\.css\?v=20261015d/);
+assert.match(html, /js\/app\.js\?v=20261015d/);
+assert.match(app, /APP_VERSION = '20261015d'/);
+assert.match(sw, /APP_VERSION = '20261015d'/);
 
 console.log('penyimpanan foto absensi (Firebase Storage): ok');

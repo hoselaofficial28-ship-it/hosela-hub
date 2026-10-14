@@ -74,4 +74,17 @@ assert.match(app, /'Rekap diperbarui: '\+\(res\.rekapRows \|\| 0\)\+' minggu · 
 assert.match(log, /Sanksi Berulang/i);
 assert.match(log, /Rp50\.000 x tingkat|50\.000 x tingkat|SB1/);
 
+// ---------------------------------------------------------------------------
+// 4b) Kerajinan: hari SAKIT/IZIN yang disetujui tidak menghilangkan kerajinan
+//     (keputusan Ko 14 Okt 2026 — berbeda dari aplikasi lama yang pakai absen fisik)
+// ---------------------------------------------------------------------------
+const migKerajinan = readFileSync(new URL('../supabase/migrations/20261014000035_kerajinan_toleransi_izin.sql', import.meta.url), 'utf8');
+assert.match(migKerajinan, /create or replace function public\.bonus_kerajinan_efektif\(/);
+assert.match(migKerajinan, /select count\(\*\) into v_izin\s*\n\s*from public\.leave_requests lr\s*\n\s*where lr\.user_id = p_user_id\s*\n\s*and lr\.status = 'DISETUJUI'/);
+assert.match(migKerajinan, /v_absen_efektif := greatest\(0, coalesce\(p_absen_fisik, 0\) - coalesce\(v_izin, 0\)\)/);
+assert.match(migKerajinan, /if v_absen_efektif > 0 then\s*\n\s*return 0;\s*\n\s*end if;/);
+assert.match(migKerajinan, /and s\.status = 'AKTIF' and s\.tingkat >= 2/);
+assert.match(migKerajinan, /return greatest\(0, coalesce\(p_bonus_setting, 0\)\);/);
+assert.match(migKerajinan, /notify pgrst, 'reload schema'/);
+
 console.log('sanksi berulang (SB): tangga denda, kerajinan, pembatalan: ok');
