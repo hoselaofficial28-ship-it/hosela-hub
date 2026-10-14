@@ -13,3 +13,10 @@ supabase-clone/.env
 supabase-clone/.env.*
 !supabase-clone/.env.example
 supabase-clone/HANDOFF.local.md
+
+# Folder cadangan aplikasi (salinan lama). Boleh tetap ada di komputer, tapi
+# tidak perlu masuk repo — pernah tidak sengaja ikut ter-commit 14 Okt 2026.
+supabase-clone/app-backup*/
+scripts/
+debug.html
+*.zip
