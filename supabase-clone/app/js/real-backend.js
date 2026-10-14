@@ -622,6 +622,121 @@
     },
 
     // args lama: [userId] -- query langsung, RLS notifications "baca sendiri".
+    // ===== Aksi yang sebelumnya belum tersambung (masih pakai data contoh) =====
+
+    // Panggilan "apakah server hidup" — cukup dijawab lokal, tidak perlu jaringan.
+    ping: async function () {
+      return { success: true };
+    },
+
+    // Pengaturan aplikasi (mis. LINK_PANDUAN). RLS app_settings: semua boleh baca.
+    getPengaturan: async function () {
+      var r = await window.sb.from('app_settings').select('key,value');
+      if (r.error) return {};
+      var cfg = {};
+      (r.data || []).forEach(function (row) { cfg[row.key] = row.value; });
+      return cfg;
+    },
+
+    // Daftar anggota satu bagian. RLS profiles: karyawan hanya melihat dirinya,
+    // Owner/Finance melihat semua — jadi daftar ini otomatis terbatas.
+    getStaffByBagian: async function (args) {
+      var bagian = args[0];
+      var r = await window.sb.from('profiles')
+        .select('id,nama,jabatan,bagian').eq('bagian', bagian).eq('status', 'AKTIF').order('nama');
+      if (r.error) return [];
+      return (r.data || []).map(function (row) {
+        return { id: row.id, nama: row.nama, jabatan: row.jabatan, bagian: row.bagian };
+      });
+    },
+
+    // Jobdesk (tautan dokumen) untuk satu jabatan. Kode lama mengembalikan SATU
+    // objek { link }, bukan daftar.
+    getJobdeskByJabatan: async function (args) {
+      var jabatan = args[0];
+      var r = await window.sb.from('jobdesks').select('id,jabatan,link').eq('jabatan', jabatan).limit(1);
+      if (r.error || !r.data || !r.data.length) return {};
+      return { id: r.data[0].id, jabatan: r.data[0].jabatan, link: r.data[0].link || '' };
+    },
+
+    // Ganti sandi: memakai Supabase Auth langsung. Sandi lama DIVERIFIKASI dengan
+    // mencoba login ulang (sandi tidak pernah disimpan/dikirim ke server kita).
+    // args lama: [userId, sandiLama, sandiBaru]
+    gantiPIN: async function (args) {
+      var sandiLama = String(args[1] || '');
+      var sandiBaru = String(args[2] || '');
+      if (sandiBaru.length < 6) return { success: false, msg: 'Sandi baru minimal 6 karakter' };
+      var sesi = await window.sb.auth.getSession();
+      var email = (sesi && sesi.data && sesi.data.session && sesi.data.session.user) ? sesi.data.session.user.email : '';
+      if (!email) return { success: false, msg: 'Sesi login tidak ditemukan, coba login ulang' };
+      var cek = await window.sb.auth.signInWithPassword({ email: email, password: sandiLama });
+      if (cek.error) return { success: false, msg: 'Sandi lama tidak cocok' };
+      var up = await window.sb.auth.updateUser({ password: sandiBaru });
+      if (up.error) return { success: false, msg: up.error.message };
+      return { success: true };
+    },
+
+    // Ubah email: Supabase mengirim tautan konfirmasi ke email BARU, jadi email
+    // baru belum aktif sebelum dikonfirmasi — pesannya disampaikan apa adanya.
+    // args lama: [userId, email]
+    updateEmail: async function (args) {
+      var email = String(args[1] || '').trim();
+      if (!email || email.indexOf('@') === -1) return { success: false, msg: 'Email tidak valid' };
+      var up = await window.sb.auth.updateUser({ email: email });
+      if (up.error) return { success: false, msg: up.error.message };
+      return { success: true, msg: 'Cek email baru untuk konfirmasi' };
+    },
+
+    // Tap anomali yang menunggu konfirmasi (Owner/Finance).
+    getAnomaliPending: async function () {
+      var r = await window.sb.rpc('get_anomali_pending');
+      if (r.error) return [];
+      return (r.data || []).map(function (row) {
+        return { id: row.id, userId: row.user_id, nama: row.nama, tanggal: row.tanggal, jam: row.jam, tipe: row.tipe, deadline: row.deadline };
+      });
+    },
+
+    // args lama: [anomId, status] — status NORMAL atau DENDA
+    konfirmasiAnomali: async function (args) {
+      var r = await window.sb.rpc('konfirmasi_anomali', { p_anom_id: args[0], p_status: args[1] });
+      if (r.error) return { success: false, msg: r.error.message };
+      return r.data;
+    },
+
+    // Penghargaan & denda manual (Owner/Finance).
+    getSanksiManual: async function () {
+      var r = await window.sb.rpc('get_sanksi_manual');
+      if (r.error) return [];
+      return (r.data || []).map(function (row) {
+        return { id: row.id, userId: row.user_id, nama: row.nama, tipe: row.tipe, keterangan: row.keterangan, nominal: row.nominal, tgl: row.tgl };
+      });
+    },
+
+    // args lama: [actorNama, userId, tipe, nominal, keterangan, bulanKey]
+    addSanksiManual: async function (args) {
+      var r = await window.sb.rpc('add_sanksi_manual', {
+        p_target_user_id: args[1], p_tipe: args[2],
+        p_nominal: parseInt(args[3], 10) || 0, p_keterangan: args[4] || ''
+      });
+      if (r.error) return { success: false, msg: r.error.message };
+      return r.data;
+    },
+
+    // args lama: [detailId]
+    batalSanksiManual: async function (args) {
+      var r = await window.sb.rpc('batal_sanksi_manual', { p_detail_id: args[0] });
+      if (r.error) return { success: false, msg: r.error.message };
+      return r.data;
+    },
+
+    // Impor data absensi lama (fingerprint) untuk satu bulan.
+    processAbsensiUpload: async function (args) {
+      var bulan = args && args[0] ? args[0] : bulanKeySekarang();
+      var r = await window.sb.rpc('import_attendance_legacy_to_events', { p_bulan_key: bulan });
+      if (r.error) return { success: false, msg: r.error.message };
+      return r.data;
+    },
+
     getNotifikasi: async function (args) {
       var userId = args[0];
       var r = await window.sb.from('notifications')

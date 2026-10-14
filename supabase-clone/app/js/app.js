@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbw6q_5ZaIGrekeBwZ5TKh6X1GpWkFHsa5i6whdwacQkTEa-vvNezHlxFMEQFKZkmm5ffQ/exec';
-var APP_VERSION = '20261014x';
+var APP_VERSION = '20261014y';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -3026,8 +3026,10 @@ function simpanEmail() {
  if (r.success) {
  document.getElementById('sm-email').textContent = email;
  document.getElementById('sm-email-form').style.display = 'none';
- showToast('Email berhasil disimpan ');
- } else { showToast('Gagal simpan email'); }
+ // Supabase mengirim tautan konfirmasi ke email baru; pesan dari server
+ // ditampilkan apa adanya supaya tidak terkesan "langsung aktif".
+ showToast(r.msg || 'Email berhasil disimpan ');
+ } else { showToast(r.msg || 'Gagal simpan email'); }
  });
 }
 
@@ -3144,9 +3146,21 @@ function batalkanSanksi(id) {
 
 // ─── REKAP BULANAN ───────────────────────────────
 // Absensi kamera disimpan terpisah dulu agar tidak mengubah rekap fingerprint lama.
+
+// Menu "Review Telat" BELUM tersambung ke Supabase: aturan bisnisnya belum
+// diputuskan Ko (aplikasi lama tidak punya fungsi ini — lihat DECISION-LOG
+// 2026-10-05). Selama saklar ini false, aplikasi menampilkan keterangan jujur
+// "belum tersambung", bukan data contoh yang seolah-olah berhasil.
+var REVIEW_TELAT_TERSAMBUNG = false;
+
 function loadReviewTelat(force) {
  var list = document.getElementById('review-telat-list');
  if (!list) return;
+ if (!REVIEW_TELAT_TERSAMBUNG) {
+ fillReviewTelatMonthSelect();
+ list.innerHTML = '<div class="empty-state"><div class="empty-icon"></div>Menu Review Telat belum tersambung ke database.<br><span style="font-size:11px;color:var(--text-muted)">Aturannya masih menunggu keputusan Owner (lihat catatan pengembangan), jadi belum ada data yang bisa ditampilkan.</span></div>';
+ return;
+ }
  fillReviewTelatMonthSelect();
  var statusSel = document.getElementById('izin-telat-status');
  var bulanSel = document.getElementById('izin-telat-bulan');
@@ -3233,6 +3247,10 @@ function fillReviewTelatMonthSelect() {
 }
 
 function submitReviewTelat(id, safeId) {
+ if (!REVIEW_TELAT_TERSAMBUNG) {
+ showToast('Menu Review Telat belum tersambung ke database');
+ return;
+ }
  var jenis = document.getElementById('izin-telat-jenis-' + safeId).value;
  var durasi = document.getElementById('izin-telat-durasi-' + safeId).value || 0;
  var sifatEl = document.getElementById('izin-telat-sifat-' + safeId);
