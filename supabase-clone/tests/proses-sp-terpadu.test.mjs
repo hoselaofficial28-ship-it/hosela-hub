@@ -26,6 +26,22 @@ assert.ok(posHapusSp < posSp, 'SP lama harus dibersihkan sebelum menghitung ulan
 assert.match(mig, /where public\._minggu_ke_bulan\(minggu\) = p_bulan_key/);
 assert.match(mig, /where tipe = 'DENDA_SP' and to_char\(tanggal, 'YYYY-MM'\) = p_bulan_key/);
 
+// ---------------------------------------------------------------------------
+// 1b) PERBAIKAN hasil uji nyata (migrasi 033):
+//     - reset mingguan harus memakai SEMUA minggu yang menyentuh bulan itu,
+//       bukan hanya minggu yang Senin-nya di bulan itu (minggu lintas bulan
+//       seperti 2026-W40 dulu tertinggal sehingga hadir menumpuk 6 -> 9 -> 12).
+//     - fungsi mengembalikan diagnosa supaya notifikasi SP bisa ditelusuri.
+// ---------------------------------------------------------------------------
+const migTerbaru = readFileSync(new URL('../supabase/migrations/20261014000033_fix_reset_mingguan_dan_diagnosa_sp.sql', import.meta.url), 'utf8');
+assert.match(migTerbaru, /create or replace function public\.process_absensi_lengkap\(p_bulan_key text\)/);
+assert.match(migTerbaru, /delete from public\.attendance_weekly\s*\n\s*where minggu in \(\s*\n\s*select distinct to_char\(d, 'IYYY-"W"IW'\)/);
+assert.match(migTerbaru, /from generate_series\(v_bulan_start, v_bulan_end, interval '1 day'\) d/);
+assert.doesNotMatch(migTerbaru, /where public\._minggu_ke_bulan\(minggu\) = p_bulan_key/, '033 harus memakai rentang tanggal, bukan _minggu_ke_bulan');
+assert.match(migTerbaru, /'spDiperiksa', v_diperiksa/);
+assert.match(migTerbaru, /'notifDikirim', v_notif/);
+assert.match(migTerbaru, /v_baru := not \(coalesce\(v_sebelum, array\[\]::text\[\]\) @> array\[/);
+
 // (b) notifikasi hanya untuk SP baru (tidak spam saat tombol ditekan ulang)
 assert.match(mig, /v_baru := not \(v_sebelum @> array\[/);
 assert.match(mig, /if v_baru then\s*\n\s*insert into public\.notifications/);
