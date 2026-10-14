@@ -152,7 +152,7 @@ assert.match(pribadiDenganSkor, /Rp 4\.500\.000/);
 assert.match(html, /<section class="pc-reports" id="pc-reports" hidden/);
 assert.match(html, /id="pc-reports-grid"/);
 assert.match(html, /onclick="loadDesktopReports\(true\)"/);
-assert.match(html, /<script src="js\/dashboard-reports\.js\?v=20261014z"><\/script>/);
+assert.match(html, /<script src="js\/dashboard-reports\.js\?v=20261015a"><\/script>/);
 assert.match(sw, /'\.\/js\/dashboard-reports\.js'/);
 
 // ---------------------------------------------------------------------------
@@ -215,9 +215,9 @@ assert.doesNotMatch(css, /#s-slip-gaji\.screen\.active>\.header\{[\s\S]{0,220}?m
 // ---------------------------------------------------------------------------
 // 5) Versi cache naik serentak
 // ---------------------------------------------------------------------------
-assert.match(html, /css\/style\.css\?v=20261014z/);
-assert.match(html, /js\/app\.js\?v=20261014z/);
-assert.match(app, /APP_VERSION = '20261014z'/);
-assert.match(sw, /APP_VERSION = '20261014z'/);
+assert.match(html, /css\/style\.css\?v=20261015a/);
+assert.match(html, /js\/app\.js\?v=20261015a/);
+assert.match(app, /APP_VERSION = '20261015a'/);
+assert.match(sw, /APP_VERSION = '20261015a'/);
 
 console.log('dashboard PC (sidebar penuh + laporan kinerja): ok');

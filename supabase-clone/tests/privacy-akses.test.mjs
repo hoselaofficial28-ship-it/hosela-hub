@@ -47,6 +47,16 @@ assert.match(mig, /create or replace function public\.get_effective_salary_setti
 assert.match(mig, /create or replace function public\.get_total_denda_bulan\([\s\S]*?Akses ditolak: hanya boleh melihat data denda sendiri/);
 assert.match(mig, /create or replace function public\.hitung_bintang\([\s\S]*?Akses ditolak: hanya boleh melihat data sendiri/);
 
+// Kolom di dalam fungsi gaji WAJIB pakai awalan tabel + #variable_conflict use_column.
+// Tanpa itu muncul error 42702 "column reference gaji_bulanan is ambiguous" yang
+// membuat SEMUA menu gaji/payroll error (pernah kejadian; diperbaiki di migrasi 032).
+assert.match(mig, /#variable_conflict use_column/);
+assert.match(mig, /coalesce\(ss\.gaji_bulanan, greatest\(0, p_fallback_gaji\)\)/);
+const fix032 = readFileSync(new URL('../supabase/migrations/20261014000032_fix_gaji_ambiguous.sql', import.meta.url), 'utf8');
+assert.match(fix032, /create or replace function public\.get_effective_salary_setting\(/);
+assert.match(fix032, /#variable_conflict use_column[\s\S]{0,2000}?Akses ditolak: hanya boleh melihat data gaji sendiri/);
+assert.match(fix032, /ss\.gaji_bulanan/);
+
 // ---------------------------------------------------------------------------
 // 3) Izin panggil: anon dicabut, authenticated hanya untuk yang dipakai aplikasi
 // ---------------------------------------------------------------------------

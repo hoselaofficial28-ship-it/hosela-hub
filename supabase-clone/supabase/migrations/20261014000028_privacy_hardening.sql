@@ -278,11 +278,17 @@ $$;
 -- ---------------------------------------------------------------------------
 -- 2) Gaji & denda: hanya diri sendiri atau Owner/Finance
 --    (dua fungsi ini semula berbentuk SQL tanpa penjagaan sama sekali)
+--
+--    PENTING: fungsi gaji punya OUT parameter bernama gaji_bulanan/bonus_kerajinan.
+--    Di PL/pgSQL nama itu menjadi variabel, sehingga penyebutan kolom dengan nama
+--    sama jadi RANCU (error 42702 "column reference gaji_bulanan is ambiguous").
+--    Karena itu semua kolom ditulis dengan awalan tabel + #variable_conflict use_column.
 -- ---------------------------------------------------------------------------
 create or replace function public.get_effective_salary_setting(
   p_user_id uuid, p_bulan_key text, p_fallback_gaji integer default 0, p_fallback_kerajinan integer default 150000
 ) returns table(gaji_bulanan integer, bonus_kerajinan integer, bulan_setting text, catatan text)
 language plpgsql stable security definer set search_path = public as $$
+#variable_conflict use_column
 begin
   if auth.uid() is null then
     raise exception 'Harus login' using errcode = '28000';
@@ -292,18 +298,18 @@ begin
   end if;
   return query
   select
-    coalesce(s.gaji_bulanan, greatest(0, p_fallback_gaji)),
-    coalesce(s.bonus_kerajinan, greatest(0, p_fallback_kerajinan)),
-    s.bulan,
-    s.catatan
+    coalesce(ss.gaji_bulanan, greatest(0, p_fallback_gaji)),
+    coalesce(ss.bonus_kerajinan, greatest(0, p_fallback_kerajinan)),
+    ss.bulan,
+    ss.catatan
   from (select 1) dummy
   left join lateral (
-    select gaji_bulanan, bonus_kerajinan, bulan, catatan
-    from public.salary_settings
-    where user_id = p_user_id and bulan <= p_bulan_key
-    order by bulan desc, created_at desc
+    select s.gaji_bulanan, s.bonus_kerajinan, s.bulan, s.catatan
+    from public.salary_settings s
+    where s.user_id = p_user_id and s.bulan <= p_bulan_key
+    order by s.bulan desc, s.created_at desc
     limit 1
-  ) s on true;
+  ) ss on true;
 end;
 $$;
 
