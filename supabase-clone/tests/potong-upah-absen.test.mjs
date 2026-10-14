@@ -32,7 +32,9 @@ assert.doesNotMatch(mig, /if w\.telat >= 3 or w\.absen >= 2 then/, 'SP1 mingguan
 assert.match(mig, /grant execute on function public\._tanggal_awal_minggu\(text\) to authenticated, service_role;/);
 
 // ---------------------------------------------------------------------------
-// 3) Telat tidak berubah + bug warisan SP2 denda dobel tetap direplikasi
+// 3) Telat tidak berubah. Denda warisan SP2 dobel masih terlihat di file
+//    migrasi 0036 (historis), tapi SUDAH DIHAPUS oleh migrasi 0037 —
+//    keputusan Ko 14 Okt 2026, lihat tests/denda-satu-jenjang.test.mjs.
 // ---------------------------------------------------------------------------
 assert.match(mig, /if r\.total_telat >= 5 then/);
 assert.match(mig, /-- BUG WARISAN yang sengaja direplikasi[\s\S]{0,200}perform public\._tambah_denda_absen\(r\.user_id, p_bulan_key, 50000\);/);

@@ -28,8 +28,10 @@ Dokumen ini adalah ringkasan. Untuk detail urutan dan edge case, baca fungsi ter
 
 - Status rekap dari jumlah `absen + telat`: 0 `BAIK`, 1–2 `KUNING`, 3–4 `ORANGE`, ≥5 `MERAH`.
 - SP1 mingguan: telat ≥3 atau absen ≥2 dalam minggu tersebut.
-- SP2 bulanan dapat dipicu telat ≥5 atau absen ≥3; denda Rp50.000 sesuai logika aktif.
-- SP3 dipicu bila absen bulanan ≥5, atau karyawan mendapat SP2 bulan sebelumnya lalu kembali memenuhi pemicu telat bulanan. Denda SP3 Rp100.000 pada alur aktif.
+- SP2 bulanan dapat dipicu telat ≥5 atau absen **efektif** 3–4; denda Rp50.000 sesuai logika aktif.
+- SP3 dipicu bila absen **efektif** bulanan ≥5, atau karyawan mendapat SP2 bulan sebelumnya lalu kembali memenuhi pemicu telat bulanan. Denda SP3 Rp100.000 pada alur aktif.
+- **Satu jenjang, bukan menumpuk** (keputusan Ko 14 Okt 2026, migrasi 0037): absen efektif ≥5 hanya menagih SP3 Rp100.000 — denda SP2 jalur absen dibatalkan. Denda warisan aplikasi lama (`_tambah_denda_absen`, Rp50.000 dobel di kolom denda mingguan) **dihapus**; fungsi lamanya dibiarkan ada di database tapi tidak dipanggil lagi.
+- **Denda SP dan denda SB tidak menumpuk**: dalam satu bulan total denda = yang **terbesar** antara denda SP dan denda SB (`_terapkan_max_denda_sp_sb`), bukan jumlah keduanya. Contoh: absen 5 hari bulan ke-1 → SP3 Rp100.000 saja (SB1 Rp50.000 tidak ditambahkan); telat 5× bulan ke-2 → SB2 Rp100.000 menggantikan SP2 Rp50.000.
 - Izin disetujui tidak menghapus fakta absensi fisik. Izin mengurangi absen efektif untuk penilaian/SP dan dapat membatalkan atau menurunkan SP serta denda terkait.
 - Perubahan keputusan izin wajib menghitung ulang efek SP, denda, bintang, notifikasi, dan cache/read model.
 
@@ -53,7 +55,8 @@ Dokumen ini adalah ringkasan. Untuk detail urutan dan edge case, baca fungsi ter
 - Hak penerima uang kerajinan mengikuti logika lama: pada preview, bonus diberikan bila absen memenuhi syarat lama (`absen === 0`). Jangan mengubah syarat ini.
 - Draft payroll yang belum publish boleh diperbarui oleh setting bulan yang sama.
 - **Hari tidak masuk tidak dapat upah** (keputusan Ko 14 Okt 2026): `gajiPokok = gajiBulanan − (gajiHarian × jumlah hari tidak masuk)`, dengan `gajiHarian = gajiBulanan ÷ hariKerjaEfektif`. Hari sakit/izin yang **disetujui** juga tidak dibayar (memang tidak bekerja), tetapi tetap **tidak** menghilangkan uang kerajinan.
-- **Denda absen & SP absen hanya untuk absen TANPA izin** (keputusan Ko 14 Okt 2026): perhitungan SP memakai `absenEfektif = absenFisik − izin/sakit DISETUJUI` untuk SP1 mingguan (≥2/minggu), SP2 (≥3/bulan), SP3 (≥5/bulan), dan denda absen SP2. Hari sakit/izin yang disetujui tetap dihitung sebagai hari tidak masuk untuk pemotongan upah, tapi tidak memicu denda.
+- **Denda absen & SP absen hanya untuk absen TANPA izin** (keputusan Ko 14 Okt 2026): perhitungan SP memakai `absenEfektif = absenFisik − izin/sakit DISETUJUI` untuk SP1 mingguan (≥2/minggu), SP2 (3–4/bulan), SP3 (≥5/bulan), dan denda absen SP2. Hari sakit/izin yang disetujui tetap dihitung sebagai hari tidak masuk untuk pemotongan upah, tapi tidak memicu denda.
+- Ringkasnya (keputusan Ko 14 Okt 2026): absen 1–2 hari tanpa izin → hanya upah hari itu hilang + kerajinan hilang; absen 3–4 hari → + SP2 Rp50.000; absen ≥5 hari → + SP3 Rp100.000 (itu saja); absen dengan izin disetujui → hanya upah hari itu yang hilang, kerajinan tetap, denda nol.
 - Payroll `PUBLISHED` harus tetap menjadi snapshot yang dapat diaudit. Bila UI menampilkan setting efektif terbaru untuk slip historis, perilaku penyesuaian saat ini harus direplikasi dan diuji agar tidak menggandakan nominal.
 - Jika delta bonus lama ke baru sama dengan adjustment plus lama, adjustment tersebut diserap agar tidak muncul atau dihitung dua kali.
 - Total gaji = `gajiPokok + totalReward + bonusKerajinan + adjustmentPlus − totalDenda − adjustmentMinus`, minimum 0.
