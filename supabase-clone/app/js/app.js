@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbw6q_5ZaIGrekeBwZ5TKh6X1GpWkFHsa5i6whdwacQkTEa-vvNezHlxFMEQFKZkmm5ffQ/exec';
-var APP_VERSION = '20261014y';
+var APP_VERSION = '20261014z';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -4313,7 +4313,7 @@ function processAttendanceAppRecap() {
  if (!currentUser || (currentUser.bagian !== 'Owner' && currentUser.bagian !== 'Finance')) return;
  var sel = document.getElementById('att-matrix-bulan');
  var bulanKey = sel ? sel.value : attendanceMonthKey(new Date());
- if (!confirm('Proses absensi kamera bulan '+bulanKey+' ke rekap resmi? Data bulan ini akan disinkronkan ulang.')) return;
+ if (!confirm('Proses absensi kamera bulan '+bulanKey+' ke rekap resmi? Data bulan ini akan disinkronkan ulang, SEKALIGUS menghitung SP & denda SP.')) return;
  var btn = document.querySelector('.attendance-process-btn');
  if (btn) { btn.textContent = 'Memproses...'; btn.disabled = true; }
  gasCall('processAbsensiAppToRekap', [bulanKey, currentUser.nama], function(res) {
@@ -4321,7 +4321,7 @@ function processAttendanceAppRecap() {
  if (!res || !res.success) { showToast((res && res.msg) || 'Gagal proses rekap'); return; }
  clearAttendanceMatrixCache(null, bulanKey);
  cacheClear('getRekapBulananSemua' + JSON.stringify([bulanKey]));
- showToast('Rekap resmi diperbarui: '+(res.rekapRows || 0)+' minggu');
+ showToast('Rekap diperbarui: '+(res.rekapRows || 0)+' minggu · SP dihitung: '+(res.spEntries || 0));
  loadAttendanceMatrix(true);
  }, function() {
  if (btn) { btn.textContent = 'Proses ke Rekap Resmi'; btn.disabled = false; }

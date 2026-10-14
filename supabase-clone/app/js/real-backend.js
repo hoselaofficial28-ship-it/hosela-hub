@@ -150,8 +150,11 @@
     },
 
     processAbsensiAppToRekap: async function (args) {
+      // Sejak 14 Okt 2026 (keputusan Ko): proses ini sekaligus menghitung SP +
+      // denda SP, supaya aturan "telat 5x sebulan -> SP2 + denda Rp50.000"
+      // benar-benar berjalan. Urutan di dalamnya: rekap absensi dulu, baru SP.
       var bulanKey = args[0];
-      var r = await window.sb.rpc('process_absensi_app_to_rekap', { p_bulan_key: bulanKey });
+      var r = await window.sb.rpc('process_absensi_lengkap', { p_bulan_key: bulanKey });
       if (r.error) return { success: false, msg: r.error.message };
       return r.data;
     },

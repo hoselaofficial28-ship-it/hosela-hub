@@ -405,7 +405,7 @@ declare
       'public.import_attendance_legacy_to_events(text)',
       'public.konfirmasi_anomali(uuid,text)',
       'public.mark_absensi_photo_failed(uuid,text)',
-      'public.process_absensi_app_to_rekap(text)',
+      'public.process_absensi_lengkap(text)',
       'public.publish_payroll(uuid)',
       'public.resolve_login_email(text)',
       'public.save_rule(uuid,text,text)',
