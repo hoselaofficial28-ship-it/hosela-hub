@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbw6q_5ZaIGrekeBwZ5TKh6X1GpWkFHsa5i6whdwacQkTEa-vvNezHlxFMEQFKZkmm5ffQ/exec';
-var APP_VERSION = '20261014l';
+var APP_VERSION = '20261014m';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -1810,12 +1810,8 @@ function loadPengumumanComposer() {
  updatePengumumanTargetFields();
  gasCall('getAllUsers', [], function(data) {
   _announcementUsers = (data || []).filter(function(user) { return user.status === 'AKTIF'; });
-  var bagianList = [];
-  _announcementUsers.forEach(function(user) {
-   var bagian = normalizeDaftarBagianName(user.bagian);
-   if (bagian && bagian !== 'Owner' && bagianList.indexOf(bagian) === -1) bagianList.push(bagian);
-  });
-  bagianList.sort(function(a,b){ return a.localeCompare(b, 'id'); });
+  var bagianOptions = _daftarOptions || mergeDaftarOptions();
+  var bagianList = getOrderedDaftarBagian(bagianOptions);
   var bagianEl = document.getElementById('peng-target-bagian');
   var userEl = document.getElementById('peng-target-user');
   setDaftarSelectOptions(bagianEl, 'Pilih bagian', bagianList);

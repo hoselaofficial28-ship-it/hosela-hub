@@ -6,6 +6,7 @@ const app = readFileSync(new URL('../app/js/app.js', import.meta.url), 'utf8');
 const backend = readFileSync(new URL('../app/js/real-backend.js', import.meta.url), 'utf8');
 const css = readFileSync(new URL('../app/css/style.css', import.meta.url), 'utf8');
 const sql = readFileSync(new URL('../supabase/migrations/20261014000025_targeted_announcements.sql', import.meta.url), 'utf8');
+const departmentSql = readFileSync(new URL('../supabase/migrations/20261014000026_announcement_department_targets.sql', import.meta.url), 'utf8');
 
 assert.match(html, /id="announcement-owner-panel"/);
 assert.match(html, /name="peng-target-mode" value="ALL"/);
@@ -16,6 +17,8 @@ assert.doesNotMatch(html, /id="s-tambah-pengumuman"/);
 assert.match(html, /class="login-card-shell"/);
 
 assert.match(app, /function loadPengumumanComposer\(\)/);
+assert.match(app, /var bagianOptions = _daftarOptions \|\| mergeDaftarOptions\(\)/);
+assert.match(app, /var bagianList = getOrderedDaftarBagian\(bagianOptions\)/);
 assert.match(app, /target = 'USER:' \+ document\.getElementById\('peng-target-user'\)\.value/);
 assert.match(app, /currentUser && currentUser\.bagian === 'Owner'/);
 assert.doesNotMatch(app, /menus\.push\(\{id:'s-tambah-pengumuman'/);
@@ -25,6 +28,9 @@ assert.match(backend, /targetBagian: row\.target_bagian/);
 assert.match(sql, /target_bagian = 'USER:' \|\| auth\.uid\(\)::text/);
 assert.match(sql, /target_bagian = 'Gudang' and public\.current_bagian\(\) = 'Packing'/);
 assert.match(sql, /Akun penerima tidak aktif atau tidak ditemukan/);
+assert.match(departmentSql, /'Content Creator'/);
+assert.match(departmentSql, /'Marketplace & Ecommerce'/);
+assert.match(departmentSql, /v_target = any\(v_allowed_targets\)/);
 assert.match(css, /#s-login \.login-card-shell/);
 assert.match(css, /\.announcement-target-options/);
 assert.match(css, /#pengumuman-list\{display:grid/);
