@@ -434,14 +434,27 @@ begin
 end $$;
 
 -- ---------------------------------------------------------------------------
--- 5) Segarkan cache izin di server API supaya perubahan langsung berlaku.
+-- 5) PENTING: fungsi pembantu yang dipakai DI DALAM policy RLS harus tetap bisa
+--    dipanggil oleh pengguna yang login. Kalau tidak, SEMUA query ke tabel
+--    ber-RLS gagal ("permission denied for function current_bagian") dan
+--    aplikasi tidak bisa dipakai. Fungsi ini hanya membaca identitas pemanggil
+--    sendiri, bukan data karyawan lain.
+--    (Kesalahan ini sempat terjadi — lihat migrasi 20261014000029.)
+-- ---------------------------------------------------------------------------
+grant execute on function public.current_bagian() to public, anon, authenticated, service_role;
+grant execute on function public.is_owner() to public, anon, authenticated, service_role;
+grant execute on function public.is_finance() to public, anon, authenticated, service_role;
+grant execute on function public.is_payroll_admin() to public, anon, authenticated, service_role;
+
+-- ---------------------------------------------------------------------------
+-- 6) Segarkan cache izin di server API supaya perubahan langsung berlaku.
 -- ---------------------------------------------------------------------------
 notify pgrst, 'reload schema';
 
 -- ---------------------------------------------------------------------------
--- 6) Verifikasi cepat (jalankan manual bila perlu):
+-- 7) Verifikasi cepat (jalankan manual bila perlu):
 --    select proname, proacl from pg_proc p join pg_namespace n on n.oid=p.pronamespace
 --    where n.nspname='public' and proname in
 --      ('get_effective_salary_setting','get_total_denda_bulan','hitung_bintang',
---       'get_papan_peringkat','_tambah_denda_absen');
+--       'get_papan_peringkat','_tambah_denda_absen','current_bagian','is_payroll_admin');
 -- ---------------------------------------------------------------------------

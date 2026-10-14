@@ -68,6 +68,22 @@ for (const fn of ['get_absensi_rekap', 'get_all_users', 'get_salary_users', 'sub
 }
 
 // ---------------------------------------------------------------------------
+// 3b) Fungsi pembantu RLS wajib tetap bisa dipanggil pengguna yang login.
+//     Pernah terjadi: izinnya ikut dicabut sehingga semua query ber-RLS gagal
+//     ("permission denied for function current_bagian") dan aplikasi tidak bisa
+//     login. Perbaikan ada di 028 (bagian 5) dan 029.
+// ---------------------------------------------------------------------------
+const fix029 = readFileSync(new URL('../supabase/migrations/20261014000029_fix_rls_helper_grants.sql', import.meta.url), 'utf8');
+for (const helper of ['current_bagian', 'is_owner', 'is_finance', 'is_payroll_admin']) {
+  const pola = new RegExp('grant execute on function public\\.' + helper + '\\(\\) to public, anon, authenticated, service_role');
+  assert.match(fix029, pola, 'migrasi 029 tidak mengembalikan izin: ' + helper);
+  assert.match(mig, pola, 'migrasi 028 tidak mengembalikan izin: ' + helper);
+}
+// Policy RLS yang memakai helper itu harus tetap ada (bukti kenapa ini wajib)
+assert.match(rls, /create policy "owner finance baca semua profil"[\s\S]*?is_payroll_admin\(\)/);
+assert.match(rls, /create policy "baca pengumuman untuk bagian sendiri atau ALL"[\s\S]*?current_bagian\(\)/);
+
+// ---------------------------------------------------------------------------
 // 4) Aplikasi: Owner bisa melihat & menyetujui pengajuan izin
 // ---------------------------------------------------------------------------
 assert.match(app, /if \(u\.bagian === 'Owner'\) \{[\s\S]{0,900}?menus\.push\(\{id:'s-kelola-izin'/);
