@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=20261012j">
+<link rel="stylesheet" href="css/style.css?v=20261014k">
 
 
 
@@ -36,14 +36,14 @@
 <!-- LOGIN -->
 <div class="screen" id="s-login">
  <div class="statusbar"></div>
+ <main class="login-card-shell" aria-labelledby="login-heading">
  <div class="login-top">
- <div class="login-logo"><img class="brand-logo-img" src="assets/logo-icon.svg?v=2" alt="Hosela Hub"></div>
- <div class="login-title">Hosela Hub</div>
- <div class="login-sub">Attendance, payroll, dan operasional tim</div>
- <div class="gold-bar-center"></div>
+  <div class="login-logo"><img class="brand-logo-img" src="assets/logo-icon.svg?v=2" alt="Hosela Hub"></div>
+  <div class="login-brand-copy"><div class="login-title">Hosela Hub</div><div class="login-sub">Portal operasional tim</div></div>
  </div>
  <div class="login-body">
- <div class="pin-label">Masuk ke akun kerja</div>
+ <div class="pin-label" id="login-heading">Masuk</div>
+ <p class="login-help">Gunakan email atau nama pengguna akun Anda.</p>
  <div class="form-group" id="username-group">
  <label class="form-label">Nama Pengguna</label>
  <input type="text" class="form-input" id="login-username" placeholder="Nama kamu" autocomplete="username">
@@ -63,6 +63,7 @@
   <span style="font-size:13px;color:var(--blue);cursor:pointer;font-weight:600" onclick="goTo('s-daftar')">Daftar di sini</span>
  </div>
  </div>
+ </main>
 </div>
 
 <!-- SCREEN DAFTAR AKUN -->
@@ -296,37 +297,34 @@
 <div class="screen" id="s-pengumuman">
  <div class="statusbar"></div>
  <div class="header">
- <div class="header-row"><button class="back-btn" onclick="goTo('s-home')">?</button><div><h1>Pengumuman</h1><p>Info terbaru dari owner</p></div></div>
+ <div class="header-row"><button class="back-btn" onclick="goTo('s-home')">?</button><div><h1>Pengumuman</h1><p>Pusat informasi resmi tim Hosela</p></div></div>
  <div class="gold-line"></div>
  </div>
- <div class="content" id="pengumuman-list"><div class="empty-state"><div class="empty-icon"></div>Memuat...</div></div>
+ <div class="content announcement-page-content">
+  <section class="announcement-hero" aria-labelledby="announcement-heading">
+   <div class="announcement-hero-icon" aria-hidden="true"></div>
+   <div><div class="eyebrow">INFORMASI TIM</div><h2 id="announcement-heading">Tetap terhubung dengan tim</h2><p>Pengumuman penting, informasi operasional, dan pembaruan terbaru tersedia di satu tempat.</p></div>
+   <div class="announcement-stats" aria-label="Ringkasan pengumuman"><div><strong id="announcement-total">—</strong><span>Total</span></div><div><strong id="announcement-important">—</strong><span>Penting</span></div></div>
+  </section>
+  <section class="announcement-composer" id="announcement-owner-panel" style="display:none" aria-labelledby="announcement-compose-title">
+   <div class="announcement-composer-head"><div><div class="eyebrow">KHUSUS OWNER</div><h2 id="announcement-compose-title">Buat Pengumuman</h2><p>Kirim informasi ke seluruh tim, bagian tertentu, atau satu orang.</p></div><span class="status-pill status-pill-info">Owner</span></div>
+   <div class="announcement-form-grid">
+    <div class="form-group announcement-title-field"><label class="form-label" for="peng-judul">Judul pengumuman</label><input type="text" class="form-input" id="peng-judul" placeholder="Contoh: Perubahan jadwal kerja" maxlength="120"></div>
+    <div class="form-group"><label class="form-label" for="peng-kategori">Kategori</label><select class="form-input" id="peng-kategori"><option value="PENTING">Penting</option><option value="INFO">Informasi</option><option value="UMUM">Umum</option></select></div>
+    <div class="form-group announcement-message-field"><label class="form-label" for="peng-isi">Isi pengumuman</label><textarea class="form-input" id="peng-isi" placeholder="Tuliskan informasi secara jelas..." rows="5" maxlength="2000"></textarea><div class="field-help">Gunakan kalimat singkat dan sertakan tindakan yang perlu dilakukan tim.</div></div>
+    <fieldset class="announcement-audience-field"><legend class="form-label">Kirim kepada</legend><div class="announcement-target-options" role="radiogroup" aria-label="Penerima pengumuman"><label><input type="radio" name="peng-target-mode" value="ALL" checked onchange="updatePengumumanTargetFields()"><span>Semua Tim</span></label><label><input type="radio" name="peng-target-mode" value="BAGIAN" onchange="updatePengumumanTargetFields()"><span>Bagian Tertentu</span></label><label><input type="radio" name="peng-target-mode" value="USER" onchange="updatePengumumanTargetFields()"><span>Orang Tertentu</span></label></div></fieldset>
+    <div class="form-group announcement-target-detail" id="peng-target-bagian-group" style="display:none"><label class="form-label" for="peng-target-bagian">Pilih bagian</label><select class="form-input" id="peng-target-bagian"><option value="">Pilih bagian</option></select></div>
+    <div class="form-group announcement-target-detail" id="peng-target-user-group" style="display:none"><label class="form-label" for="peng-target-user">Pilih orang</label><select class="form-input" id="peng-target-user"><option value="">Memuat daftar karyawan...</option></select></div>
+   </div>
+   <div class="announcement-submit-row"><div class="announcement-audience-summary" id="peng-target-summary">Akan dikirim ke seluruh anggota tim.</div><button class="btn btn-primary" id="peng-submit-btn" onclick="submitPengumuman()">Kirim Pengumuman</button></div>
+  </section>
+  <section class="announcement-feed" aria-labelledby="announcement-feed-title"><div class="announcement-feed-head"><div><div class="eyebrow">TERBARU</div><h2 id="announcement-feed-title">Daftar Pengumuman</h2></div><span class="status-pill status-pill-muted" id="announcement-feed-status">Memuat</span></div><div id="pengumuman-list"><div class="empty-state"><div class="empty-icon"></div>Memuat...</div></div></section>
+ </div>
  <div class="navbar">
  <div class="nav-item" onclick="goTo('s-home')"><div class="nav-icon"></div><div class="nav-label">Beranda</div></div>
  <div class="nav-item" onclick="goTo('s-jobdesk')"><div class="nav-icon"></div><div class="nav-label">Jobdesk</div></div>
  <div class="nav-item active"><div class="nav-icon"></div><div class="nav-label" style="color:var(--blue)">Pengumuman</div></div>
  <div class="nav-item" onclick="goTo('s-ide')"><div class="nav-icon"></div><div class="nav-label">Ide Tim</div></div>
- </div>
-</div>
-
-<!-- BUAT PENGUMUMAN -->
-<div class="screen" id="s-tambah-pengumuman">
- <div class="statusbar"></div>
- <div class="header">
- <div class="header-row"><button class="back-btn" onclick="goTo('s-home')">?</button><div><h1>Buat Pengumuman</h1><p>Tambah info untuk tim</p></div></div>
- <div class="gold-line"></div>
- </div>
- <div class="content">
- <div class="card">
- <div class="form-group"><label class="form-label">Judul</label><input type="text" class="form-input" id="peng-judul" placeholder="Judul pengumuman"></div>
- <div class="form-group"><label class="form-label">Isi</label><textarea class="form-input" id="peng-isi" placeholder="Isi pengumuman..." style="height:100px"></textarea></div>
- <div class="form-group"><label class="form-label">Kategori</label>
- <select class="form-input" id="peng-kategori"><option value="PENTING">PENTING</option><option value="INFO">INFO</option><option value="UMUM">UMUM</option></select>
- </div>
- <div class="form-group"><label class="form-label">Ditujukan untuk</label>
- <select class="form-input" id="peng-target"><option value="ALL">Semua Tim</option><option value="Live">Live Streaming</option><option value="Packing">Packing</option><option value="Ecommerce">E-commerce</option><option value="Finance">Finance</option></select>
- </div>
- <button class="btn btn-primary" onclick="submitPengumuman()">Kirim Pengumuman</button>
- </div>
  </div>
 </div>
 
@@ -845,8 +843,8 @@
 <script src="js/supabase-client.js"></script>
 <script src="js/real-backend.js"></script>
 <script src="js/mock-backend.js"></script>
-<script src="js/app.js?v=20261012j"></script>
-<script src="js/payroll.js?v=20261012j"></script>
+<script src="js/app.js?v=20261014k"></script>
+<script src="js/payroll.js?v=20261014k"></script>
 <script src="js/preview.js?v=20260930b"></script>
 </body>
 </html>

@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbw6q_5ZaIGrekeBwZ5TKh6X1GpWkFHsa5i6whdwacQkTEa-vvNezHlxFMEQFKZkmm5ffQ/exec';
-var APP_VERSION = '20261012j';
+var APP_VERSION = '20261014k';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -1136,7 +1136,6 @@ function loadHome(forceRefresh) {
  menus.push({id:'s-payroll', icon:'card', bg:'#ede9fe', label:'Penggajian', sub:'Pratinjau dan terbitkan slip'});
  }
  if (u.bagian === 'Owner') {
- menus.push({id:'s-tambah-pengumuman', icon:'edit', bg:'#f0fdf4', label:'Buat Pengumuman', sub:'Info baru'});
  menus.push({id:'s-manage-users', icon:'users', bg:'#fef3c7', label:'Pendaftar & Akses', sub:'Pantau dan kelola akun'});
  menus.push({id:'s-laporan-absensi', icon:'chart', bg:'#e0f2fe', label:'Laporan Absensi', sub:'Rekap kehadiran'});
  menus.push({id:'s-sanksi-manual', icon:'scale', bg:'#fce7f3', label:'Penghargaan & Denda', sub:'Denda dan penghargaan manual'});
@@ -1801,31 +1800,107 @@ function showBulanPicker() {
  if (picker) picker.style.display = picker.style.display === 'none' ? 'block' : 'none';
 }
 
+var _announcementUsers = [];
+
+function loadPengumumanComposer() {
+ var panel = document.getElementById('announcement-owner-panel');
+ var isOwner = currentUser && currentUser.bagian === 'Owner';
+ if (panel) panel.style.display = isOwner ? 'block' : 'none';
+ if (!isOwner) return;
+ updatePengumumanTargetFields();
+ gasCall('getAllUsers', [], function(data) {
+  _announcementUsers = (data || []).filter(function(user) { return user.status === 'AKTIF'; });
+  var bagianList = [];
+  _announcementUsers.forEach(function(user) {
+   var bagian = normalizeDaftarBagianName(user.bagian);
+   if (bagian && bagian !== 'Owner' && bagianList.indexOf(bagian) === -1) bagianList.push(bagian);
+  });
+  bagianList.sort(function(a,b){ return a.localeCompare(b, 'id'); });
+  var bagianEl = document.getElementById('peng-target-bagian');
+  var userEl = document.getElementById('peng-target-user');
+  setDaftarSelectOptions(bagianEl, 'Pilih bagian', bagianList);
+  userEl.innerHTML = '<option value="">Pilih orang</option>';
+  _announcementUsers.forEach(function(user) {
+   if (user.bagian === 'Owner') return;
+   var option = document.createElement('option');
+   option.value = user.id;
+   option.textContent = user.nama + ' — ' + normalizeDaftarBagianName(user.bagian) + ' / ' + user.jabatan;
+   userEl.appendChild(option);
+  });
+ }, function() {
+  var userEl = document.getElementById('peng-target-user');
+  if (userEl) userEl.innerHTML = '<option value="">Daftar karyawan gagal dimuat</option>';
+ });
+}
+
+function getPengumumanTargetMode() {
+ var checked = document.querySelector('input[name="peng-target-mode"]:checked');
+ return checked ? checked.value : 'ALL';
+}
+
+function updatePengumumanTargetFields() {
+ var mode = getPengumumanTargetMode();
+ var bagianGroup = document.getElementById('peng-target-bagian-group');
+ var userGroup = document.getElementById('peng-target-user-group');
+ var summary = document.getElementById('peng-target-summary');
+ if (bagianGroup) bagianGroup.style.display = mode === 'BAGIAN' ? 'block' : 'none';
+ if (userGroup) userGroup.style.display = mode === 'USER' ? 'block' : 'none';
+ if (summary) summary.textContent = mode === 'ALL' ? 'Akan dikirim ke seluruh anggota tim.' : mode === 'BAGIAN' ? 'Hanya anggota pada bagian yang dipilih yang dapat melihat.' : 'Hanya orang yang dipilih yang dapat melihat.';
+}
+
+function formatAnnouncementTarget(target) {
+ target = String(target || 'ALL');
+ if (target === 'ALL') return 'Semua Tim';
+ if (target.indexOf('USER:') === 0) {
+  var id = target.slice(5);
+  var user = _announcementUsers.find(function(item){ return item.id === id; });
+  return user ? user.nama : 'Orang Tertentu';
+ }
+ return normalizeDaftarBagianName(target);
+}
+
 function loadPengumuman() {
  var list = document.getElementById('pengumuman-list');
  list.innerHTML = skelCards(3);
+ loadPengumumanComposer();
  gasCall('getPengumuman', [currentUser ? currentUser.bagian : 'ALL'], function(data) {
- if (!data || !data.length) { list.innerHTML = '<div class="empty-state"><div class="empty-icon"></div>Belum ada pengumuman</div>'; return; }
+ var totalEl = document.getElementById('announcement-total');
+ var importantEl = document.getElementById('announcement-important');
+ var feedStatus = document.getElementById('announcement-feed-status');
+ var rows = data || [];
+ if (totalEl) totalEl.textContent = rows.length;
+ if (importantEl) importantEl.textContent = rows.filter(function(p){ return p.kategori === 'PENTING'; }).length;
+ if (feedStatus) feedStatus.textContent = rows.length + ' pengumuman';
+ if (!rows.length) { list.innerHTML = '<div class="empty-state"><div class="empty-icon"></div><strong>Belum ada pengumuman</strong><br><small>Informasi terbaru dari Owner akan muncul di sini.</small></div>'; return; }
  var bdg = {PENTING:'badge-red', INFO:'badge-blue', UMUM:'badge-green'};
- list.innerHTML = '<div class="section-label">Terbaru</div>' + data.map(function(p) {
- return '<div class="peng-card"><div class="peng-header"><span class="badge '+(bdg[p.kategori]||'badge-gray')+'">'+p.kategori+'</span><span class="peng-tgl">'+p.tgl+'</span></div>'+
- '<div class="peng-title">'+p.judul+'</div><div class="peng-isi">'+p.isi+'</div></div>';
+ list.innerHTML = rows.map(function(p) {
+ var targetLabel = formatAnnouncementTarget(p.targetBagian);
+ return '<article class="peng-card announcement-card"><div class="peng-header"><div class="announcement-card-badges"><span class="badge '+(bdg[p.kategori]||'badge-gray')+'">'+jobdeskSafe(p.kategori)+'</span><span class="announcement-target-badge">'+uiIcon('users')+' '+jobdeskSafe(targetLabel)+'</span></div><time class="peng-tgl">'+jobdeskSafe(p.tgl)+'</time></div>'+
+ '<h3 class="peng-title">'+jobdeskSafe(p.judul)+'</h3><div class="peng-isi">'+jobdeskSafe(p.isi)+'</div></article>';
  }).join('');
- }, function(){ list.innerHTML = '<div class="empty-state">Gagal memuat</div>'; });
+ }, function(){ var feedStatus=document.getElementById('announcement-feed-status'); if(feedStatus) feedStatus.textContent='Gagal'; list.innerHTML = '<div class="empty-state">Gagal memuat pengumuman. Silakan coba lagi.</div>'; });
 }
 
 function submitPengumuman() {
  var judul = document.getElementById('peng-judul').value.trim();
  var isi = document.getElementById('peng-isi').value.trim();
  var kategori = document.getElementById('peng-kategori').value;
- var target = document.getElementById('peng-target').value;
+ var mode = getPengumumanTargetMode();
+ var target = 'ALL';
+ if (mode === 'BAGIAN') target = document.getElementById('peng-target-bagian').value;
+ if (mode === 'USER') target = 'USER:' + document.getElementById('peng-target-user').value;
  if (!judul || !isi) { showToast('Judul dan isi wajib diisi'); return; }
- gasCall('addPengumuman', [judul, isi, kategori, target, currentUser.nama], function() {
+ if ((mode === 'BAGIAN' && !target) || (mode === 'USER' && target === 'USER:')) { showToast('Pilih penerima pengumuman'); return; }
+ var btn = document.getElementById('peng-submit-btn');
+ btn.disabled = true; btn.textContent = 'Mengirim...';
+ gasCall('addPengumuman', [judul, isi, kategori, target, currentUser.nama], function(res) {
+ btn.disabled = false; btn.textContent = 'Kirim Pengumuman';
+ if (!res || res.success === false) { showToast((res && res.msg) || 'Pengumuman gagal dikirim'); return; }
  document.getElementById('peng-judul').value = '';
  document.getElementById('peng-isi').value = '';
- showToast('Pengumuman berhasil dikirim!');
- goTo('s-pengumuman');
- }, function(){ showToast('Gagal. Coba lagi.'); });
+ showToast('Pengumuman berhasil dikirim');
+ loadPengumuman();
+ }, function(){ btn.disabled = false; btn.textContent = 'Kirim Pengumuman'; showToast('Gagal mengirim. Coba lagi.'); });
 }
 
 function loadIde() {

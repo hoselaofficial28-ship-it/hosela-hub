@@ -3148,3 +3148,42 @@ body.phone-mode #app-wrap #s-daftar.screen.active{
     justify-content:flex-start;
   }
 }
+
+/* Login ringkas: kartu putih khas Hosela dengan aksen biru, konsisten di HP dan PC. */
+#s-login.screen{align-items:center;justify-content:center;padding:calc(20px + env(safe-area-inset-top,0px)) 16px calc(20px + env(safe-area-inset-bottom,0px));overflow-y:auto!important;background:radial-gradient(circle at 18% 8%,rgba(79,140,255,.22),transparent 34%),linear-gradient(145deg,#eef5ff 0%,#dce9ff 48%,#f8fbff 100%)!important}
+#s-login .statusbar{display:none}
+#s-login .login-card-shell{width:min(100%,420px);margin:auto;overflow:hidden;border:1px solid #d8e4f5;border-radius:20px;background:#fff;box-shadow:0 24px 70px rgba(18,61,125,.16)}
+#s-login .login-top{display:flex;align-items:center;gap:12px;min-height:0;padding:22px 22px 14px;text-align:left;background:#fff!important}
+#s-login .login-top::after,#s-login .gold-bar-center{display:none}
+#s-login .login-logo{width:50px;height:50px;margin:0;padding:5px;flex:0 0 auto;border:1px solid #c9dcfb;border-radius:14px;background:#edf4ff;box-shadow:none}
+#s-login .brand-logo-img{width:100%;height:100%}
+#s-login .login-title{color:#12213b;font-size:20px;line-height:1.2;font-weight:800}
+#s-login .login-sub{max-width:none;margin:3px 0 0;color:#667792;font-size:11px;line-height:1.4}
+#s-login .login-body{width:100%!important;margin:0;padding:14px 22px 22px;border:0;border-radius:0;background:#fff;box-shadow:none}
+#s-login .login-body::after{display:none}
+#s-login .pin-label{margin:0 0 4px;font-size:22px;font-weight:800}
+#s-login .login-help{margin:0 0 18px;color:#667792;font-size:12px;line-height:1.5}
+#s-login .form-group{margin-bottom:13px}
+#s-login .form-input{min-height:46px;background:#f5f8fd;border-color:#d5e0f0}
+#s-login #login-btn{min-height:46px;margin-top:2px;box-shadow:0 10px 22px rgba(21,87,216,.22)}
+@media (min-width:900px){body:not(.phone-mode) #s-login.screen.active{display:flex!important;width:100%!important;max-width:none!important;min-height:100vh!important;margin:0!important;padding:32px!important;overflow:auto!important;box-shadow:none!important}}
+@media (max-width:480px){#s-login.screen{justify-content:flex-start;padding-left:14px;padding-right:14px}#s-login .login-card-shell{border-radius:17px}#s-login .login-top{padding:19px 18px 12px}#s-login .login-body{padding:12px 18px 20px}}
+
+/* Pengumuman: composer langsung untuk Owner dan feed yang lapang. */
+.announcement-page-content{width:100%;display:flex;flex-direction:column;gap:16px}
+.announcement-hero,.announcement-composer,.announcement-feed{width:100%;border:1px solid #dce6f4;border-radius:18px;background:#fff;box-shadow:0 12px 34px rgba(30,58,95,.06)}
+.announcement-hero{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:16px;padding:20px;background:linear-gradient(135deg,#fff 0%,#eef5ff 100%)}
+.announcement-hero-icon{width:58px;height:58px;display:grid;place-items:center;border-radius:16px;background:#dbeafe;color:#1557d8}
+.announcement-hero-icon::before{content:'';width:28px;height:28px;background:currentColor;-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' d='M3 11v2a2 2 0 0 0 2 2h1l2 4h3l-2-4h2l8 4V5l-8 4H5a2 2 0 0 0-2 2Z'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' d='M3 11v2a2 2 0 0 0 2 2h1l2 4h3l-2-4h2l8 4V5l-8 4H5a2 2 0 0 0-2 2Z'/%3E%3C/svg%3E") center/contain no-repeat}
+.announcement-hero h2,.announcement-composer h2,.announcement-feed h2{margin:0;color:#15233b;font-size:19px;line-height:1.3}
+.announcement-hero p,.announcement-composer-head p{max-width:680px;margin:5px 0 0;color:#667792;font-size:12px;line-height:1.55}
+.announcement-stats{display:grid;grid-template-columns:repeat(2,minmax(72px,1fr));overflow:hidden;border:1px solid #ccdcf3;border-radius:13px;background:rgba(255,255,255,.8)}
+.announcement-stats div{padding:10px 14px;text-align:center}.announcement-stats div+div{border-left:1px solid #dce6f4}.announcement-stats strong{display:block;color:#1557d8;font-size:20px;line-height:1.1}.announcement-stats span{color:#667792;font-size:10px;font-weight:700}
+.announcement-composer{padding:20px}.announcement-composer-head,.announcement-feed-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:18px}
+.announcement-form-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(200px,.34fr);gap:0 14px}.announcement-message-field,.announcement-audience-field{grid-column:1/-1}.announcement-message-field textarea{min-height:116px}
+.announcement-audience-field{min-width:0;margin:0 0 14px;padding:0;border:0}.announcement-target-options{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.announcement-target-options label{position:relative;min-width:0;cursor:pointer}.announcement-target-options input{position:absolute;opacity:0;pointer-events:none}
+.announcement-target-options span{display:flex;align-items:center;justify-content:center;min-height:46px;padding:10px 12px;border:1px solid #d5e0f0;border-radius:11px;background:#f8fbff;color:#465874;font-size:12px;font-weight:700;text-align:center;transition:border-color .18s,background .18s,color .18s,box-shadow .18s}.announcement-target-options input:checked+span{border-color:#1557d8;background:#eaf2ff;color:#1557d8;box-shadow:0 0 0 2px rgba(21,87,216,.1)}.announcement-target-options input:focus-visible+span{outline:3px solid rgba(21,87,216,.25);outline-offset:2px}
+.announcement-target-detail{grid-column:1/-1}.announcement-submit-row{display:flex;align-items:center;justify-content:space-between;gap:16px;padding-top:4px}.announcement-audience-summary{color:#667792;font-size:11px;line-height:1.5}.announcement-submit-row .btn{width:auto;min-width:210px;min-height:46px}
+.announcement-feed{padding:20px}#pengumuman-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}#pengumuman-list>.empty-state{grid-column:1/-1;margin:0}.announcement-card{height:100%;margin:0;padding:16px;border:1px solid #e0e8f4;border-radius:14px;background:#fbfdff;box-shadow:none}.announcement-card-badges{display:flex;flex-wrap:wrap;align-items:center;gap:7px}.announcement-target-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 8px;border-radius:999px;background:#eef3f9;color:#53657f;font-size:10px;font-weight:700}.announcement-target-badge svg{width:13px;height:13px}.announcement-card .peng-title{margin:13px 0 7px;color:#17233a;font-size:15px;line-height:1.4}.announcement-card .peng-isi{color:#53627a;font-size:12px;line-height:1.65;white-space:pre-wrap}
+@media (min-width:900px){body:not(.phone-mode) #s-pengumuman .announcement-page-content{max-width:none!important}}
+@media (max-width:700px){.announcement-page-content{gap:12px}.announcement-hero{grid-template-columns:auto minmax(0,1fr);padding:16px;gap:12px}.announcement-hero-icon{width:48px;height:48px;border-radius:13px}.announcement-stats{grid-column:1/-1;width:100%}.announcement-composer,.announcement-feed{padding:15px;border-radius:15px}.announcement-composer-head,.announcement-feed-head{gap:10px}.announcement-form-grid{grid-template-columns:1fr}.announcement-message-field,.announcement-audience-field,.announcement-target-detail{grid-column:1}.announcement-target-options{grid-template-columns:1fr}.announcement-submit-row{align-items:stretch;flex-direction:column}.announcement-submit-row .btn{width:100%;min-width:0}#pengumuman-list{grid-template-columns:1fr}.peng-header{align-items:flex-start;gap:9px}.peng-tgl{white-space:nowrap}}

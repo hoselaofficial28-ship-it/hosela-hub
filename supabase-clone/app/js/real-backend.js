@@ -442,11 +442,11 @@
     getPengumuman: async function (args) {
       var bagian = args[0];
       var r = await window.sb.from('announcements')
-        .select('id,judul,isi,kategori,dibuat_oleh,created_at')
+        .select('id,judul,isi,kategori,target_bagian,dibuat_oleh,created_at')
         .eq('status', 'AKTIF').order('created_at', { ascending: false });
       if (r.error) return [];
       return (r.data || []).map(function (row) {
-        return { id: row.id, judul: row.judul, isi: row.isi, kategori: row.kategori, dibuat: row.dibuat_oleh, tgl: fmtTanggalId(row.created_at) };
+        return { id: row.id, judul: row.judul, isi: row.isi, kategori: row.kategori, targetBagian: row.target_bagian, dibuat: row.dibuat_oleh, tgl: fmtTanggalId(row.created_at) };
       });
     },
 
