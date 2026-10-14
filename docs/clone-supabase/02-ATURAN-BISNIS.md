@@ -52,6 +52,8 @@ Dokumen ini adalah ringkasan. Untuk detail urutan dan edge case, baca fungsi ter
 - Setting dapat diubah massal untuk beberapa karyawan lalu disimpan sekali.
 - Hak penerima uang kerajinan mengikuti logika lama: pada preview, bonus diberikan bila absen memenuhi syarat lama (`absen === 0`). Jangan mengubah syarat ini.
 - Draft payroll yang belum publish boleh diperbarui oleh setting bulan yang sama.
+- **Hari tidak masuk tidak dapat upah** (keputusan Ko 14 Okt 2026): `gajiPokok = gajiBulanan − (gajiHarian × jumlah hari tidak masuk)`, dengan `gajiHarian = gajiBulanan ÷ hariKerjaEfektif`. Hari sakit/izin yang **disetujui** juga tidak dibayar (memang tidak bekerja), tetapi tetap **tidak** menghilangkan uang kerajinan.
+- **Denda absen & SP absen hanya untuk absen TANPA izin** (keputusan Ko 14 Okt 2026): perhitungan SP memakai `absenEfektif = absenFisik − izin/sakit DISETUJUI` untuk SP1 mingguan (≥2/minggu), SP2 (≥3/bulan), SP3 (≥5/bulan), dan denda absen SP2. Hari sakit/izin yang disetujui tetap dihitung sebagai hari tidak masuk untuk pemotongan upah, tapi tidak memicu denda.
 - Payroll `PUBLISHED` harus tetap menjadi snapshot yang dapat diaudit. Bila UI menampilkan setting efektif terbaru untuk slip historis, perilaku penyesuaian saat ini harus direplikasi dan diuji agar tidak menggandakan nominal.
 - Jika delta bonus lama ke baru sama dengan adjustment plus lama, adjustment tersebut diserap agar tidak muncul atau dihitung dua kali.
 - Total gaji = `gajiPokok + totalReward + bonusKerajinan + adjustmentPlus − totalDenda − adjustmentMinus`, minimum 0.
