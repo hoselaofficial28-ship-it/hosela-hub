@@ -20,6 +20,11 @@
     var jam = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
     return d.getDate() + ' ' + MONTH_ID[d.getMonth()] + ' ' + d.getFullYear() + ' ' + jam;
   }
+  // Bulan berjalan dengan format key yang dipakai seluruh aplikasi: YYYY-MM
+  function bulanKeySekarang() {
+    var d = new Date();
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+  }
 
   var handlers = {
     validateLogin: async function (args) {
@@ -474,6 +479,83 @@
       return (r.data || []).map(function (row) {
         return { id: row.id, judul: row.judul, isi: row.isi, kategori: row.kategori, targetBagian: row.target_bagian, dibuat: row.dibuat_oleh, tgl: fmtTanggalId(row.created_at) };
       });
+    },
+
+    // args lama: [userId, bagian]
+    // Sebelumnya aksi ini belum ada di sini sehingga halaman utama memakai DATA
+    // CONTOH (mock): nama "Bintang Bulan Ini" dan pengumuman bukan data asli.
+    // Sekarang semua diambil dari Supabase (RLS otomatis membatasi ke data sendiri).
+    getHomeData: async function (args) {
+      var userId = args[0];
+      var hasil = { success: true, pengumuman: [], rewards: [], notifCountByMenu: {}, profile: {}, anomaliPending: [] };
+      var adaLibur = null;
+      var r = await Promise.all([
+        window.sb.from('announcements').select('id,judul,isi,kategori,created_at')
+          .eq('status', 'AKTIF').order('created_at', { ascending: false }).limit(5),
+        window.sb.from('notifications').select('menu').eq('user_id', userId).eq('status', 'BELUM'),
+        window.sb.from('profiles').select('bintang,skor,final_score').eq('id', userId).maybeSingle(),
+        window.sb.from('attendance_anomalies').select('id,tanggal,tipe,deadline')
+          .eq('user_id', userId).eq('status', 'MENUNGGU').order('deadline', { ascending: true }),
+        // Papan peringkat (RPC, wajib login) dipakai untuk "Bintang Bulan Ini".
+        window.sb.rpc('get_papan_peringkat')
+      ]);
+      adaLibur = r.find(function (x) { return x && x.error; });
+
+      // 1) Pengumuman terbaru
+      (r[0].data || []).forEach(function (row) {
+        hasil.pengumuman.push({ id: row.id, judul: row.judul, isi: row.isi, kategori: row.kategori, tgl: fmtTanggalId(row.created_at) });
+      });
+
+      // 2) Jumlah notifikasi belum dibaca per menu (dipakai badge di menu)
+      (r[1].data || []).forEach(function (row) {
+        var menu = row.menu || 's-notifikasi';
+        hasil.notifCountByMenu[menu] = (hasil.notifCountByMenu[menu] || 0) + 1;
+        hasil.notifCountByMenu['s-notifikasi'] = (hasil.notifCountByMenu['s-notifikasi'] || 0) + 1;
+      });
+
+      // 3) Profil sendiri (bintang & skor)
+      if (r[2].data) hasil.profile = { bintang: r[2].data.bintang || 0, skor: r[2].data.skor || 0 };
+
+      // 4) Anomali tap yang menunggu konfirmasi (milik sendiri)
+      (r[3].data || []).forEach(function (row) {
+        hasil.anomaliPending.push({
+          id: row.id, tanggal: fmtTanggalId(row.tanggal), tipe: row.tipe,
+          deadline: row.deadline ? fmtTanggalJamId(row.deadline) : '-'
+        });
+      });
+
+      // 5) Bintang bulan ini = peringkat 1 papan peringkat (data ASLI, bukan contoh).
+      //    Kalau belum ada yang punya nilai (final_score 0 semua), pakai yang
+      //    bintang/skornya paling tinggi; kalau semua kosong juga, kartunya
+      //    disembunyikan (memang belum ada penilaian).
+      var papan = (r[4] && r[4].data) || [];
+      var juara = papan[0];
+      if (juara && Number(juara.final_score || 0) <= 0) {
+        var adaNilai = papan.some(function (x) { return Number(x.bintang || 0) > 0 || Number(x.skor || 0) > 0; });
+        juara = adaNilai ? papan.slice().sort(function (a, b) {
+          return (Number(b.bintang || 0) - Number(a.bintang || 0)) || (Number(b.skor || 0) - Number(a.skor || 0));
+        })[0] : null;
+      }
+      if (juara) {
+        hasil.rewards = [{
+          bulan: bulanKeySekarang(),
+          nama: juara.nama,
+          bagian: juara.bagian,
+          alasan: juara.apresiasi || 'Peringkat teratas bulan ini',
+          pesan: 'Skor ' + (juara.skor || 0) + '/100 · ' + (juara.bintang || 0) + ' bintang'
+        }];
+      }
+
+      if (adaLibur) hasil.pesanGagal = adaLibur.error.message;
+      return hasil;
+    },
+
+    // Badge jumlah pengajuan izin yang masih menunggu (Owner/Finance melihat semua,
+    // karyawan otomatis hanya miliknya karena RLS).
+    getIzinPendingCount: async function () {
+      var r = await window.sb.from('leave_requests').select('id', { count: 'exact', head: true }).eq('status', 'MENUNGGU');
+      if (r.error) return { count: 0 };
+      return { count: r.count || 0 };
     },
 
     // args lama: [judul, isi, kategori, target, actorNama]
