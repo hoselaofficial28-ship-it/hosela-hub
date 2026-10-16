@@ -12,6 +12,23 @@ function json(body: unknown, status = 200) {
   })
 }
 
+function configuredSecretKeys() {
+  const keys = new Set<string>()
+  const legacyServiceRole = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
+  if (legacyServiceRole) keys.add(legacyServiceRole)
+
+  try {
+    const namedKeys = JSON.parse(Deno.env.get('SUPABASE_SECRET_KEYS') || '{}')
+    Object.values(namedKeys).forEach((value) => {
+      if (typeof value === 'string' && value) keys.add(value)
+    })
+  } catch {
+    // Project lama masih menyediakan SUPABASE_SERVICE_ROLE_KEY di atas.
+  }
+
+  return keys
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
   if (req.method !== 'POST') return json({ success: false, msg: 'Gunakan POST' }, 405)
@@ -19,7 +36,7 @@ Deno.serve(async (req) => {
   try {
     const authHeader = req.headers.get('Authorization') || ''
     const token = authHeader.replace(/^Bearer\s+/i, '')
-    if (!token) return json({ success: false, msg: 'Harus login' }, 401)
+    const apiKey = req.headers.get('apikey') || ''
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const anonKey = Deno.env.get('SUPABASE_ANON_KEY')!
@@ -28,9 +45,11 @@ Deno.serve(async (req) => {
       auth: { persistSession: false, autoRefreshToken: false },
     })
 
-    // Cron memakai service_role. Pemanggilan manual dari aplikasi hanya boleh
-    // dilakukan Owner; identitas dibaca dari JWT, bukan dari body request.
-    if (token !== serviceRoleKey) {
+    // Cron memakai secret key pada header `apikey`. Pemanggilan manual dari
+    // aplikasi memakai JWT pengguna dan hanya boleh dilakukan Owner.
+    const isTrustedCron = !!apiKey && configuredSecretKeys().has(apiKey)
+    if (!isTrustedCron) {
+      if (!token) return json({ success: false, msg: 'Harus login sebagai Owner atau memakai secret key Cron' }, 401)
       const caller = createClient(supabaseUrl, anonKey, {
         global: { headers: { Authorization: authHeader } },
         auth: { persistSession: false, autoRefreshToken: false },

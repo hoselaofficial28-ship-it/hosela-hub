@@ -1,0 +1,5 @@
+[functions.cleanup-attendance-photos]
+# Verifikasi dilakukan di dalam function:
+# - JWT pengguna harus berasal dari akun Owner, atau
+# - Cron harus mengirim project secret key lewat header `apikey`.
+verify_jwt = false

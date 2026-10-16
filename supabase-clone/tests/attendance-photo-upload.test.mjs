@@ -8,6 +8,7 @@ const sw = readFileSync(new URL('../app/sw.js', import.meta.url), 'utf8');
 const storageSrc = readFileSync(new URL('../app/js/photo-storage.js', import.meta.url), 'utf8');
 const migration = readFileSync(new URL('../supabase/migrations/20261014000038_supabase_attendance_photo_storage.sql', import.meta.url), 'utf8');
 const cleanup = readFileSync(new URL('../supabase/functions/cleanup-attendance-photos/index.ts', import.meta.url), 'utf8');
+const functionConfig = readFileSync(new URL('../supabase/config.toml', import.meta.url), 'utf8');
 
 // Fungsi murni modul penyimpanan, tanpa browser/jaringan.
 const fakeWindow = { crypto: undefined, sb: { storage: {} } };
@@ -93,6 +94,12 @@ assert.doesNotMatch(migration, /bytea/);
 assert.match(cleanup, /30 \* 24 \* 60 \* 60 \* 1000/);
 assert.match(cleanup, /bucket\.remove\(batch\)/);
 assert.match(cleanup, /upload_status: 'EXPIRED'/);
+assert.match(cleanup, /req\.headers\.get\('apikey'\)/);
+assert.match(cleanup, /SUPABASE_SECRET_KEYS/);
+assert.match(cleanup, /configuredSecretKeys\(\)\.has\(apiKey\)/);
+assert.match(cleanup, /profile\.bagian !== 'Owner'/);
+assert.match(functionConfig, /\[functions\.cleanup-attendance-photos\]/);
+assert.match(functionConfig, /verify_jwt = false/);
 
 // Versi cache serentak agar HP tidak mempertahankan kode Firebase lama.
 assert.match(html, /css\/style\.css\?v=20261015e/);
