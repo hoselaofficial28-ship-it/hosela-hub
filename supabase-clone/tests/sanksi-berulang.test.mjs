@@ -79,6 +79,7 @@ assert.match(log, /Rp50\.000 x tingkat|50\.000 x tingkat|SB1/);
 //     (keputusan Ko 14 Okt 2026 — berbeda dari aplikasi lama yang pakai absen fisik)
 // ---------------------------------------------------------------------------
 const migKerajinan = readFileSync(new URL('../supabase/migrations/20261014000035_kerajinan_toleransi_izin.sql', import.meta.url), 'utf8');
+const migDetailKerajinan = readFileSync(new URL('../supabase/migrations/20261016000039_fix_bonus_kerajinan_detail_rekap.sql', import.meta.url), 'utf8');
 assert.match(migKerajinan, /create or replace function public\.bonus_kerajinan_efektif\(/);
 assert.match(migKerajinan, /select count\(\*\) into v_izin\s*\n\s*from public\.leave_requests lr\s*\n\s*where lr\.user_id = p_user_id\s*\n\s*and lr\.status = 'DISETUJUI'/);
 assert.match(migKerajinan, /v_absen_efektif := greatest\(0, coalesce\(p_absen_fisik, 0\) - coalesce\(v_izin, 0\)\)/);
@@ -86,5 +87,11 @@ assert.match(migKerajinan, /if v_absen_efektif > 0 then\s*\n\s*return 0;\s*\n\s*
 assert.match(migKerajinan, /and s\.status = 'AKTIF' and s\.tingkat >= 2/);
 assert.match(migKerajinan, /return greatest\(0, coalesce\(p_bonus_setting, 0\)\);/);
 assert.match(migKerajinan, /notify pgrst, 'reload schema'/);
+
+// Detail Catatan Kehadiran wajib memakai rumus efektif yang sama dengan ringkasan.
+assert.match(migDetailKerajinan, /alter function public\.get_absensi_rekap\(uuid\) rename to get_absensi_rekap_base/);
+assert.match(migDetailKerajinan, /v_bonus_efektif := public\.bonus_kerajinan_efektif\(/);
+assert.match(migDetailKerajinan, /jsonb_set\(v_item, '\{bonusKerajinan\}', to_jsonb\(v_bonus_efektif\), true\)/);
+assert.match(migDetailKerajinan, /grant execute on function public\.get_absensi_rekap\(uuid\) to authenticated/);
 
 console.log('sanksi berulang (SB): tangga denda, kerajinan, pembatalan: ok');
