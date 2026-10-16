@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbw6q_5ZaIGrekeBwZ5TKh6X1GpWkFHsa5i6whdwacQkTEa-vvNezHlxFMEQFKZkmm5ffQ/exec';
-var APP_VERSION = '20261015e';
+var APP_VERSION = '20261016a';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -3880,6 +3880,9 @@ function loadAttendanceMatrix(force) {
  if (!el) return;
  if (summary) summary.innerHTML = '';
  var cacheKey = (_attendanceMatrixCanEdit ? 'all' : currentUser.id) + ':' + bulanKey;
+ if (force) {
+  clearAttendanceMatrixCache(_attendanceMatrixCanEdit ? null : currentUser.id, bulanKey);
+ }
  if (!force && _attendanceMatrixCache[cacheKey]) {
  renderAttendanceMatrixWithRecap(_attendanceMatrixCache[cacheKey], bulanKey);
  return;
