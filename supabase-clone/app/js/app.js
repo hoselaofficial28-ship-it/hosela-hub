@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbw6q_5ZaIGrekeBwZ5TKh6X1GpWkFHsa5i6whdwacQkTEa-vvNezHlxFMEQFKZkmm5ffQ/exec';
-var APP_VERSION = '20261016c';
+var APP_VERSION = '20261016d';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -1125,11 +1125,10 @@ function loadHome(forceRefresh) {
  menus.push({id:'s-absensi-camera', icon:'camera', bg:'#e8f0ff', label:'Absensi Kamera', sub:'Foto & lokasi kantor'});
  menus.push({id:'s-catatan-kehadiran', icon:'calendar', bg:'#e8f0ff', label:'Catatan Kehadiran', sub:'Riwayat masuk & pulang'});
  menus.push({id:'s-izin', icon:'edit', bg:'#d1fae5', label:'Izin / Sakit', sub:'Ajukan ketidakhadiran'});
- menus.push({id:'s-slip-gaji', icon:'receipt', bg:'#e0f2fe', label:'Slip Gaji', sub:'Riwayat gaji kamu'});
+if (u.bagian !== 'Owner' && u.bagian !== 'Finance')
+menus.push({id:'s-slip-gaji', icon:'receipt', bg:'#e0f2fe', label:'Slip Gaji', sub:'Riwayat gaji kamu'});
  if (u.bagian === 'Owner' || u.bagian === 'Finance')
  menus.push({id:'s-kalender', icon:'calendar', bg:'#fee2e2', label:'Kalender Libur', sub:'Atur hari libur'});
- if (u.bagian === 'Owner' || u.bagian === 'Finance')
- menus.push({id:'s-setting-gaji', icon:'money', bg:'#e0f2fe', label:'Pengaturan Gaji', sub:'Ubah gaji karyawan'});
  if (u.bagian === 'Finance') {
  menus.push({id:'s-kelola-izin', icon:'check', bg:'#d1fae5', label:'Kelola Izin', sub:'Setujui pengajuan'});
  menus.push({id:'s-kpi-check', icon:'clipboard', bg:'#fef3c7', label:'KPI Checklist', sub:'Update KPI kamu'});

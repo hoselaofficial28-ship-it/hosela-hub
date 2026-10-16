@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=20261015e">
+<link rel="stylesheet" href="css/style.css?v=20261016d">
 
 
 
@@ -829,8 +829,17 @@
  <div class="header-row"><button class="back-btn" onclick="goTo('s-home')">?</button><div><h1>Penggajian</h1><p>Pratinjau gaji sebelum menerbitkan slip</p></div></div>
  <div class="gold-line"></div>
  </div>
- <div class="content">
- <div style="display:flex;gap:8px;margin-bottom:12px">
+ <div class="content payroll-hub-content">
+ <section class="payroll-guide" aria-label="Langkah membuat slip gaji">
+  <div class="payroll-guide-copy"><span class="payroll-guide-eyebrow">PUSAT PENGGAJIAN</span><h2>Buat slip tanpa pindah-pindah menu</h2><p>Ikuti tiga langkah berurutan. Tombol utama di bawah otomatis menyesuaikan tahap penggajian.</p></div>
+  <div class="payroll-guide-steps">
+   <button type="button" onclick="goTo('s-catatan-kehadiran')"><b>1</b><span><strong>Cek Kehadiran</strong><small>Proses rekap resmi</small></span></button>
+   <button type="button" onclick="goTo('s-setting-gaji')"><b>2</b><span><strong>Atur Gaji</strong><small>Gaji dan kerajinan</small></span></button>
+   <button type="button" onclick="goTo('s-slip-gaji')"><b>3</b><span><strong>Slip Terbit</strong><small>Lihat slip karyawan</small></span></button>
+  </div>
+ </section>
+ <div class="payroll-month-row">
+ <label for="payroll-bulan-sel">Bulan penggajian</label>
  <select id="payroll-bulan-sel" class="form-input" style="flex:1" onchange="loadPayrollPreview()"></select>
  </div>
  <div id="payroll-content"><div class="empty-state"><div class="empty-icon"></div>Memuat...</div></div>
@@ -862,8 +871,8 @@
 <script src="js/real-backend.js"></script>
 <script src="js/dashboard-reports.js?v=20261015e"></script>
 <script src="js/mock-backend.js"></script>
-<script src="js/app.js?v=20261016c"></script>
-<script src="js/payroll.js?v=20261016c"></script>
+<script src="js/app.js?v=20261016d"></script>
+<script src="js/payroll.js?v=20261016d"></script>
 <script src="js/preview.js?v=20260930b"></script>
 </body>
 </html>
