@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbw6q_5ZaIGrekeBwZ5TKh6X1GpWkFHsa5i6whdwacQkTEa-vvNezHlxFMEQFKZkmm5ffQ/exec';
-var APP_VERSION = '20261016b';
+var APP_VERSION = '20261016c';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -4045,7 +4045,7 @@ function renderAttendanceMatrix(res) {
  '<span>'+d+'</span><small>'+(masuk ? masuk.substring(0,5) : '-')+'</small><small>'+(pulang ? pulang.substring(0,5) : '-')+'</small><em>'+statusSymbol+'</em></button>';
  }
  return '<div class="card att-user-card" data-search="'+(u.nama+' '+u.bagian+' '+u.jabatan).toLowerCase()+'">'+
- '<div class="att-user-head"><div><b>'+u.nama+'</b><p>'+u.jabatan+' · '+u.bagian+'</p></div><span>'+u.id+'</span></div>'+
+ '<div class="att-user-head"><div><b>'+u.nama+'</b><p>'+u.jabatan+' · '+u.bagian+'</p></div></div>'+
  '<div class="att-grid">'+days+'</div>'+
  renderAttendanceUserRecap(u, res)+
  '</div>';

@@ -51,6 +51,8 @@ const window = {
 
 const context = vm.createContext({ window, console, Date, Promise, String, Array, Object, Math, parseInt, isNaN });
 vm.runInContext(fs.readFileSync(new URL('../app/js/real-backend.js', import.meta.url), 'utf8'), context);
+const appSource = fs.readFileSync(new URL('../app/js/app.js', import.meta.url), 'utf8');
+assert.doesNotMatch(appSource, /<span>'\+u\.id\+'<\/span>/, 'UUID karyawan tidak boleh ditampilkan di kartu Catatan Kehadiran');
 
 const matrix = await window.realBackend('getAbsensiMatrix', ['2026-10']);
 assert.equal(matrix.success, true);
