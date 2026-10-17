@@ -158,13 +158,13 @@ function buildPayrollSlipPdfHtml(res) {
   itemHtml = '<div class="pdf-empty">Tidak ada item detail.</div>';
  } else {
   if (kelompok.plus.length) {
-   itemHtml += '<div class="pdf-group plus"><span>Penerimaan (+)</span><span>+ Rp '+payrollPdfMoney(kelompok.jumlahPlus)+'</span></div>' + kelompok.plus.map(pdfItemRow).join('');
+   itemHtml += '<div class="pdf-group plus">Penerimaan (+) = + Rp '+payrollPdfMoney(kelompok.jumlahPlus)+'</div>' + kelompok.plus.map(pdfItemRow).join('');
   }
   if (kelompok.minus.length) {
-   itemHtml += '<div class="pdf-group minus"><span>Potongan (&minus;)</span><span>- Rp '+payrollPdfMoney(kelompok.jumlahMinus)+'</span></div>' + kelompok.minus.map(pdfItemRow).join('');
+   itemHtml += '<div class="pdf-group minus">Potongan (&minus;) = - Rp '+payrollPdfMoney(kelompok.jumlahMinus)+'</div>' + kelompok.minus.map(pdfItemRow).join('');
   }
   if (kelompok.nol.length) {
-   itemHtml += '<div class="pdf-group netral"><span>Tanpa nilai</span><span>Rp 0</span></div>' + kelompok.nol.map(pdfItemRow).join('');
+   itemHtml += '<div class="pdf-group netral">Tanpa nilai = Rp 0</div>' + kelompok.nol.map(pdfItemRow).join('');
   }
   itemHtml += '<div class="pdf-item pdf-item-total"><div><b>Selisih item detail</b><small>(+ &minus; &minus;)</small></div><strong>Rp '+payrollPdfMoney(kelompok.jumlahPlus - kelompok.jumlahMinus)+'</strong></div>';
  }
@@ -708,11 +708,12 @@ function renderPayrollItems(items) {
  var k = kelompokkanPayrollItems(items);
  var html = '<div style="font-size:11px;font-weight:800;color:var(--text-muted);margin-top:12px;margin-bottom:6px">ITEM DETAIL</div>';
  if (k.plus.length) {
-  html += '<div style="display:flex;justify-content:space-between;font-size:11px;font-weight:900;color:#065f46;margin:8px 0 6px"><span>PENERIMAAN (+)</span><span>+ Rp '+k.jumlahPlus.toLocaleString('id-ID')+'</span></div>';
+  // Subtotal ditulis sebaris dengan judul kelompok supaya tidak terbaca seperti baris item.
+  html += '<div style="font-size:11px;font-weight:900;color:#065f46;margin:8px 0 6px">PENERIMAAN (+) = + Rp '+k.jumlahPlus.toLocaleString('id-ID')+'</div>';
   html += k.plus.map(payrollItemRowHtml).join('');
  }
  if (k.minus.length) {
-  html += '<div style="display:flex;justify-content:space-between;font-size:11px;font-weight:900;color:#dc2626;margin:12px 0 6px"><span>POTONGAN (&minus;)</span><span>- Rp '+k.jumlahMinus.toLocaleString('id-ID')+'</span></div>';
+  html += '<div style="font-size:11px;font-weight:900;color:#dc2626;margin:12px 0 6px">POTONGAN (&minus;) = - Rp '+k.jumlahMinus.toLocaleString('id-ID')+'</div>';
   html += k.minus.map(payrollItemRowHtml).join('');
  }
  if (k.nol.length) {
@@ -720,6 +721,8 @@ function renderPayrollItems(items) {
   html += k.nol.map(payrollItemRowHtml).join('');
  }
  html += '<div style="display:flex;justify-content:space-between;font-size:11px;font-weight:900;color:var(--text-dark);border-top:1px solid var(--gray-border);padding-top:8px;margin-top:8px"><span>Selisih item detail (+ &minus; &minus;)</span><span>Rp '+(k.jumlahPlus - k.jumlahMinus).toLocaleString('id-ID')+'</span></div>';
+ // Ruang bawah supaya baris terakhir tidak tertutup tombol "Pratinjau HP" yang melayang.
+ html += '<div style="height:104px" aria-hidden="true"></div>';
  return html;
 }
 
