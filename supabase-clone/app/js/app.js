@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbw6q_5ZaIGrekeBwZ5TKh6X1GpWkFHsa5i6whdwacQkTEa-vvNezHlxFMEQFKZkmm5ffQ/exec';
-var APP_VERSION = '20261017d';
+var APP_VERSION = '20261017f';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -274,8 +274,22 @@ function ensureFreshRuntime() {
 }
 ensureFreshRuntime();
 
+// Simpan error terakhir apa adanya (dipakai laporan halaman utama + pemanggilan ulang
+// lewat chrome://... console). Jangan disamarkan: pesan + stack asli ikut disimpan.
+window._lastRuntimeError = null;
+function catatRuntimeError(sumber, err) {
+ var pesan = (err && err.message) ? err.message : String(err);
+ var stack = (err && err.stack) ? String(err.stack) : '(tanpa stack)';
+ window._lastRuntimeError = { sumber: sumber, pesan: pesan, stack: stack, waktu: new Date().toISOString() };
+ console.error('[RUNTIME ' + sumber + '] ' + pesan + '\n' + stack);
+ return window._lastRuntimeError;
+}
+window.addEventListener('unhandledrejection', function(e) {
+ catatRuntimeError('promise', e.reason);
+});
+
 window.addEventListener('error', function(e) {
- console.error('App runtime error:', e.error || e.message);
+ catatRuntimeError('error', e.error || e.message);
  var loading = document.getElementById('loading');
  if (loading) loading.style.display = 'none';
  var active = document.querySelector('.screen.active');
@@ -587,7 +601,15 @@ function gasCall(action, args, success, failure) {
  // Cek cache dulu
  if (CACHEABLE.indexOf(action) !== -1) {
   var cached = cacheGet(cacheKey);
-  if (cached) { if (success) success(cached); return; }
+  if (cached) {
+   // Balasan cache SELALU dikirim pada tick berikutnya, tidak sinkron. Pemanggil biasanya
+   // baru menyiapkan variabel/fungsi setelah memanggil gasCall; balasan sinkron membuat
+   // variabel itu belum siap -> "render is not a function" dan skeleton menggantung.
+   setTimeout(function () {
+    try { if (success) success(cached); } catch (e) { console.error('Callback error [' + action + ']:', e); }
+   }, 0);
+   return;
+  }
  }
  // Gabungkan dengan permintaan yang masih berjalan untuk aksi+argumen yang sama
  var waiters = _gasInFlight[cacheKey];
@@ -1973,7 +1995,16 @@ function loadDesktopReports(force) {
   } else {
    pcSetReportHead(kicker, judul, 'Diperbarui pukul ' + jamSekarang + ' · ' + labelBulanKey(bulanKey));
   }
-  render();
+  try {
+   render();
+  } catch (e) {
+   // Jangan biarkan skeleton menggantung: tampilkan sebab aslinya.
+   var info = catatRuntimeError('laporan-utama', e);
+   gagal.push('tampilan: ' + info.pesan);
+   grid.innerHTML = '<div class="empty-state" role="alert"><strong>Laporan gagal ditampilkan</strong><br><small>' +
+    jobdeskSafe(info.pesan) + '</small></div>';
+   pcSetReportHead(kicker, judul, 'Diperbarui ' + jamSekarang + ' · gagal: ' + info.pesan);
+  }
  }
 
  function ambil(nama, action, args, simpan) {
@@ -2000,7 +2031,7 @@ function loadDesktopReports(force) {
   ambil('pengumuman', 'getPengumuman', [currentUser.bagian], function (r) { bag.peng = r || []; });
   ambil('kalender libur', 'getKalenderLibur', [], function (r) { bag.libur = r || []; });
 
-  function render() {
+  var render = function () {
    var liburNama = pcLiburHariIni(bag.libur, todayKey);
    var sum = pcAttendanceSummary(bag.matrix, todayKey, { liburNama: liburNama });
    var perf = pcPerformanceSummary(bag.rekap);
@@ -2008,7 +2039,7 @@ function loadDesktopReports(force) {
     pcAttendanceCardHtml(sum, { jamSekarang: jamSekarang }) +
     pcPerformanceCardHtml(perf, labelBulanKey(bulanKey)) +
     pcActionCardHtml({ izinPending: bag.izin, pengumuman: bag.peng });
-  }
+  };
  } else {
   var sendiri = { matrix: null, izin: [], slip: [] };
   ambil('absensi saya', 'getAbsensiMatrixUser', [currentUser.id, bulanKey], function (r) {
@@ -2020,7 +2051,7 @@ function loadDesktopReports(force) {
    sendiri.slip = (r && r.data) ? r.data : [];
   });
 
-  function render() {
+  var render = function () {
    var sum = pcPersonalSummary(sendiri.matrix, todayKey);
    var prof = (window._lastHomeData && window._lastHomeData.profile) || {};
    var statusText = sum.masuk
@@ -2036,7 +2067,7 @@ function loadDesktopReports(force) {
     izin: sendiri.izin,
     slip: sendiri.slip
    });
-  }
+  };
  }
 }
 
