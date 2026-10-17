@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbw6q_5ZaIGrekeBwZ5TKh6X1GpWkFHsa5i6whdwacQkTEa-vvNezHlxFMEQFKZkmm5ffQ/exec';
-var APP_VERSION = '20261017a';
+var APP_VERSION = '20261017b';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -4438,8 +4438,15 @@ function cleanDisplayText(text) {
   .replace(/\s+/g, ' ')
   .trim();
 }
+function formatJamText(text) {
+ return String(text || '').replace(/(-?\d+(?:[.,]\d+)?)\s+jam\b/gi, function(match, rawValue) {
+  var hours = Number(String(rawValue).replace(',', '.'));
+  if (!Number.isFinite(hours)) return match;
+  return hours.toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 2 }) + ' jam';
+ });
+}
 function cleanAbsensiText(text) {
- return cleanDisplayText(text)
+ return formatJamText(cleanDisplayText(text))
   .replace(/\[[A-Z_]*SYNC\]\s*/gi, '')
   .replace(/\bLEMBUR_PULANG\b/g, 'Lembur pulang')
   .replace(/\bLEMBUR_MINGGU\b/g, 'Lembur hari Minggu')
