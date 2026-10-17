@@ -143,7 +143,8 @@ function buildPayrollSlipPdfHtml(res) {
  var bulan = res && res.bulan || d.bulan || d.kerajinanSettingBulan || '';
  var nama = d.nama || (currentUser && currentUser.nama) || '-';
  var title = 'Slip Gaji - ' + nama + ' - ' + salaryMonthLabel(bulan);
- var itemHtml = items.length ? items.map(function(item) {
+ var kelompok = kelompokkanPayrollItems(items);
+ var pdfItemRow = function(item) {
   var tipe = item.tipe || '';
   var nominal = parseInt(item.nominal || 0, 10) || 0;
   var minus = payrollItemIsDeduction(tipe, nominal);
@@ -151,10 +152,25 @@ function buildPayrollSlipPdfHtml(res) {
   var tanda = kosong ? '' : (minus ? '-' : '+');
   var kelas = kosong ? 'netral' : (minus ? 'minus' : 'plus');
   return '<div class="pdf-item"><div><b>'+salaryEsc(payrollItemLabel(tipe))+'</b><small>'+salaryEsc(formatPayrollItemDescription(item.keterangan || item.tanggal || '-'))+'</small></div><strong class="'+kelas+'">'+tanda+' Rp '+payrollPdfMoney(Math.abs(nominal))+'</strong></div>';
- }).join('') : '<div class="pdf-empty">Tidak ada item detail.</div>';
+ };
+ var itemHtml = '';
+ if (!items.length) {
+  itemHtml = '<div class="pdf-empty">Tidak ada item detail.</div>';
+ } else {
+  if (kelompok.plus.length) {
+   itemHtml += '<div class="pdf-group plus"><span>Penerimaan (+)</span><span>+ Rp '+payrollPdfMoney(kelompok.jumlahPlus)+'</span></div>' + kelompok.plus.map(pdfItemRow).join('');
+  }
+  if (kelompok.minus.length) {
+   itemHtml += '<div class="pdf-group minus"><span>Potongan (&minus;)</span><span>- Rp '+payrollPdfMoney(kelompok.jumlahMinus)+'</span></div>' + kelompok.minus.map(pdfItemRow).join('');
+  }
+  if (kelompok.nol.length) {
+   itemHtml += '<div class="pdf-group netral"><span>Tanpa nilai</span><span>Rp 0</span></div>' + kelompok.nol.map(pdfItemRow).join('');
+  }
+  itemHtml += '<div class="pdf-item pdf-item-total"><div><b>Selisih item detail</b><small>(+ &minus; &minus;)</small></div><strong>Rp '+payrollPdfMoney(kelompok.jumlahPlus - kelompok.jumlahMinus)+'</strong></div>';
+ }
  var html = '<!doctype html><html><head><meta charset="utf-8"><title>'+salaryEsc(title)+'</title>'+
  '<style>'+
- '@page{size:A4;margin:16mm}*{box-sizing:border-box}body{margin:0;background:#eef4ff;font-family:Inter,Arial,sans-serif;color:#172033}.pdf-wrap{max-width:820px;margin:0 auto;padding:24px}.pdf-card{background:#fff;border:1px solid #dbe7ff;border-radius:22px;padding:28px;box-shadow:0 18px 50px rgba(37,99,235,.12)}.pdf-head{display:flex;justify-content:space-between;gap:18px;align-items:flex-start;border-bottom:1px solid #e5edff;padding-bottom:18px;margin-bottom:18px}.brand{display:flex;gap:12px;align-items:center}.logo{width:46px;height:46px;border-radius:14px;background:linear-gradient(135deg,#1d5fd7,#6ba4ff);color:#fff;display:grid;place-items:center;font-weight:900;font-size:24px}.brand h1{font-size:22px;margin:0;letter-spacing:-.03em}.brand p,.meta p{margin:3px 0 0;color:#64748b;font-size:12px}.meta{text-align:right}.meta b{font-size:15px;color:#0f172a}.employee{display:grid;grid-template-columns:1.4fr .8fr;gap:12px;margin:18px 0}.box{background:#f8fbff;border:1px solid #e2ebff;border-radius:16px;padding:14px}.box small{display:block;color:#64748b;font-size:11px;margin-bottom:4px}.box b{font-size:14px}.total{background:linear-gradient(135deg,#1f62db,#5a93ff);color:#fff;border-radius:18px;padding:18px;margin:18px 0;display:flex;justify-content:space-between;align-items:center}.total span{font-size:12px;opacity:.9}.total b{font-size:24px}.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:14px 0}.metric{border-radius:14px;padding:12px;text-align:center;background:#f8fbff;border:1px solid #e2ebff}.metric b{display:block;font-size:16px;color:#1d5fd7}.metric span{font-size:11px;color:#64748b}.section-title{font-size:13px;font-weight:900;margin:20px 0 10px;color:#0f172a}.pdf-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eef2ff;font-size:13px}.pdf-row.plus b,.plus{color:#059669}.pdf-row.minus b,.minus{color:#dc2626}.netral{color:#64748b}.pdf-item{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;border:1px solid #e2ebff;border-radius:14px;padding:12px;margin-bottom:8px}.pdf-item small{display:block;color:#64748b;margin-top:3px}.pdf-empty{color:#64748b;border:1px dashed #cbdaf5;border-radius:14px;padding:14px;text-align:center}.note{margin-top:18px;color:#64748b;font-size:11px;line-height:1.5}.actions{position:sticky;top:0;display:flex;justify-content:flex-end;gap:8px;margin-bottom:14px}.actions button{border:0;border-radius:999px;padding:10px 14px;font-weight:800;cursor:pointer}.print{background:#1f62db;color:#fff}.close{background:#eaf1ff;color:#1f3b68}@media print{body{background:#fff}.pdf-wrap{padding:0}.actions{display:none}.pdf-card{box-shadow:none;border:0;border-radius:0;padding:0}}'+
+ '@page{size:A4;margin:16mm}*{box-sizing:border-box}body{margin:0;background:#eef4ff;font-family:Inter,Arial,sans-serif;color:#172033}.pdf-wrap{max-width:820px;margin:0 auto;padding:24px}.pdf-card{background:#fff;border:1px solid #dbe7ff;border-radius:22px;padding:28px;box-shadow:0 18px 50px rgba(37,99,235,.12)}.pdf-head{display:flex;justify-content:space-between;gap:18px;align-items:flex-start;border-bottom:1px solid #e5edff;padding-bottom:18px;margin-bottom:18px}.brand{display:flex;gap:12px;align-items:center}.logo{width:46px;height:46px;border-radius:14px;background:linear-gradient(135deg,#1d5fd7,#6ba4ff);color:#fff;display:grid;place-items:center;font-weight:900;font-size:24px}.brand h1{font-size:22px;margin:0;letter-spacing:-.03em}.brand p,.meta p{margin:3px 0 0;color:#64748b;font-size:12px}.meta{text-align:right}.meta b{font-size:15px;color:#0f172a}.employee{display:grid;grid-template-columns:1.4fr .8fr;gap:12px;margin:18px 0}.box{background:#f8fbff;border:1px solid #e2ebff;border-radius:16px;padding:14px}.box small{display:block;color:#64748b;font-size:11px;margin-bottom:4px}.box b{font-size:14px}.total{background:linear-gradient(135deg,#1f62db,#5a93ff);color:#fff;border-radius:18px;padding:18px;margin:18px 0;display:flex;justify-content:space-between;align-items:center}.total span{font-size:12px;opacity:.9}.total b{font-size:24px}.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:14px 0}.metric{border-radius:14px;padding:12px;text-align:center;background:#f8fbff;border:1px solid #e2ebff}.metric b{display:block;font-size:16px;color:#1d5fd7}.metric span{font-size:11px;color:#64748b}.section-title{font-size:13px;font-weight:900;margin:20px 0 10px;color:#0f172a}.pdf-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eef2ff;font-size:13px}.pdf-row.plus b,.plus{color:#059669}.pdf-row.minus b,.minus{color:#dc2626}.netral{color:#64748b}.pdf-item{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;border:1px solid #e2ebff;border-radius:14px;padding:12px;margin-bottom:8px}.pdf-item small{display:block;color:#64748b;margin-top:3px}.pdf-empty{color:#64748b;border:1px dashed #cbdaf5;border-radius:14px;padding:14px;text-align:center}.pdf-group{display:flex;justify-content:space-between;font-size:12px;font-weight:900;margin:14px 0 8px;padding:8px 12px;border-radius:12px;background:#f8fbff;border:1px solid #e2ebff}.pdf-group.plus{color:#059669}.pdf-group.minus{color:#dc2626}.pdf-group.netral{color:#64748b}.pdf-item-total{border-top:2px solid #e5edff;margin-top:10px}.note{margin-top:18px;color:#64748b;font-size:11px;line-height:1.5}.actions{position:sticky;top:0;display:flex;justify-content:flex-end;gap:8px;margin-bottom:14px}.actions button{border:0;border-radius:999px;padding:10px 14px;font-weight:800;cursor:pointer}.print{background:#1f62db;color:#fff}.close{background:#eaf1ff;color:#1f3b68}@media print{body{background:#fff}.pdf-wrap{padding:0}.actions{display:none}.pdf-card{box-shadow:none;border:0;border-radius:0;padding:0}}'+
  '</style></head><body><div class="pdf-wrap"><div class="actions"><button class="close" onclick="window.close()">Tutup</button><button class="print" onclick="window.print()">Download / Simpan PDF</button></div><div class="pdf-card">'+
  '<div class="pdf-head"><div class="brand"><div class="logo">H</div><div><h1>Hosela Hub</h1><p>Slip Gaji Karyawan</p></div></div><div class="meta"><b>'+salaryEsc(salaryMonthLabel(bulan))+'</b><p>Dipublish '+salaryEsc(d.dipublishPada || res.dipublishPada || '-')+'</p></div></div>'+
  '<div class="employee"><div class="box"><small>Nama Karyawan</small><b>'+salaryEsc(nama)+'</b><p style="margin:4px 0 0;color:#64748b;font-size:12px">'+salaryEsc(d.jabatan || '-')+' · '+salaryEsc(d.bagian || '-')+'</p></div><div class="box"><small>ID Slip</small><b>'+salaryEsc(d.id || '-').slice(0,24)+'</b></div></div>'+
@@ -649,10 +665,7 @@ function payrollAmountRow(label, value, type) {
  return '<div style="display:flex;justify-content:space-between;font-size:11px;color:'+color+';padding:4px 0"><span>'+label+'</span><span style="font-weight:800">'+sign+' Rp '+n.toLocaleString('id-ID')+'</span></div>';
 }
 
-function renderPayrollItems(items) {
- if (!items.length) return '<div style="font-size:11px;color:var(--text-muted);margin-top:10px">Belum ada item detail.</div>';
- var html = '<div style="font-size:11px;font-weight:800;color:var(--text-muted);margin-top:12px;margin-bottom:6px">ITEM DETAIL</div>';
- items.forEach(function(it) {
+function payrollItemRowHtml(it) {
  var n = parseInt(it.nominal || 0, 10) || 0;
  var tipe = String(it.tipe || '');
  var minus = payrollItemIsDeduction(tipe, n);
@@ -660,11 +673,53 @@ function renderPayrollItems(items) {
  // Potongan selalu minus + merah; pendapatan plus + hijau; nominal nol netral tanpa tanda.
  var color = kosong ? 'var(--text-muted)' : (minus ? '#dc2626' : '#065f46');
  var tanda = kosong ? '' : (minus ? '-' : '+');
- html += '<div style="border:1px solid var(--gray-border);border-radius:8px;padding:8px;margin-bottom:6px;background:#fff">';
- html += '<div style="display:flex;justify-content:space-between;gap:8px"><div style="font-size:11px;font-weight:800;color:var(--text-dark)">'+payrollItemLabel(tipe)+'</div><div style="font-size:11px;font-weight:900;color:'+color+'">'+tanda+' Rp '+Math.abs(n).toLocaleString('id-ID')+'</div></div>';
+ var html = '<div style="border:1px solid var(--gray-border);border-radius:8px;padding:8px;margin-bottom:6px;background:#fff">';
+ html += '<div style="display:flex;justify-content:space-between;gap:8px"><div style="font-size:11px;font-weight:800;color:var(--text-dark)">'+salaryEsc(payrollItemLabel(tipe))+'</div><div style="font-size:11px;font-weight:900;color:'+color+'">'+tanda+' Rp '+Math.abs(n).toLocaleString('id-ID')+'</div></div>';
  html += '<div style="font-size:10px;color:var(--text-muted);line-height:1.5;margin-top:3px">'+salaryEsc(((it.tanggal || '')+' '+formatPayrollItemDescription(it.keterangan || '')).trim())+'</div>';
  html += '</div>';
+ return html;
+}
+
+/**
+ * Item detail disusun berkelompok: semua penerimaan (+) dulu, lalu semua potongan (-),
+ * lalu item tanpa nilai. Tiap kelompok punya subtotal supaya jumlahnya bisa dicocokkan
+ * dengan komponen di atasnya (mis. total denda).
+ */
+function kelompokkanPayrollItems(items) {
+ var hasil = { plus: [], minus: [], nol: [] };
+ (items || []).forEach(function(it) {
+  var mentah = parseInt(it.nominal || 0, 10) || 0;
+  if (mentah === 0) { hasil.nol.push(it); return; }
+  if (payrollItemIsDeduction(it.tipe, mentah)) hasil.minus.push(it);
+  else hasil.plus.push(it);
  });
+ var urut = function(a, b) {
+  var t = String(a.tanggal || '').localeCompare(String(b.tanggal || ''));
+  return t !== 0 ? t : String(a.tipe || '').localeCompare(String(b.tipe || ''));
+ };
+ hasil.plus.sort(urut); hasil.minus.sort(urut); hasil.nol.sort(urut);
+ hasil.jumlahPlus = hasil.plus.reduce(function(s, it) { return s + Math.abs(parseInt(it.nominal || 0, 10) || 0); }, 0);
+ hasil.jumlahMinus = hasil.minus.reduce(function(s, it) { return s + Math.abs(parseInt(it.nominal || 0, 10) || 0); }, 0);
+ return hasil;
+}
+
+function renderPayrollItems(items) {
+ if (!items || !items.length) return '<div style="font-size:11px;color:var(--text-muted);margin-top:10px">Belum ada item detail.</div>';
+ var k = kelompokkanPayrollItems(items);
+ var html = '<div style="font-size:11px;font-weight:800;color:var(--text-muted);margin-top:12px;margin-bottom:6px">ITEM DETAIL</div>';
+ if (k.plus.length) {
+  html += '<div style="display:flex;justify-content:space-between;font-size:11px;font-weight:900;color:#065f46;margin:8px 0 6px"><span>PENERIMAAN (+)</span><span>+ Rp '+k.jumlahPlus.toLocaleString('id-ID')+'</span></div>';
+  html += k.plus.map(payrollItemRowHtml).join('');
+ }
+ if (k.minus.length) {
+  html += '<div style="display:flex;justify-content:space-between;font-size:11px;font-weight:900;color:#dc2626;margin:12px 0 6px"><span>POTONGAN (&minus;)</span><span>- Rp '+k.jumlahMinus.toLocaleString('id-ID')+'</span></div>';
+  html += k.minus.map(payrollItemRowHtml).join('');
+ }
+ if (k.nol.length) {
+  html += '<div style="font-size:11px;font-weight:900;color:var(--text-muted);margin:12px 0 6px">TANPA NILAI</div>';
+  html += k.nol.map(payrollItemRowHtml).join('');
+ }
+ html += '<div style="display:flex;justify-content:space-between;font-size:11px;font-weight:900;color:var(--text-dark);border-top:1px solid var(--gray-border);padding-top:8px;margin-top:8px"><span>Selisih item detail (+ &minus; &minus;)</span><span>Rp '+(k.jumlahPlus - k.jumlahMinus).toLocaleString('id-ID')+'</span></div>';
  return html;
 }
 
@@ -686,6 +741,7 @@ function payrollItemIsDeduction(tipe, nominal) {
 function payrollItemLabel(tipe) {
  var map = {
  DENDA_SP: 'Denda SP',
+ DENDA_TELAT: 'Denda keterlambatan',
  DENDA_MANUAL: 'Denda manual',
  DENDA_ANOMALI: 'Denda tap anomali',
  REWARD_MANUAL: 'Penghargaan manual',
