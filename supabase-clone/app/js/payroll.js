@@ -603,20 +603,40 @@ function renderPayrollDetailBox(res) {
  if (currentUser && (currentUser.bagian === 'Finance' || currentUser.bagian === 'Owner') && d.statusSlip !== 'PUBLISHED') {
  html += renderPayrollAdjustmentForm(d);
  }
- html += renderPayrollItems(items);
+ html += renderPayrollItems(items, {
+  bisaHapusPenyesuaian: !!(currentUser && (currentUser.bagian === 'Finance' || currentUser.bagian === 'Owner') && d.statusSlip !== 'PUBLISHED'),
+  payrollDetailId: d.id || ''
+ });
  html += '</div>';
  return html;
 }
 
+/**
+ * Form penyesuaian Finance. Kolom sengaja KOSONG setiap kali tampil (keputusan Ko
+ * 2026-10-17): penyesuaian yang sudah disimpan MENUMPUK sebagai baris item, jadi
+ * input ini untuk penyesuaian berikutnya. Ringkasan yang tersimpan ditampilkan di
+ * atas form supaya angka lama tetap terlihat tanpa ikut nyangkut di kolom input.
+ */
 function renderPayrollAdjustmentForm(d) {
+ var plusTersimpan = parseInt(d.adjustmentPlus || 0, 10) || 0;
+ var minusTersimpan = parseInt(d.adjustmentMinus || 0, 10) || 0;
+ var ringkas = '';
+ if (plusTersimpan || minusTersimpan) {
+  ringkas = '<div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;line-height:1.6">Sudah tersimpan: ' +
+   (plusTersimpan ? '<b style="color:#16a34a">+ Rp ' + plusTersimpan.toLocaleString('id-ID') + '</b>' : '') +
+   (plusTersimpan && minusTersimpan ? ' · ' : '') +
+   (minusTersimpan ? '<b style="color:#dc2626">- Rp ' + minusTersimpan.toLocaleString('id-ID') + '</b>' : '') +
+   '<br>Hapus lewat tombol <b>Hapus</b> pada baris penyesuaian di item detail.</div>';
+ }
  return '<div style="margin-top:12px;background:#f8fafc;border:1px solid var(--gray-border);border-radius:8px;padding:10px">' +
  '<div style="font-size:11px;font-weight:800;color:var(--text-dark);margin-bottom:8px">Penyesuaian Finance</div>' +
+ ringkas +
  '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">' +
- '<div><label class="form-label">Tambahan</label><input class="form-input" type="number" id="adj-plus-'+d.id+'" value="'+(parseInt(d.adjustmentPlus || 0, 10) || 0)+'" placeholder="0"></div>' +
- '<div><label class="form-label">Potongan</label><input class="form-input" type="number" id="adj-minus-'+d.id+'" value="'+(parseInt(d.adjustmentMinus || 0, 10) || 0)+'" placeholder="0"></div>' +
+ '<div><label class="form-label">Tambahan</label><input class="form-input" type="number" id="adj-plus-'+d.id+'" value="" placeholder="0"></div>' +
+ '<div><label class="form-label">Potongan</label><input class="form-input" type="number" id="adj-minus-'+d.id+'" value="" placeholder="0"></div>' +
  '</div>' +
- '<textarea class="form-input" id="adj-note-'+d.id+'" style="height:58px;margin-bottom:8px" placeholder="Catatan penyesuaian">'+(d.catatanAdjustment || '')+'</textarea>' +
- '<button class="btn btn-sm btn-primary" id="adj-save-'+d.id+'" style="width:100%" onclick="savePayrollAdjustment(&quot;'+d.id+'&quot;)">Simpan Penyesuaian</button>' +
+ '<textarea class="form-input" id="adj-note-'+d.id+'" style="height:58px;margin-bottom:8px" placeholder="Catatan penyesuaian (mis. denda keterlambatan)"></textarea>' +
+ '<button class="btn btn-sm btn-primary" id="adj-save-'+d.id+'" style="width:100%" onclick="savePayrollAdjustment(&quot;'+d.id+'&quot;)">Tambah Penyesuaian</button>' +
  '</div>';
 }
 
@@ -625,31 +645,70 @@ function savePayrollAdjustment(payrollDetailId) {
  var minusEl = document.getElementById('adj-minus-' + payrollDetailId);
  var noteEl = document.getElementById('adj-note-' + payrollDetailId);
  var saveBtn = document.getElementById('adj-save-' + payrollDetailId);
- var plus = plusEl ? plusEl.value : 0;
- var minus = minusEl ? minusEl.value : 0;
+ var plus = parseInt((plusEl ? plusEl.value : 0), 10) || 0;
+ var minus = parseInt((minusEl ? minusEl.value : 0), 10) || 0;
  var note = noteEl ? noteEl.value.trim() : '';
+ // Nominal 0 tidak dikirim: penyesuaian yang sudah tersimpan tidak boleh terhapus
+ // hanya karena kolom dibiarkan kosong (keputusan Ko 2026-10-17).
+ if (plus <= 0 && minus <= 0) {
+  showToast('Isi nominal tambahan atau potongan dulu');
+  return;
+ }
  if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'Menyimpan...'; }
  gasCall('updatePayrollAdjustment', [payrollDetailId, plus, minus, note], function(res) {
  if (!res || res.success === false) {
- showToast((res && res.msg) || 'Gagal simpan adjustment');
- if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Simpan Penyesuaian'; }
- return;
+  showToast((res && res.msg) || 'Gagal simpan adjustment');
+  if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Tambah Penyesuaian'; }
+  return;
  }
- _payrollDetailCache[payrollDetailId] = res;
- Object.keys(_payrollPreviewCache).forEach(function(k){ delete _payrollPreviewCache[k]; });
- cacheClearAction('getPayrollPreview');
- cacheClearAction('getPayrollDetail');
- showToast('Penyesuaian disimpan');
- var boxes = document.querySelectorAll('[id^="payroll-detail-"]');
- boxes.forEach(function(box) {
- if (box.style.display === 'block' && box.innerHTML.indexOf('adj-plus-' + payrollDetailId) !== -1) {
- box.innerHTML = renderPayrollDetailBox(res);
- }
- });
- loadPayrollPreview();
+  _payrollDetailCache[payrollDetailId] = res;
+  Object.keys(_payrollPreviewCache).forEach(function(k){ delete _payrollPreviewCache[k]; });
+  cacheClearAction('getPayrollPreview');
+  cacheClearAction('getPayrollDetail');
+  showToast('Penyesuaian ditambahkan');
+  var boxes = document.querySelectorAll('[id^="payroll-detail-"]');
+  boxes.forEach(function(box) {
+  if (box.style.display === 'block' && box.innerHTML.indexOf('adj-plus-' + payrollDetailId) !== -1) {
+  box.innerHTML = renderPayrollDetailBox(res);
+  }
+  });
+  loadPayrollPreview();
  }, function() {
- showToast('Gagal simpan adjustment');
- if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Simpan Penyesuaian'; }
+  showToast('Gagal simpan adjustment');
+  if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Tambah Penyesuaian'; }
+ });
+}
+
+/**
+ * Hapus SATU baris penyesuaian Finance (mis. salah input nominal).
+ * Penyesuaian lain tidak tersentuh; total dihitung ulang di database.
+ */
+function hapusPayrollAdjustmentUI(itemId, payrollDetailId, btn) {
+ if (!itemId) return;
+ if (!confirm('Hapus baris penyesuaian ini?\n\nBaris lain tidak ikut terhapus.')) return;
+ var teksAsli = btn ? btn.textContent : '';
+ if (btn) { btn.disabled = true; btn.textContent = '...'; }
+ gasCall('hapusPayrollAdjustment', [itemId], function(res) {
+  if (!res || res.success === false) {
+   showToast((res && res.msg) || 'Gagal hapus penyesuaian');
+   if (btn) { btn.disabled = false; btn.textContent = teksAsli || 'Hapus'; }
+   return;
+  }
+  if (payrollDetailId) _payrollDetailCache[payrollDetailId] = res;
+  Object.keys(_payrollPreviewCache).forEach(function(k){ delete _payrollPreviewCache[k]; });
+  cacheClearAction('getPayrollPreview');
+  cacheClearAction('getPayrollDetail');
+  showToast('Penyesuaian dihapus');
+  var boxes = document.querySelectorAll('[id^="payroll-detail-"]');
+  boxes.forEach(function(box) {
+   if (box.style.display === 'block' && box.innerHTML.indexOf('adj-plus-' + payrollDetailId) !== -1) {
+    box.innerHTML = renderPayrollDetailBox(res);
+   }
+  });
+  loadPayrollPreview();
+ }, function() {
+  showToast('Gagal hapus penyesuaian');
+  if (btn) { btn.disabled = false; btn.textContent = teksAsli || 'Hapus'; }
  });
 }
 
@@ -665,7 +724,7 @@ function payrollAmountRow(label, value, type) {
  return '<div style="display:flex;justify-content:space-between;font-size:11px;color:'+color+';padding:4px 0"><span>'+label+'</span><span style="font-weight:800">'+sign+' Rp '+n.toLocaleString('id-ID')+'</span></div>';
 }
 
-function payrollItemRowHtml(it) {
+function payrollItemRowHtml(it, opsi) {
  var n = parseInt(it.nominal || 0, 10) || 0;
  var tipe = String(it.tipe || '');
  var minus = payrollItemIsDeduction(tipe, n);
@@ -673,8 +732,12 @@ function payrollItemRowHtml(it) {
  // Potongan selalu minus + merah; pendapatan plus + hijau; nominal nol netral tanpa tanda.
  var color = kosong ? 'var(--text-muted)' : (minus ? '#dc2626' : '#065f46');
  var tanda = kosong ? '' : (minus ? '-' : '+');
+ var bolehHapus = opsi && opsi.bisaHapusPenyesuaian && /^ADJUSTMENT_/.test(tipe) && it.id;
+ var tombolHapus = bolehHapus
+  ? '<button type="button" onclick="hapusPayrollAdjustmentUI(&quot;'+salaryEsc(it.id)+'&quot;,&quot;'+salaryEsc(opsi.payrollDetailId || '')+'&quot;,this)" style="border:1px solid #fca5a5;background:#fef2f2;color:#b91c1c;border-radius:6px;padding:2px 8px;font-size:10px;font-weight:800;cursor:pointer;margin-left:8px;white-space:nowrap">Hapus</button>'
+  : '';
  var html = '<div style="border:1px solid var(--gray-border);border-radius:8px;padding:8px;margin-bottom:6px;background:#fff">';
- html += '<div style="display:flex;justify-content:space-between;gap:8px"><div style="font-size:11px;font-weight:800;color:var(--text-dark)">'+salaryEsc(payrollItemLabel(tipe))+'</div><div style="font-size:11px;font-weight:900;color:'+color+'">'+tanda+' Rp '+Math.abs(n).toLocaleString('id-ID')+'</div></div>';
+ html += '<div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><div style="font-size:11px;font-weight:800;color:var(--text-dark)">'+salaryEsc(payrollItemLabel(tipe))+'</div><div style="display:flex;align-items:center"><div style="font-size:11px;font-weight:900;color:'+color+'">'+tanda+' Rp '+Math.abs(n).toLocaleString('id-ID')+'</div>'+tombolHapus+'</div></div>';
  html += '<div style="font-size:10px;color:var(--text-muted);line-height:1.5;margin-top:3px">'+salaryEsc(((it.tanggal || '')+' '+formatPayrollItemDescription(it.keterangan || '')).trim())+'</div>';
  html += '</div>';
  return html;
@@ -703,22 +766,23 @@ function kelompokkanPayrollItems(items) {
  return hasil;
 }
 
-function renderPayrollItems(items) {
+function renderPayrollItems(items, opsi) {
  if (!items || !items.length) return '<div style="font-size:11px;color:var(--text-muted);margin-top:10px">Belum ada item detail.</div>';
  var k = kelompokkanPayrollItems(items);
+ var baris = function(it) { return payrollItemRowHtml(it, opsi); };
  var html = '<div style="font-size:11px;font-weight:800;color:var(--text-muted);margin-top:12px;margin-bottom:6px">ITEM DETAIL</div>';
  if (k.plus.length) {
   // Subtotal ditulis sebaris dengan judul kelompok supaya tidak terbaca seperti baris item.
   html += '<div style="font-size:11px;font-weight:900;color:#065f46;margin:8px 0 6px">PENERIMAAN (+) = + Rp '+k.jumlahPlus.toLocaleString('id-ID')+'</div>';
-  html += k.plus.map(payrollItemRowHtml).join('');
+  html += k.plus.map(baris).join('');
  }
  if (k.minus.length) {
   html += '<div style="font-size:11px;font-weight:900;color:#dc2626;margin:12px 0 6px">POTONGAN (&minus;) = - Rp '+k.jumlahMinus.toLocaleString('id-ID')+'</div>';
-  html += k.minus.map(payrollItemRowHtml).join('');
+  html += k.minus.map(baris).join('');
  }
  if (k.nol.length) {
   html += '<div style="font-size:11px;font-weight:900;color:var(--text-muted);margin:12px 0 6px">TANPA NILAI</div>';
-  html += k.nol.map(payrollItemRowHtml).join('');
+  html += k.nol.map(baris).join('');
  }
  html += '<div style="display:flex;justify-content:space-between;font-size:11px;font-weight:900;color:var(--text-dark);border-top:1px solid var(--gray-border);padding-top:8px;margin-top:8px"><span>Selisih item detail (+ &minus; &minus;)</span><span>Rp '+(k.jumlahPlus - k.jumlahMinus).toLocaleString('id-ID')+'</span></div>';
  // Ruang bawah supaya baris terakhir tidak tertutup tombol "Pratinjau HP" yang melayang.

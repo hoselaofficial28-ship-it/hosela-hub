@@ -283,6 +283,13 @@
       return r.data;
     },
 
+    // Hapus SATU baris penyesuaian Finance (keputusan Ko 2026-10-17: penyesuaian menumpuk).
+    hapusPayrollAdjustment: async function (args) {
+      var r = await window.sb.rpc('hapus_payroll_adjustment', { p_item_id: args[0] });
+      if (r.error) return { success: false, msg: r.error.message };
+      return r.data;
+    },
+
     getPayrollEmployeeSlip: async function (args) {
       var r = await window.sb.rpc('get_payroll_employee_slip', { p_user_id: args[0] || null });
       if (r.error) return { success: false, msg: r.error.message };

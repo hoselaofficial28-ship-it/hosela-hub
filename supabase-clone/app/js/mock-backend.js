@@ -460,12 +460,26 @@
       if (!run) return { success: false };
       var d = run.data.find(function (x) { return x.id === args[0]; });
       if (d) {
-        d.adjustmentPlus = parseInt(args[1], 10) || 0;
-        d.adjustmentMinus = parseInt(args[2], 10) || 0;
+        var tambah = parseInt(args[1], 10) || 0;
+        var potong = parseInt(args[2], 10) || 0;
+        // Menumpuk, bukan menimpa (keputusan Ko 2026-10-17).
+        if (tambah <= 0 && potong <= 0) return { success: false, msg: 'Isi nominal tambahan atau potongan dulu' };
+        d.adjustmentPlus = (parseInt(d.adjustmentPlus || 0, 10) || 0) + tambah;
+        d.adjustmentMinus = (parseInt(d.adjustmentMinus || 0, 10) || 0) + potong;
         d.catatanAdjustment = args[3] || '';
         d.totalGaji = Math.max(0, d.gajiPokok + d.totalReward + d.bonusKerajinan + d.adjustmentPlus - d.totalDenda - d.adjustmentMinus);
       }
       return { success: true, data: d };
+    },
+    hapusPayrollAdjustment: function (args) {
+      for (var b in PAYROLL_RUNS) {
+        for (var i = 0; i < PAYROLL_RUNS[b].data.length; i++) {
+          if (PAYROLL_RUNS[b].data[i].id === args[0]) {
+            return { success: true, data: PAYROLL_RUNS[b].data[i] };
+          }
+        }
+      }
+      return { success: false, msg: 'Item penyesuaian tidak ditemukan' };
     }
   };
 
