@@ -405,6 +405,14 @@
       if (run) { run.status = 'PUBLISHED'; run.data.forEach(function (d) { d.statusSlip = 'PUBLISHED'; }); }
       return handlers.getPayrollDetail.__fromRun(run);
     },
+    cancelPayroll: function (args) {
+      var run = findRunById(args[0]);
+      if (run && run.status === 'PUBLISHED') {
+        run.status = 'CONFIRMED';
+        run.data.forEach(function (d) { d.statusSlip = 'DRAFT'; });
+      }
+      return handlers.getPayrollDetail.__fromRun(run);
+    },
     getPayrollDetail: function (args) {
       var run = findRunByDetailId(args[0]);
       if (!run) return { success: false, msg: 'Payroll detail tidak ditemukan (demo)' };

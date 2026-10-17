@@ -256,6 +256,12 @@
       return r.data;
     },
 
+    cancelPayroll: async function (args) {
+      var r = await window.sb.rpc('cancel_published_payroll', { p_payroll_run_id: args[0] });
+      if (r.error) return { success: false, msg: r.error.message };
+      return r.data;
+    },
+
     getPayrollDetail: async function (args) {
       var r = await window.sb.rpc('get_payroll_detail', { p_payroll_detail_id: args[0] });
       if (r.error) return { success: false, msg: r.error.message };

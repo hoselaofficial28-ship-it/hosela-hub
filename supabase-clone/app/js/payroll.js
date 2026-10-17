@@ -452,7 +452,11 @@ function renderPayrollPreview(res, bulanKey) {
  } else if (status === 'CONFIRMED') {
  actionHtml = '<button class="btn btn-sm btn-gold" onclick="publishPayrollUI(&quot;'+(res.id || '')+'&quot;)">Terbitkan Slip</button>';
  } else {
- actionHtml = '<span class="badge badge-green">Diterbitkan</span>';
+ actionHtml = '<div class="payroll-published-actions"><span class="badge badge-green">Diterbitkan</span>' +
+ (currentUser && currentUser.bagian === 'Owner'
+ ? '<button class="btn btn-sm btn-danger-soft" onclick="cancelPayrollUI(&quot;'+(res.id || '')+'&quot;,&quot;'+bulanKey+'&quot;,this)">Batalkan Terbit</button>'
+ : '') +
+ '</div>';
  }
  var html =
  '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">' +
@@ -693,6 +697,41 @@ function publishPayrollUI(payrollRunId) {
  showToast('Slip gaji dipublish');
  }, function() {
  showToast('Gagal publish slip');
+ });
+}
+
+function cancelPayrollUI(payrollRunId, bulanKey, button) {
+ if (!payrollRunId || !currentUser || currentUser.bagian !== 'Owner') return;
+ var label = salaryMonthLabel(bulanKey || '');
+ if (!confirm('Batalkan penerbitan slip '+label+'?\n\nSlip akan ditarik dari semua karyawan dan kembali ke status Dikonfirmasi. Data tidak dihapus dan dapat diterbitkan lagi.')) return;
+ var originalText = button ? button.textContent : 'Batalkan Terbit';
+ if (button) {
+ button.disabled = true;
+ button.textContent = 'Membatalkan...';
+ }
+ gasCall('cancelPayroll', [payrollRunId], function(res) {
+ if (!res || res.success === false) {
+ showToast((res && res.msg) || 'Gagal membatalkan slip');
+ if (button) {
+ button.disabled = false;
+ button.textContent = originalText;
+ }
+ return;
+ }
+ cacheClearAction('getPayrollPreview');
+ cacheClearAction('getPayrollDetail');
+ cacheClearAction('getPayrollEmployeeSlip');
+ cacheClearAction('getPayrollEmployeeSlipDetail');
+ _slipDetailCache = {};
+ if (res.bulan) _payrollPreviewCache[res.bulan] = res;
+ renderPayrollPreview(res, res.bulan || bulanKey);
+ showToast('Penerbitan slip dibatalkan. Data kembali ke tahap Dikonfirmasi.');
+ }, function(err) {
+ showToast((err && err.message) || 'Gagal membatalkan slip');
+ if (button) {
+ button.disabled = false;
+ button.textContent = originalText;
+ }
  });
 }
 

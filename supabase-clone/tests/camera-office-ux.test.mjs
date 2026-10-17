@@ -48,9 +48,9 @@ assert.match(css, /@media \(max-width:599px\)\{[\s\S]*?\.office-toggle-btn\{min-
 assert.match(css, /\.camera-actions\{display:grid;grid-template-columns:1fr 1fr/);
 
 // --- Versi cache harus naik serentak supaya HP tidak memakai file lama ---
-assert.match(html, /css\/style\.css\?v=20261015e/);
-assert.match(html, /js\/app\.js\?v=20261015e/);
-assert.match(app, /APP_VERSION = '20261015e'/);
-assert.match(sw, /APP_VERSION = '20261015e'/);
+assert.match(html, /css\/style\.css\?v=20261017a/);
+assert.match(html, /js\/app\.js\?v=20261017a/);
+assert.match(app, /APP_VERSION = '20261017a'/);
+assert.match(sw, /APP_VERSION = '20261017a'/);
 
 console.log('camera + office settings UX: ok');

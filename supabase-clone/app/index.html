@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=20261016d">
+<link rel="stylesheet" href="css/style.css?v=20261017a">
 
 
 
@@ -239,7 +239,7 @@
 <div class="screen" id="s-jobdesk">
  <div class="statusbar"></div>
  <div class="header">
- <div class="header-row"><button class="back-btn" onclick="goTo('s-home')">?</button><div><h1>Jobdesk</h1><p id="jobdesk-subtitle">Tugas dan panduan kerja sesuai bagian Anda</p></div></div>
+ <div class="header-row"><button class="back-btn" onclick="goBack()">?</button><div><h1>Jobdesk</h1><p id="jobdesk-subtitle">Tugas dan panduan kerja sesuai bagian Anda</p></div></div>
  <div class="gold-line"></div>
  </div>
  <div class="content jobdesk-page-content">
@@ -269,7 +269,7 @@
 <div class="screen" id="s-staff">
  <div class="statusbar"></div>
  <div class="header">
- <div class="header-row"><button class="back-btn" onclick="goTo('s-jobdesk')">?</button><div><h1 id="staff-bagian-title">?</h1><p>Pilih nama kamu</p></div></div>
+ <div class="header-row"><button class="back-btn" onclick="goBack()">?</button><div><h1 id="staff-bagian-title">?</h1><p>Pilih nama kamu</p></div></div>
  <div class="gold-line"></div>
  </div>
  <div class="content" id="staff-list"></div>
@@ -285,7 +285,7 @@
 <div class="screen" id="s-detail">
  <div class="statusbar"></div>
  <div class="header">
- <div class="header-row"><button class="back-btn" onclick="goTo('s-staff')">?</button><div><h1 id="detail-nama">?</h1><p id="detail-jabatan">?</p></div></div>
+ <div class="header-row"><button class="back-btn" onclick="goBack()">?</button><div><h1 id="detail-nama">?</h1><p id="detail-jabatan">?</p></div></div>
  <div style="display:flex;gap:6px;margin-top:8px" id="detail-badges"></div>
  </div>
  <div class="content">
@@ -310,7 +310,7 @@
 <div class="screen" id="s-pengumuman">
  <div class="statusbar"></div>
  <div class="header">
- <div class="header-row"><button class="back-btn" onclick="goTo('s-home')">?</button><div><h1>Pengumuman</h1><p>Pusat informasi resmi tim Hosela</p></div></div>
+ <div class="header-row"><button class="back-btn" onclick="goBack()">?</button><div><h1>Pengumuman</h1><p>Pusat informasi resmi tim Hosela</p></div></div>
  <div class="gold-line"></div>
  </div>
  <div class="content announcement-page-content">
@@ -345,7 +345,7 @@
 <div class="screen" id="s-ide">
  <div class="statusbar"></div>
  <div class="header">
- <div class="header-row"><button class="back-btn" onclick="goTo('s-home')">?</button><div><h1>Ide Tim</h1><p>Sampaikan ide terbaikmu</p></div></div>
+ <div class="header-row"><button class="back-btn" onclick="goBack()">?</button><div><h1>Ide Tim</h1><p>Sampaikan ide terbaikmu</p></div></div>
  <div class="gold-line"></div>
  </div>
  <div class="content">
@@ -370,7 +370,7 @@
 <div class="screen" id="s-peraturan">
  <div class="statusbar"></div>
  <div class="header">
- <div class="header-row"><button class="back-btn" onclick="goTo('s-home')">?</button><div><h1>Peraturan</h1><p>Tata tertib kantor Hosela</p></div></div>
+ <div class="header-row"><button class="back-btn" onclick="goBack()">?</button><div><h1>Peraturan</h1><p>Tata tertib kantor Hosela</p></div></div>
  <div class="gold-line"></div>
  </div>
  <div class="content peraturan-page-content">
@@ -404,7 +404,7 @@
 <div class="screen" id="s-kalender">
  <div class="statusbar"></div>
  <div class="header">
- <div class="header-row"><button class="back-btn" onclick="goTo('s-home')">?</button><div><h1>Kalender Libur</h1><p>Kelola hari libur difasilitasi</p></div></div>
+ <div class="header-row"><button class="back-btn" onclick="goBack()">?</button><div><h1>Kalender Libur</h1><p>Kelola hari libur difasilitasi</p></div></div>
  <div class="gold-line"></div>
  </div>
  <div class="content">
@@ -423,7 +423,7 @@
 <div class="screen" id="s-manage-users">
  <div class="statusbar"></div>
  <div class="header">
- <div class="header-row"><button class="back-btn" onclick="goTo('s-home')">?</button><div><h1>Pendaftar & Akses</h1><p>Khusus Owner · akun baru langsung aktif</p></div><button class="btn btn-primary btn-sm" style="margin-left:auto;white-space:nowrap" onclick="goTo('s-tambah-karyawan')">+ Tambah</button></div>
+ <div class="header-row"><button class="back-btn" onclick="goBack()">?</button><div><h1>Pendaftar & Akses</h1><p>Khusus Owner · akun baru langsung aktif</p></div><button class="btn btn-primary btn-sm" style="margin-left:auto;white-space:nowrap" onclick="goTo('s-tambah-karyawan')">+ Tambah</button></div>
  <div class="gold-line"></div>
  </div>
  <div class="content">
@@ -451,7 +451,7 @@
 <div class="screen" id="s-tambah-karyawan">
  <div class="statusbar"></div>
  <div class="header">
- <div class="header-row"><button class="back-btn" onclick="goTo('s-manage-users')">?</button><div><h1>Tambah Karyawan</h1><p>Daftarkan anggota baru</p></div></div>
+ <div class="header-row"><button class="back-btn" onclick="goBack()">?</button><div><h1>Tambah Karyawan</h1><p>Daftarkan anggota baru</p></div></div>
  <div class="gold-line"></div>
  </div>
  <div class="content">
@@ -469,7 +469,7 @@
 <div class="screen" id="s-absensi-upload">
  <div class="statusbar"></div>
  <div class="header">
- <div class="header-row"><button class="back-btn" onclick="goTo('s-home')">?</button><div><h1>Upload Absensi</h1><p>Data fingerprint mingguan</p></div></div>
+ <div class="header-row"><button class="back-btn" onclick="goBack()">?</button><div><h1>Upload Absensi</h1><p>Data fingerprint mingguan</p></div></div>
  <div class="gold-line"></div>
  </div>
  <div class="content">
@@ -515,7 +515,7 @@
 <div class="screen" id="s-laporan-absensi">
  <div class="statusbar"></div>
  <div class="header">
- <div class="header-row"><button class="back-btn" onclick="goTo('s-home')">?</button><div><h1>Laporan Absensi</h1><p id="laporan-minggu-label">Minggu terbaru</p></div></div>
+ <div class="header-row"><button class="back-btn" onclick="goBack()">?</button><div><h1>Laporan Absensi</h1><p id="laporan-minggu-label">Minggu terbaru</p></div></div>
  <div class="gold-line"></div>
  </div>
  <div class="content" id="laporan-list"><div class="empty-state"><div class="empty-icon"></div>Memuat...</div></div>
@@ -525,7 +525,7 @@
 <div class="screen" id="s-kpi-check">
  <div class="statusbar"></div>
  <div class="header">
- <div class="header-row"><button class="back-btn" onclick="goTo('s-home')">?</button><div><h1>KPI Checklist</h1><p id="kpi-check-minggu">Minggu ini</p></div></div>
+ <div class="header-row"><button class="back-btn" onclick="goBack()">?</button><div><h1>KPI Checklist</h1><p id="kpi-check-minggu">Minggu ini</p></div></div>
  <div class="gold-line"></div>
  </div>
  <div class="content" id="kpi-check-content">
@@ -537,7 +537,7 @@
 <div class="screen" id="s-papan-peringkat">
  <div class="statusbar"></div>
  <div class="header">
- <div class="header-row"><button class="back-btn" onclick="goTo('s-home')">?</button><div><h1>Papan Peringkat</h1><p>Kinerja tim bulan ini</p></div></div>
+ <div class="header-row"><button class="back-btn" onclick="goBack()">?</button><div><h1>Papan Peringkat</h1><p>Kinerja tim bulan ini</p></div></div>
  <div class="gold-line"></div>
  </div>
  <div class="content" id="papan-content">
@@ -549,7 +549,7 @@
 <div class="screen" id="s-ganti-pin">
  <div class="statusbar"></div>
  <div class="header">
- <div class="header-row"><button class="back-btn" onclick="goTo('s-home')">?</button><div><h1>Ganti Sandi</h1><p>Ubah kata sandi kamu</p></div></div>
+ <div class="header-row"><button class="back-btn" onclick="goBack()">?</button><div><h1>Ganti Sandi</h1><p>Ubah kata sandi kamu</p></div></div>
  <div class="gold-line"></div>
  </div>
  <div class="content">
@@ -602,7 +602,7 @@
 <div class="screen" id="s-absensi-camera">
  <div class="statusbar"></div>
  <div class="header">
- <div class="header-row"><button class="back-btn" onclick="goTo('s-home')">?</button><div><h1>Absensi Kamera</h1><p>Foto selfie dan lokasi kantor</p></div></div>
+ <div class="header-row"><button class="back-btn" onclick="goBack()">?</button><div><h1>Absensi Kamera</h1><p>Foto selfie dan lokasi kantor</p></div></div>
  <div class="gold-line"></div>
  </div>
  <div class="content camera-page-content">
@@ -656,7 +656,7 @@
 <div class="screen" id="s-izin">
  <div class="statusbar"></div>
  <div class="header">
- <div class="header-row"><button class="back-btn" onclick="goTo('s-home')">?</button><div><h1>Izin / Sakit</h1><p>Ajukan ketidakhadiran</p></div></div>
+ <div class="header-row"><button class="back-btn" onclick="goBack()">?</button><div><h1>Izin / Sakit</h1><p>Ajukan ketidakhadiran</p></div></div>
  <div class="gold-line"></div>
  </div>
  <div class="content izin-page-content">
@@ -701,7 +701,7 @@
 <div class="screen" id="s-kelola-izin">
  <div class="statusbar"></div>
  <div class="header">
- <div class="header-row"><button class="back-btn" onclick="goTo('s-home')">?</button><div><h1>Kelola</h1><p>Izin & Tap Anomali</p></div></div>
+ <div class="header-row"><button class="back-btn" onclick="goBack()">?</button><div><h1>Kelola</h1><p>Izin & Tap Anomali</p></div></div>
  <div class="gold-line"></div>
  </div>
  <div style="display:flex;border-bottom:2px solid var(--gray-border);background:#fff;flex-shrink:0">
@@ -718,7 +718,7 @@
 <div class="screen" id="s-notifikasi">
  <div class="statusbar"></div>
  <div class="header">
- <div class="header-row"><button class="back-btn" onclick="goTo('s-home')">?</button><div><h1>Notifikasi</h1><p>Peringatan & info untukmu</p></div>
+ <div class="header-row"><button class="back-btn" onclick="goBack()">?</button><div><h1>Notifikasi</h1><p>Peringatan & info untukmu</p></div>
  <button onclick="hapusSemuaNotif()" style="background:none;border:none;color:rgba(255,255,255,0.7);font-size:12px;cursor:pointer;margin-left:auto">Hapus Semua</button>
  </div>
  <div class="gold-line"></div>
@@ -732,7 +732,7 @@
 <div class="screen" id="s-sanksi-manual">
  <div class="statusbar"></div>
  <div class="header">
- <div class="header-row"><button class="back-btn" onclick="goTo('s-home')">?</button><div><h1>Penghargaan & Denda</h1><p>Denda dan penghargaan manual</p></div></div>
+ <div class="header-row"><button class="back-btn" onclick="goBack()">?</button><div><h1>Penghargaan & Denda</h1><p>Denda dan penghargaan manual</p></div></div>
  <div class="gold-line"></div>
  </div>
  <div class="content">
@@ -774,7 +774,7 @@
 <div class="screen" id="s-review-telat">
  <div class="statusbar"></div>
  <div class="header">
- <div class="header-row"><button class="back-btn" onclick="goTo('s-home')">?</button><div><h1>Review Telat</h1><p>Tentukan potongan telat khusus</p></div></div>
+ <div class="header-row"><button class="back-btn" onclick="goBack()">?</button><div><h1>Review Telat</h1><p>Tentukan potongan telat khusus</p></div></div>
  <div class="gold-line"></div>
  </div>
  <div class="content">
@@ -798,7 +798,7 @@
 <div class="screen" id="s-catatan-kehadiran">
  <div class="statusbar"></div>
  <div class="header">
- <div class="header-row"><button class="back-btn" onclick="goTo('s-home')">?</button><div><h1>Catatan Kehadiran</h1><p>Riwayat masuk dan pulang bulanan</p></div></div>
+ <div class="header-row"><button class="back-btn" onclick="goBack()">?</button><div><h1>Catatan Kehadiran</h1><p>Riwayat masuk dan pulang bulanan</p></div></div>
  <div class="gold-line"></div>
  </div>
  <div class="content">
@@ -815,7 +815,7 @@
 <div class="screen" id="s-setting-gaji">
  <div class="statusbar"></div>
  <div class="header">
- <div class="header-row"><button class="back-btn" onclick="goTo('s-home')">?</button><div><h1>Pengaturan Gaji</h1><p>Ubah gaji bulanan karyawan</p></div></div>
+ <div class="header-row"><button class="back-btn" onclick="goBack()">?</button><div><h1>Pengaturan Gaji</h1><p>Ubah gaji bulanan karyawan</p></div></div>
  <div class="gold-line"></div>
  </div>
  <div class="content">
@@ -826,7 +826,7 @@
 <div class="screen" id="s-payroll">
  <div class="statusbar"></div>
  <div class="header">
- <div class="header-row"><button class="back-btn" onclick="goTo('s-home')">?</button><div><h1>Penggajian</h1><p>Pratinjau gaji sebelum menerbitkan slip</p></div></div>
+ <div class="header-row"><button class="back-btn" onclick="goBack()">?</button><div><h1>Penggajian</h1><p>Pratinjau gaji sebelum menerbitkan slip</p></div></div>
  <div class="gold-line"></div>
  </div>
  <div class="content payroll-hub-content">
@@ -850,7 +850,7 @@
 <div class="screen" id="s-slip-gaji">
  <div class="statusbar"></div>
  <div class="header">
- <div class="header-row"><button class="back-btn" onclick="goTo('s-home')">?</button><div><h1>Slip Gaji</h1><p>Slip yang sudah dipublish</p></div></div>
+ <div class="header-row"><button class="back-btn" onclick="goBack()">?</button><div><h1>Slip Gaji</h1><p>Slip yang sudah dipublish</p></div></div>
  <div class="gold-line"></div>
  </div>
  <div class="content slip-page-content">
@@ -871,8 +871,8 @@
 <script src="js/real-backend.js"></script>
 <script src="js/dashboard-reports.js?v=20261015e"></script>
 <script src="js/mock-backend.js"></script>
-<script src="js/app.js?v=20261016d"></script>
-<script src="js/payroll.js?v=20261016d"></script>
+<script src="js/app.js?v=20261017a"></script>
+<script src="js/payroll.js?v=20261017a"></script>
 <script src="js/preview.js?v=20260930b"></script>
 </body>
 </html>

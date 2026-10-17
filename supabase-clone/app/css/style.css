@@ -898,6 +898,14 @@ textarea.form-input{line-height:1.45}
 .payroll-guide-steps span{display:flex;flex-direction:column;min-width:0}
 .payroll-guide-steps strong{font-size:12px;line-height:1.35}
 .payroll-guide-steps small{font-size:10px;line-height:1.4;color:var(--text-muted)}
+.payroll-published-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap}
+.btn-danger-soft{min-height:44px;border:1px solid #fda29b!important;background:#fff5f4!important;color:#b42318!important}
+.btn-danger-soft:hover{background:#fee4e2!important}
+.btn-danger-soft:disabled{opacity:.55;cursor:not-allowed}
+@media(max-width:480px){
+ .payroll-published-actions{width:100%;justify-content:space-between;margin-top:8px}
+ .payroll-published-actions .btn-danger-soft{flex:1}
+}
 .payroll-month-row{display:grid;grid-template-columns:1fr;gap:6px;margin-bottom:12px}
 .payroll-month-row label{font-size:12px;font-weight:800;color:var(--text-dark)}
 @media (min-width:768px){

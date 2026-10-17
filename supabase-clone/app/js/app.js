@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbw6q_5ZaIGrekeBwZ5TKh6X1GpWkFHsa5i6whdwacQkTEa-vvNezHlxFMEQFKZkmm5ffQ/exec';
-var APP_VERSION = '20261016d';
+var APP_VERSION = '20261017a';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -419,6 +419,7 @@ function invalidateReadCacheAfterMutation(action) {
   createPayrollDraft: ['getPayrollPreview','getPayrollDetail'],
   confirmPayroll: ['getPayrollPreview','getPayrollDetail','getPayrollEmployeeSlip','getPayrollEmployeeSlipDetail'],
   publishPayroll: ['getPayrollPreview','getPayrollDetail','getPayrollEmployeeSlip','getPayrollEmployeeSlipDetail','getNotifikasi','getHomeData'],
+  cancelPayroll: ['getPayrollPreview','getPayrollDetail','getPayrollEmployeeSlip','getPayrollEmployeeSlipDetail','getNotifikasi','getHomeData'],
   submitKPILaporan: ['getKPILaporan','getPapanPeringkat','getHomeData'],
   submitIzin: ['getIzinKaryawan','getIzinPending','getIzinPendingCount','getHomeData','getNotifikasi'],
   approveIzin: ['getIzinKaryawan','getIzinPending','getIzinPendingCount','getAbsensiRekap','getRekapBulananSemua','getHomeData','getNotifikasi'],
@@ -674,6 +675,7 @@ function installApp() {
 
 // Navigation history stack untuk swipe back
 var _navHistory = [];
+var _isBackNavigation = false;
 
 function activeScreenId() {
  var active = document.querySelector('.screen.active');
@@ -710,7 +712,9 @@ function goTo(id) {
  if (c) c.scrollTop = 0;
  if (prevId && prevId !== id) {
  var skipHistoryPush = false;
- if (id === 's-home' && (prevId === 's-login' || prevId === 's-force-pin')) {
+ if (_isBackNavigation) {
+ skipHistoryPush = true;
+ } else if (id === 's-home' && (prevId === 's-login' || prevId === 's-force-pin')) {
  _navHistory = [];
  skipHistoryPush = true;
  } else if (prevId === 's-login' || prevId === 's-force-pin') {
@@ -718,7 +722,10 @@ function goTo(id) {
  skipHistoryPush = true;
  }
  if (!skipHistoryPush && _navHistory[_navHistory.length - 1] !== prevId) _navHistory.push(prevId);
- history.pushState({ screen: id }, '', '#' + id);
+ try {
+  if (_isBackNavigation) history.replaceState({ screen: id }, '', '#' + id);
+  else history.pushState({ screen: id }, '', '#' + id);
+ } catch(e) {}
  }
  // Hapus badge menu yang dibuka + tandai notif menu tsb sebagai dibaca
  if (currentUser && id !== 's-home') {
@@ -762,6 +769,22 @@ function goTo(id) {
  if (id === 's-home') setTimeout(ensureHomeBackGuard, 50);
 }
 
+function goBack() {
+ var target = _navHistory.length ? _navHistory.pop() : 's-home';
+ if (!document.getElementById(target)) target = 's-home';
+ _isBackNavigation = true;
+ try {
+  goTo(target);
+ } finally {
+  _isBackNavigation = false;
+ }
+}
+
+document.querySelectorAll('.back-btn').forEach(function(button) {
+ button.setAttribute('aria-label', 'Kembali ke halaman sebelumnya');
+ button.setAttribute('title', 'Kembali');
+});
+
 // Handle browser back button / swipe back
 window.addEventListener('popstate', function(e) {
  if (_allowAppExit) return;
@@ -790,10 +813,7 @@ window.addEventListener('popstate', function(e) {
  return;
  }
  if (_navHistory.length > 0) {
- var prev = _navHistory.pop();
- document.querySelectorAll('.screen').forEach(function(s){ s.classList.remove('active'); });
- var el = document.getElementById(prev);
- if (el) el.classList.add('active');
+ goBack();
  } else {
  // Tidak ada history — push state lagi supaya tidak keluar app
  try { history.pushState({ screen: activeId || 's-home', appGuard: true }, '', location.href); } catch(err) {}

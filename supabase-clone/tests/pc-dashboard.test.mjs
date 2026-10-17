@@ -215,9 +215,9 @@ assert.doesNotMatch(css, /#s-slip-gaji\.screen\.active>\.header\{[\s\S]{0,220}?m
 // ---------------------------------------------------------------------------
 // 5) Versi cache naik serentak
 // ---------------------------------------------------------------------------
-assert.match(html, /css\/style\.css\?v=20261015e/);
-assert.match(html, /js\/app\.js\?v=20261015e/);
-assert.match(app, /APP_VERSION = '20261015e'/);
-assert.match(sw, /APP_VERSION = '20261015e'/);
+assert.match(html, /css\/style\.css\?v=20261017a/);
+assert.match(html, /js\/app\.js\?v=20261017a/);
+assert.match(app, /APP_VERSION = '20261017a'/);
+assert.match(sw, /APP_VERSION = '20261017a'/);
 
 console.log('dashboard PC (sidebar penuh + laporan kinerja): ok');
