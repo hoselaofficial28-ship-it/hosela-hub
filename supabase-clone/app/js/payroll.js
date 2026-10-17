@@ -120,6 +120,15 @@ function payrollPdfMoney(n) {
  return (parseInt(n || 0, 10) || 0).toLocaleString('id-ID');
 }
 
+function formatPayrollItemDescription(value) {
+ return String(value || '').replace(/(\d+)(?:[.,](\d+))?\s+jam\b/gi, function(match, whole, fraction) {
+  if (!fraction) return whole + ' jam';
+  var hours = Number(whole + '.' + fraction);
+  if (!isFinite(hours)) return match;
+  return hours.toLocaleString('id-ID', { maximumFractionDigits: 2 }) + ' jam';
+ });
+}
+
 function payrollPdfRow(label, value, type) {
  var n = parseInt(value || 0, 10) || 0;
  var sign = type === 'minus' && n > 0 ? '-' : (type === 'plus' && n > 0 ? '+' : '');
@@ -137,7 +146,7 @@ function buildPayrollSlipPdfHtml(res) {
   var tipe = item.tipe || '';
   var nominal = parseInt(item.nominal || 0, 10) || 0;
   var minus = tipe === 'DENDA' || tipe === 'ADJUSTMENT_MINUS' || tipe === 'ABSEN';
-  return '<div class="pdf-item"><div><b>'+salaryEsc(payrollItemLabel(tipe))+'</b><small>'+salaryEsc(item.keterangan || item.tanggal || '-')+'</small></div><strong class="'+(minus ? 'minus' : 'plus')+'">'+(minus ? '-' : '+')+' Rp '+payrollPdfMoney(Math.abs(nominal))+'</strong></div>';
+  return '<div class="pdf-item"><div><b>'+salaryEsc(payrollItemLabel(tipe))+'</b><small>'+salaryEsc(formatPayrollItemDescription(item.keterangan || item.tanggal || '-'))+'</small></div><strong class="'+(minus ? 'minus' : 'plus')+'">'+(minus ? '-' : '+')+' Rp '+payrollPdfMoney(Math.abs(nominal))+'</strong></div>';
  }).join('') : '<div class="pdf-empty">Tidak ada item detail.</div>';
  var html = '<!doctype html><html><head><meta charset="utf-8"><title>'+salaryEsc(title)+'</title>'+
  '<style>'+
@@ -645,7 +654,7 @@ function renderPayrollItems(items) {
  var color = n < 0 || tipe.indexOf('DENDA') !== -1 || tipe.indexOf('POTONGAN') !== -1 ? '#dc2626' : '#065f46';
  html += '<div style="border:1px solid var(--gray-border);border-radius:8px;padding:8px;margin-bottom:6px;background:#fff">';
  html += '<div style="display:flex;justify-content:space-between;gap:8px"><div style="font-size:11px;font-weight:800;color:var(--text-dark)">'+payrollItemLabel(tipe)+'</div><div style="font-size:11px;font-weight:900;color:'+color+'">Rp '+Math.abs(n).toLocaleString('id-ID')+'</div></div>';
- html += '<div style="font-size:10px;color:var(--text-muted);line-height:1.5;margin-top:3px">'+(it.tanggal || '')+' '+(it.keterangan || '')+'</div>';
+ html += '<div style="font-size:10px;color:var(--text-muted);line-height:1.5;margin-top:3px">'+salaryEsc(((it.tanggal || '')+' '+formatPayrollItemDescription(it.keterangan || '')).trim())+'</div>';
  html += '</div>';
  });
  return html;

@@ -28,5 +28,8 @@ assert.match(payroll, /Sinkronkan Ulang/);
 assert.match(payroll, /res\.sourceStale === true/);
 assert.match(payroll, /Sistem akan menyinkronkan Catatan Kehadiran terbaru terlebih dahulu/);
 assert.match(payroll, /if \(!res \|\| res\.success === false\)/);
+assert.match(payroll, /function formatPayrollItemDescription\(/);
+assert.match(payroll, /maximumFractionDigits: 2/);
+assert.match(payroll, /salaryEsc\(formatPayrollItemDescription\(item\.keterangan/);
 
 console.log('payroll attendance sync tests passed');
