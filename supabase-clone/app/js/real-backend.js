@@ -244,6 +244,12 @@
       return r.data;
     },
 
+    syncPayrollAttendance: async function (args) {
+      var r = await window.sb.rpc('refresh_payroll_from_attendance', { p_payroll_run_id: args[0] });
+      if (r.error) return { success: false, msg: r.error.message };
+      return r.data;
+    },
+
     confirmPayroll: async function (args) {
       var r = await window.sb.rpc('confirm_payroll', { p_payroll_run_id: args[0] });
       if (r.error) return { success: false, msg: r.error.message };

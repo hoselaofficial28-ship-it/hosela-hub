@@ -396,6 +396,14 @@
       }
       return handlers.getPayrollDetail.__fromRun(PAYROLL_RUNS[bulanKey]);
     },
+    syncPayrollAttendance: function (args) {
+      var run = findRunById(args[0]);
+      if (!run) return { success: false, msg: 'Penggajian tidak ditemukan (demo)' };
+      run.status = 'DRAFT';
+      run.sourceStale = false;
+      run.data = karyawanList().map(buildPayrollDetailForUser);
+      return handlers.getPayrollDetail.__fromRun(run);
+    },
     confirmPayroll: function (args) {
       var run = findRunById(args[0]); if (run) run.status = 'CONFIRMED';
       return handlers.getPayrollDetail.__fromRun(run);
@@ -464,7 +472,7 @@
   }
   handlers.getPayrollDetail.__fromRun = function (run) {
     if (!run) return { success: false, msg: 'Run tidak ditemukan' };
-    return { success: true, id: run.id, bulan: run.bulan, status: run.status, totalPayroll: run.data.reduce(function (s, r) { return s + r.totalGaji; }, 0), data: run.data };
+    return { success: true, id: run.id, bulan: run.bulan, status: run.status, sourceStale: !!run.sourceStale, totalPayroll: run.data.reduce(function (s, r) { return s + r.totalGaji; }, 0), data: run.data };
   };
 
   // ============================== ENTRY POINT ==============================

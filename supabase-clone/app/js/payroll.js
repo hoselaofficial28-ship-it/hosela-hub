@@ -5,6 +5,7 @@ var _salaryUsersCache = [];
 var _salaryUserMap = {};
 var _salaryUsersMonth = '';
 var _salarySelectedMonth = '';
+var _payrollAutoSyncing = {};
 
 function getDefaultPayrollMonth() {
  var now = new Date();
@@ -80,7 +81,7 @@ function loadPayrollPreview() {
  el.innerHTML = skelCards(3);
 
  if (_payrollPreviewCache[bulanKey]) {
- renderPayrollPreview(_payrollPreviewCache[bulanKey], bulanKey);
+ handlePayrollPreviewResponse(_payrollPreviewCache[bulanKey], bulanKey);
  return;
  }
 
@@ -89,11 +90,21 @@ function loadPayrollPreview() {
  renderPayrollSetupState(bulanKey);
  return;
  }
- _payrollPreviewCache[bulanKey] = res;
- renderPayrollPreview(res, bulanKey);
+ handlePayrollPreviewResponse(res, bulanKey);
  }, function() {
  renderPayrollSetupState(bulanKey);
  });
+}
+
+function handlePayrollPreviewResponse(res, bulanKey) {
+ var status = String(res && res.status || '').toUpperCase();
+ if (res && res.id && res.sourceStale === true && status !== 'PUBLISHED' && !_payrollAutoSyncing[bulanKey]) {
+  _payrollAutoSyncing[bulanKey] = true;
+  syncPayrollAttendanceUI(res.id, bulanKey, null, true);
+  return;
+ }
+ _payrollPreviewCache[bulanKey] = res;
+ renderPayrollPreview(res, bulanKey);
 }
 
 function salaryEsc(s) {
@@ -448,9 +459,13 @@ function renderPayrollPreview(res, bulanKey) {
  if (status === 'PREVIEW') {
  actionHtml = '<button class="btn btn-sm btn-primary" onclick="createPayrollDraftUI(&quot;'+bulanKey+'&quot;)">Buat Draf</button>';
  } else if (status === 'DRAFT') {
- actionHtml = '<button class="btn btn-sm btn-primary" onclick="confirmPayrollUI(&quot;'+(res.id || '')+'&quot;)">Konfirmasi</button>';
+ actionHtml = '<div style="display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px">' +
+ '<button class="btn btn-sm btn-secondary" onclick="syncPayrollAttendanceUI(&quot;'+(res.id || '')+'&quot;,&quot;'+bulanKey+'&quot;,this,false)">Sinkronkan Kehadiran</button>' +
+ '<button class="btn btn-sm btn-primary" onclick="confirmPayrollUI(&quot;'+(res.id || '')+'&quot;,this)">Konfirmasi</button></div>';
  } else if (status === 'CONFIRMED') {
- actionHtml = '<button class="btn btn-sm btn-gold" onclick="publishPayrollUI(&quot;'+(res.id || '')+'&quot;)">Terbitkan Slip</button>';
+ actionHtml = '<div style="display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px">' +
+ '<button class="btn btn-sm btn-secondary" onclick="syncPayrollAttendanceUI(&quot;'+(res.id || '')+'&quot;,&quot;'+bulanKey+'&quot;,this,false)">Sinkronkan Ulang</button>' +
+ '<button class="btn btn-sm btn-gold" onclick="publishPayrollUI(&quot;'+(res.id || '')+'&quot;,this)">Terbitkan Slip</button></div>';
  } else {
  actionHtml = '<div class="payroll-published-actions"><span class="badge badge-green">Diterbitkan</span>' +
  (currentUser && currentUser.bagian === 'Owner'
@@ -676,27 +691,72 @@ function createPayrollDraftUI(bulanKey) {
  });
 }
 
-function confirmPayrollUI(payrollRunId) {
+function syncPayrollAttendanceUI(payrollRunId, bulanKey, button, automatic) {
  if (!payrollRunId || !currentUser) return;
- if (!confirm('Konfirmasi penggajian ini? Slip belum diterbitkan sampai tombol Terbitkan Slip ditekan.')) return;
- gasCall('confirmPayroll', [payrollRunId, currentUser.nama], function(res) {
- if (res && res.bulan) _payrollPreviewCache[res.bulan] = res;
- renderPayrollPreview(res, res.bulan);
- showToast('Penggajian dikonfirmasi');
- }, function() {
- showToast('Gagal konfirmasi payroll');
+ if (!automatic && !confirm('Sinkronkan penggajian dengan Catatan Kehadiran terbaru?\n\nJika sebelumnya sudah dikonfirmasi, status akan kembali ke Draf agar dapat diperiksa ulang.')) return;
+ var originalText = button ? button.textContent : '';
+ if (button) {
+  button.disabled = true;
+  button.textContent = 'Menyinkronkan...';
+ }
+ gasCall('syncPayrollAttendance', [payrollRunId], function(res) {
+  delete _payrollAutoSyncing[bulanKey];
+  if (!res || res.success === false) {
+   if (button) { button.disabled = false; button.textContent = originalText; }
+   showToast((res && res.msg) || 'Sinkronisasi penggajian gagal');
+   return;
+  }
+  cacheClearAction('getPayrollPreview');
+  cacheClearAction('getPayrollDetail');
+  _payrollDetailCache = {};
+  _payrollPreviewCache[bulanKey] = res;
+  renderPayrollPreview(res, res.bulan || bulanKey);
+  showToast(automatic ? 'Penggajian otomatis diselaraskan dengan kehadiran terbaru' : 'Penggajian sudah disinkronkan');
+ }, function(err) {
+  delete _payrollAutoSyncing[bulanKey];
+  if (button) { button.disabled = false; button.textContent = originalText; }
+  renderPayrollSetupState(bulanKey);
+  showToast((err && err.message) || 'Sinkronisasi penggajian gagal');
  });
 }
 
-function publishPayrollUI(payrollRunId) {
+function confirmPayrollUI(payrollRunId, button) {
+ if (!payrollRunId || !currentUser) return;
+ if (!confirm('Konfirmasi penggajian ini?\n\nSistem akan menyinkronkan Catatan Kehadiran terbaru terlebih dahulu. Slip belum diterbitkan sampai tombol Terbitkan Slip ditekan.')) return;
+ var originalText = button ? button.textContent : 'Konfirmasi';
+ if (button) { button.disabled = true; button.textContent = 'Mengonfirmasi...'; }
+ gasCall('confirmPayroll', [payrollRunId, currentUser.nama], function(res) {
+ if (!res || res.success === false) {
+  if (button) { button.disabled = false; button.textContent = originalText; }
+  showToast((res && res.msg) || 'Gagal konfirmasi payroll');
+  return;
+ }
+ if (res && res.bulan) _payrollPreviewCache[res.bulan] = res;
+ renderPayrollPreview(res, res.bulan);
+ showToast('Penggajian dikonfirmasi');
+ }, function(err) {
+ if (button) { button.disabled = false; button.textContent = originalText; }
+ showToast((err && err.message) || 'Gagal konfirmasi payroll');
+ });
+}
+
+function publishPayrollUI(payrollRunId, button) {
  if (!payrollRunId || !currentUser) return;
  if (!confirm('Terbitkan slip gaji ke semua karyawan untuk penggajian ini?')) return;
+ var originalText = button ? button.textContent : 'Terbitkan Slip';
+ if (button) { button.disabled = true; button.textContent = 'Menerbitkan...'; }
  gasCall('publishPayroll', [payrollRunId, currentUser.nama], function(res) {
+ if (!res || res.success === false) {
+  if (button) { button.disabled = false; button.textContent = originalText; }
+  showToast((res && res.msg) || 'Gagal publish slip');
+  return;
+ }
  if (res && res.bulan) _payrollPreviewCache[res.bulan] = res;
  renderPayrollPreview(res, res.bulan);
  showToast('Slip gaji dipublish');
- }, function() {
- showToast('Gagal publish slip');
+ }, function(err) {
+ if (button) { button.disabled = false; button.textContent = originalText; }
+ showToast((err && err.message) || 'Gagal publish slip');
  });
 }
 

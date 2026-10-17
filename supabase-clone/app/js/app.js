@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbw6q_5ZaIGrekeBwZ5TKh6X1GpWkFHsa5i6whdwacQkTEa-vvNezHlxFMEQFKZkmm5ffQ/exec';
-var APP_VERSION = '20261017b';
+var APP_VERSION = '20261017c';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -417,6 +417,7 @@ function invalidateReadCacheAfterMutation(action) {
   updateUserSalary: ['getSalaryUsers','getAllUsers','getAbsensiRekap','getAllAbsensiRekap','getRekapBulananSemua','getPayrollPreview','getPayrollDetail','getPayrollEmployeeSlip','getPayrollEmployeeSlipDetail'],
   deactivateSalaryUser: ['getSalaryUsers','getAllUsers','getStaffByBagian','getRekapBulananSemua','getPayrollPreview','getHomeData'],
   createPayrollDraft: ['getPayrollPreview','getPayrollDetail'],
+  syncPayrollAttendance: ['getPayrollPreview','getPayrollDetail','getPayrollEmployeeSlip','getPayrollEmployeeSlipDetail'],
   confirmPayroll: ['getPayrollPreview','getPayrollDetail','getPayrollEmployeeSlip','getPayrollEmployeeSlipDetail'],
   publishPayroll: ['getPayrollPreview','getPayrollDetail','getPayrollEmployeeSlip','getPayrollEmployeeSlipDetail','getNotifikasi','getHomeData'],
   cancelPayroll: ['getPayrollPreview','getPayrollDetail','getPayrollEmployeeSlip','getPayrollEmployeeSlipDetail','getNotifikasi','getHomeData'],
