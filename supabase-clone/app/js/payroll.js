@@ -6,6 +6,7 @@ var _salaryUserMap = {};
 var _salaryUsersMonth = '';
 var _salarySelectedMonth = '';
 var _payrollAutoSyncing = {};
+var _slipListState = { items: [], isAdmin: false, month: '', sort: 'DESC' };
 
 function getDefaultPayrollMonth() {
  var now = new Date();
@@ -843,51 +844,31 @@ function buildRecentPayrollMonths(count) {
 function loadPublishedEmployeeSlips() {
  var el = document.getElementById('slip-gaji-content');
  if (!el) return;
- var months = buildRecentPayrollMonths(12);
- var pending = months.length;
- var rows = [];
  el.innerHTML = skelCards(3);
- cacheClearAction('getPayrollPreview');
+ cacheClearAction('getPublishedPayrollSlips');
  cacheClearAction('getPayrollDetail');
-
- function finishOne() {
- pending -= 1;
- if (pending > 0) return;
- rows.sort(function(a, b) {
- if ((a.bulan || '') !== (b.bulan || '')) return String(b.bulan || '').localeCompare(String(a.bulan || ''));
- return String(a.nama || '').localeCompare(String(b.nama || ''));
+ gasCall('getPublishedPayrollSlips', [], function(res) {
+  if (!res || res.error || res.success === false) {
+   el.innerHTML = slipListErrorState(res && (res.msg || res.error || res.message));
+   return;
+  }
+  renderAdminSlipList(res.data || res.items || []);
+ }, function(err) {
+  el.innerHTML = slipListErrorState(err && (err.msg || err.message || err));
  });
- renderAdminSlipList(rows);
- }
-
- months.forEach(function(monthKey) {
- gasCall('getPayrollPreview', [monthKey], function(res) {
- var status = String((res && res.status) || '').toUpperCase();
- var data = (res && (res.data || res.items)) || [];
- if (status === 'PUBLISHED' && data.length) {
- data.forEach(function(d) {
- rows.push({
- id: d.id || '',
- payrollRunId: d.payrollRunId || res.id || '',
- userId: d.userId || '',
- nama: d.nama || '-',
- bagian: d.bagian || '-',
- jabatan: d.jabatan || '-',
- bulan: res.bulan || monthKey,
- dipublishPada: res.dipublishPada || res.updatedAt || '-',
- totalGaji: d.totalGaji || d.total || 0,
- totalReward: d.totalReward || 0,
- bonusKerajinan: d.bonusKerajinan || 0,
- totalDenda: d.totalDenda || 0,
- gajiPokok: d.gajiPokok || 0
- });
- });
- }
- finishOne();
- }, function() {
- finishOne();
- });
- });
+}
+/**
+ * Keadaan gagal saat memuat riwayat slip. Sebab asli ditampilkan (bukan disamarkan) supaya
+ * Owner/Finance tahu harus berbuat apa — mis. fungsi RPC belum ada karena migrasi belum jalan.
+ */
+function slipListErrorState(sebab) {
+ var pesan = sebab ? String(sebab) : '';
+ var saran = /get_published_payroll_slips|does not exist|PGRST202|schema cache/i.test(pesan)
+  ? ' Jalankan migrasi supabase/migrations/20261017000042_grouped_payroll_slips.sql di Supabase.'
+  : ' Coba muat ulang halaman.';
+ return '<div class="empty-state"><div class="empty-icon"></div>Riwayat slip belum dapat dimuat.' +
+  (pesan ? '<br><small>Penyebab: ' + salaryEsc(pesan) + '</small>' : '') +
+  '<br><small>' + saran.trim() + '</small></div>';
 }
 function renderSlipSetupState() {
  var el = document.getElementById('slip-gaji-content');
@@ -902,54 +883,105 @@ function renderSlipSetupState() {
 }
 
 function renderSlipList(items) {
- var el = document.getElementById('slip-gaji-content');
- if (!el) return;
- if (!items.length) {
- el.innerHTML = '<div class="empty-state"><div class="empty-icon"></div>Belum ada slip yang dipublish</div>';
- return;
- }
- el.innerHTML = items.map(function(s) {
- var targetId = 'slip-detail-' + String(s.payrollRunId || s.id || '').replace(/[^a-zA-Z0-9_-]/g, '');
- return '<article class="card slip-card">' +
- '<div class="slip-card-head">' +
- '<div><div class="slip-period">'+salaryEsc(salaryMonthLabel(s.bulan || s.periode || '-'))+'</div><div class="slip-meta">Diterbitkan '+salaryEsc(s.dipublishPada || '-')+'</div></div>' +
- '<div class="slip-amount"><span>Gaji bersih</span><strong>Rp '+(parseInt(s.totalGaji || s.total || 0, 10) || 0).toLocaleString('id-ID')+'</strong></div>' +
- '</div>' +
- '<div class="slip-actions">' +
- '<button class="btn btn-sm btn-primary" onclick="toggleSlipDetail(&quot;'+(s.payrollRunId || '')+'&quot;,&quot;'+targetId+'&quot;)">Lihat Rincian</button>' +
- '<button class="btn btn-sm btn-secondary" onclick="downloadEmployeeSlipPdf(&quot;'+(s.payrollRunId || '')+'&quot;,&quot;'+(currentUser && currentUser.id || '')+'&quot;,this)">Unduh PDF</button>' +
- '</div>' +
- '<div id="'+targetId+'" class="slip-detail-panel" style="display:none"></div>' +
- '</article>';
- }).join('');
+ setSlipListData(items, false);
 }
 
 function renderAdminSlipList(items) {
+ setSlipListData(items, true);
+}
+
+function setSlipListData(items, isAdmin) {
+ _slipListState.items = Array.isArray(items) ? items.slice() : [];
+ _slipListState.isAdmin = !!isAdmin;
+ var available = getSlipAvailableMonths(_slipListState.items);
+ if (_slipListState.month && available.indexOf(_slipListState.month) === -1) _slipListState.month = '';
+ renderGroupedSlipList();
+}
+
+function getSlipAvailableMonths(items) {
+ var seen = {};
+ (items || []).forEach(function(item) {
+  var key = String(item.bulan || item.periode || '');
+  if (key) seen[key] = true;
+ });
+ return Object.keys(seen).sort(function(a, b) { return b.localeCompare(a); });
+}
+
+function changeSlipMonthFilter(value) {
+ _slipListState.month = value || '';
+ renderGroupedSlipList();
+}
+
+function changeSlipSort(value) {
+ _slipListState.sort = value === 'ASC' ? 'ASC' : 'DESC';
+ renderGroupedSlipList();
+}
+
+function renderGroupedSlipList() {
  var el = document.getElementById('slip-gaji-content');
  if (!el) return;
- if (!items.length) {
- el.innerHTML = '<div class="empty-state"><div class="empty-icon"></div>Belum ada slip karyawan yang dipublish</div>';
+ var allItems = _slipListState.items || [];
+ if (!allItems.length) {
+ el.innerHTML = '<div class="empty-state"><div class="empty-icon"></div>' + (_slipListState.isAdmin ? 'Belum ada slip karyawan yang diterbitkan' : 'Belum ada slip yang diterbitkan') + '</div>';
  return;
  }
- var total = items.reduce(function(sum, s) { return sum + (parseInt(s.totalGaji || s.total || 0, 10) || 0); }, 0);
- var html = '<div class="slip-summary-grid">' +
- '<div class="card slip-summary-card"><strong>'+items.length+'</strong><span>Slip Terbit</span></div>' +
- '<div class="card slip-summary-card"><strong class="is-green">Rp '+total.toLocaleString('id-ID')+'</strong><span>Total Slip</span></div>' +
- '</div>';
- items.forEach(function(s) {
- var safeId = String(s.id || s.payrollRunId || s.userId || '').replace(/[^a-zA-Z0-9_-]/g, '');
- var targetId = 'admin-slip-detail-' + safeId;
- html += '<article class="card slip-card">' +
- '<div class="slip-card-head">' +
- '<div><div class="slip-period">'+salaryEsc(s.nama || '-')+'</div><div class="slip-meta">'+salaryEsc(s.jabatan || '-')+' · '+salaryEsc(s.bagian || '-')+' · '+salaryEsc(salaryMonthLabel(s.bulan || '-'))+'</div></div>' +
- '<div class="slip-amount"><span>Gaji bersih</span><strong>Rp '+(parseInt(s.totalGaji || s.total || 0, 10) || 0).toLocaleString('id-ID')+'</strong></div>' +
- '</div>' +
- renderPayrollMiniBreakdown(s) +
- '<div class="slip-actions slip-actions-single"><button class="btn btn-sm btn-primary" onclick="toggleAdminSlipDetail(&quot;'+salaryEsc(s.id || '')+'&quot;,&quot;'+targetId+'&quot;)">Lihat Rincian Slip</button></div>' +
- '<div id="'+targetId+'" class="slip-detail-panel" style="display:none"></div>' +
- '</article>';
+ var months = getSlipAvailableMonths(allItems);
+ var filtered = allItems.filter(function(item) {
+  return !_slipListState.month || String(item.bulan || item.periode || '') === _slipListState.month;
  });
+ filtered.sort(function(a, b) {
+  var monthCompare = String(a.bulan || '').localeCompare(String(b.bulan || ''));
+  if (_slipListState.sort === 'DESC') monthCompare *= -1;
+  if (monthCompare) return monthCompare;
+  return String(a.nama || '').localeCompare(String(b.nama || ''));
+ });
+ var total = filtered.reduce(function(sum, s) { return sum + (parseInt(s.totalGaji || s.total || 0, 10) || 0); }, 0);
+ var shownMonths = getSlipAvailableMonths(filtered);
+ if (_slipListState.sort === 'ASC') shownMonths.reverse();
+ var monthOptions = '<option value="">Semua bulan</option>' + months.map(function(month) {
+  return '<option value="'+salaryEsc(month)+'"'+(_slipListState.month === month ? ' selected' : '')+'>'+salaryEsc(salaryMonthLabel(month))+'</option>';
+ }).join('');
+ var html = '<section class="slip-browser" aria-label="Riwayat slip gaji">' +
+ '<div class="slip-toolbar">' +
+ '<div class="slip-toolbar-copy"><strong>Riwayat Slip</strong><span>'+months.length+' bulan tersedia</span></div>' +
+ '<div class="slip-filter-grid">' +
+ '<label class="slip-filter-field"><span>Pilih bulan</span><select class="form-input" aria-label="Pilih bulan slip" onchange="changeSlipMonthFilter(this.value)">'+monthOptions+'</select></label>' +
+ '<label class="slip-filter-field"><span>Urutkan</span><select class="form-input" aria-label="Urutkan slip" onchange="changeSlipSort(this.value)"><option value="DESC"'+(_slipListState.sort === 'DESC' ? ' selected' : '')+'>Terbaru dahulu</option><option value="ASC"'+(_slipListState.sort === 'ASC' ? ' selected' : '')+'>Terlama dahulu</option></select></label>' +
+ '</div></div>' +
+ '<div class="slip-summary-grid"><div class="card slip-summary-card"><strong>'+filtered.length+'</strong><span>Slip ditampilkan</span></div><div class="card slip-summary-card"><strong class="is-green">Rp '+total.toLocaleString('id-ID')+'</strong><span>Total gaji bersih</span></div></div>';
+
+ if (!filtered.length) {
+  html += '<div class="empty-state"><div class="empty-icon"></div>Tidak ada slip pada bulan yang dipilih</div>';
+ } else {
+  shownMonths.forEach(function(month) {
+   var monthItems = filtered.filter(function(item) { return String(item.bulan || item.periode || '') === month; });
+   var monthTotal = monthItems.reduce(function(sum, item) { return sum + (parseInt(item.totalGaji || item.total || 0, 10) || 0); }, 0);
+   html += '<section class="slip-month-group" aria-labelledby="slip-month-'+salaryEsc(month)+'"><div class="slip-month-head"><div><span>PERIODE GAJI</span><h3 id="slip-month-'+salaryEsc(month)+'">'+salaryEsc(salaryMonthLabel(month))+'</h3></div><div><strong>'+monthItems.length+' slip</strong><span>Rp '+monthTotal.toLocaleString('id-ID')+'</span></div></div><div class="slip-month-list">';
+   monthItems.forEach(function(item, index) { html += renderSlipListRow(item, index); });
+   html += '</div></section>';
+  });
+ }
+ html += '</section>';
  el.innerHTML = html;
+}
+
+function renderSlipListRow(s, index) {
+ var safeId = String((s.id || s.payrollRunId || '') + '-' + (s.userId || index)).replace(/[^a-zA-Z0-9_-]/g, '');
+ var targetId = 'slip-row-detail-' + safeId;
+ var total = parseInt(s.totalGaji || s.total || 0, 10) || 0;
+ var isAdmin = _slipListState.isAdmin;
+ var title = isAdmin ? (s.nama || '-') : 'Slip Gaji';
+ var meta = isAdmin ? ((s.jabatan || '-') + ' · ' + (s.bagian || '-')) : ('Diterbitkan ' + (s.dipublishPada || '-'));
+ var detailAction = isAdmin
+  ? 'toggleAdminSlipDetail(&quot;'+salaryEsc(s.id || '')+'&quot;,&quot;'+targetId+'&quot;)'
+  : 'toggleSlipDetail(&quot;'+salaryEsc(s.payrollRunId || '')+'&quot;,&quot;'+targetId+'&quot;)';
+ var userId = isAdmin ? (s.userId || '') : (currentUser && currentUser.id || '');
+ return '<article class="slip-list-row">' +
+  '<div class="slip-row-main"><div class="slip-row-identity"><div class="slip-document-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2h9l4 4v16H6z"/><path d="M14 2v5h5M9 12h6M9 16h6"/></svg></div><div><div class="slip-period">'+salaryEsc(title)+'</div><div class="slip-meta">'+salaryEsc(meta)+'</div></div></div>' +
+  '<div class="slip-amount"><span>Gaji bersih</span><strong>Rp '+total.toLocaleString('id-ID')+'</strong></div></div>' +
+  (isAdmin ? renderPayrollMiniBreakdown(s) : '') +
+  '<div class="slip-actions"><button class="btn btn-sm btn-primary" aria-controls="'+targetId+'" onclick="'+detailAction+'">Lihat Rincian</button><button class="btn btn-sm btn-secondary" onclick="downloadEmployeeSlipPdf(&quot;'+salaryEsc(s.payrollRunId || '')+'&quot;,&quot;'+salaryEsc(userId)+'&quot;,this)">Unduh PDF</button></div>' +
+  '<div id="'+targetId+'" class="slip-detail-panel" style="display:none"></div></article>';
 }
 function toggleSlipDetail(payrollRunId, targetId) {
  var target = document.getElementById(targetId);

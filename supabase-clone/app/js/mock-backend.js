@@ -437,6 +437,17 @@
       });
       return { success: true, data: rows };
     },
+    getPublishedPayrollSlips: function () {
+      var rows = [];
+      Object.keys(PAYROLL_RUNS).forEach(function (bulan) {
+        var run = PAYROLL_RUNS[bulan];
+        if (run.status !== 'PUBLISHED') return;
+        run.data.forEach(function (d) {
+          rows.push(Object.assign({ bulan: bulan, payrollRunId: run.id }, d));
+        });
+      });
+      return { success: true, data: rows };
+    },
     getPayrollEmployeeSlipDetail: function (args) {
       var userId = args[0], runId = args[1];
       var run = PAYROLL_RUNS[Object.keys(PAYROLL_RUNS).find(function (b) { return PAYROLL_RUNS[b].id === runId; }) || ''] || findRunById(runId);

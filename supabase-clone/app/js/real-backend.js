@@ -289,6 +289,12 @@
       return r.data;
     },
 
+    getPublishedPayrollSlips: async function () {
+      var r = await window.sb.rpc('get_published_payroll_slips');
+      if (r.error) return { success: false, msg: r.error.message };
+      return r.data;
+    },
+
     // args lama: [userId, payrollRunId]
     getPayrollEmployeeSlipDetail: async function (args) {
       var r = await window.sb.rpc('get_payroll_employee_slip_detail', { p_user_id: args[0], p_payroll_run_id: args[1] });
