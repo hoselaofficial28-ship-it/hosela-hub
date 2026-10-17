@@ -571,39 +571,71 @@ function gasFormPost(action, args, success, failure) {
  }, 3500);
 }
 
+// Aksi yang sama tidak dijalankan dua kali bersamaan (prefetch + halaman sering meminta aksi
+// yang sama pada pembukaan pertama sehingga Supabase kebanjiran request). Setiap permintaan
+// juga diberi batas waktu supaya skeleton/loading tidak menggantung selamanya bila tidak ada
+// balasan — kegagalan dilaporkan apa adanya, bukan didiamkan.
+var _gasInFlight = {};
+var GAS_TIMEOUT_MS = 25000;
+
 function gasCall(action, args, success, failure) {
  var cacheKey = action + JSON.stringify(args || []);
- function finishSuccess(data) {
+ function applyCache(data) {
   if (CACHEABLE.indexOf(action) !== -1) cacheSet(cacheKey, data, cacheTtlForAction(action));
   else invalidateReadCacheAfterMutation(action);
-  if (success) success(data);
  }
  // Cek cache dulu
  if (CACHEABLE.indexOf(action) !== -1) {
- var cached = cacheGet(cacheKey);
- if (cached) { if (success) success(cached); return; }
+  var cached = cacheGet(cacheKey);
+  if (cached) { if (success) success(cached); return; }
  }
+ // Gabungkan dengan permintaan yang masih berjalan untuk aksi+argumen yang sama
+ var waiters = _gasInFlight[cacheKey];
+ if (waiters) { waiters.push({ success: success, failure: failure }); return; }
+ waiters = _gasInFlight[cacheKey] = [{ success: success, failure: failure }];
+
+ var selesai = false;
+ var jam = setTimeout(function () {
+  tutup(false, new Error('Tidak ada balasan dalam ' + (GAS_TIMEOUT_MS / 1000) + ' detik untuk aksi "' + action + '". Periksa koneksi lalu muat ulang halaman.'));
+ }, GAS_TIMEOUT_MS);
+
+ function tutup(ok, payload) {
+  if (selesai) return;
+  selesai = true;
+  clearTimeout(jam);
+  delete _gasInFlight[cacheKey];
+  if (ok) applyCache(payload);
+  waiters.forEach(function (w) {
+   try {
+    if (ok) { if (w.success) w.success(payload); }
+    else if (w.failure) w.failure(payload);
+    else console.error('GAS Error [' + action + ']:', payload);
+   } catch (e) {
+    console.error('Callback error [' + action + ']:', e);
+   }
+  });
+ }
+
  // ====== SUPABASE ASLI dulu (js/real-backend.js), baru fallback DEMO ======
  if (window.realBackendHandles && window.realBackendHandles(action)) {
- window.realBackend(action, args || []).then(function(result) {
-  finishSuccess(result);
- }).catch(function(err) {
-  console.error('[REAL] error, action=' + action, err);
-  if (failure) failure(err); else console.error('Supabase Error:', err);
- });
- return;
+  window.realBackend(action, args || []).then(function (result) {
+   tutup(true, result);
+  }).catch(function (err) {
+   console.error('[REAL] error, action=' + action, err);
+   tutup(false, err);
+  });
+  return;
  }
  // Belum tersambung ke Supabase asli untuk aksi ini — dialihkan ke data
  // contoh di js/mock-backend.js supaya tampilan & alur tetap bisa dicek.
- setTimeout(function() {
- try {
-  if (typeof window.mockBackend !== 'function') throw new Error('mock-backend.js belum termuat');
-  var result = window.mockBackend(action, args || []);
-  finishSuccess(result);
- } catch (e) {
-  console.error('[DEMO] mockBackend error, action=' + action, e);
-  if (failure) failure(e); else console.error('GAS Error:', e);
- }
+ setTimeout(function () {
+  try {
+   if (typeof window.mockBackend !== 'function') throw new Error('mock-backend.js belum termuat');
+   tutup(true, window.mockBackend(action, args || []));
+  } catch (e) {
+   console.error('[DEMO] mockBackend error, action=' + action, e);
+   tutup(false, e);
+  }
  }, 220 + Math.random() * 180);
 }
 
@@ -1807,6 +1839,7 @@ function closeHomeCategory(fromHistory) {
 var _pcNavApplied = false;
 var _pcReportsLoading = false;
 var _pcReportsLoadedAt = 0;
+var _pcReportsStartedAt = 0;
 
 // Layar yang memang tidak boleh punya sidebar (sebelum login / wajib ganti sandi).
 var PC_SIDEBAR_SKIP = ['s-login', 's-daftar', 's-paksa-ganti-pin'];
@@ -1911,9 +1944,10 @@ function loadDesktopReports(force) {
  if (!sec || !grid) return;
  if (!isDesktopLayout() || !currentUser) { sec.hidden = true; return; }
  sec.hidden = false;
- if (_pcReportsLoading) return;
+ if (_pcReportsLoading && (Date.now() - _pcReportsStartedAt) < 30000) return;
  if (!force && _pcReportsLoadedAt && (Date.now() - _pcReportsLoadedAt) < 60 * 1000) return;
  _pcReportsLoading = true;
+ _pcReportsStartedAt = Date.now();
 
  var bulanKey = attendanceMonthKey(new Date());
  var todayKey = pcTodayKey(new Date());
