@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbw6q_5ZaIGrekeBwZ5TKh6X1GpWkFHsa5i6whdwacQkTEa-vvNezHlxFMEQFKZkmm5ffQ/exec';
-var APP_VERSION = '20261020e';
+var APP_VERSION = '20261020f';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -751,9 +751,32 @@ function ensureHomeBackGuard() {
  } catch(e) {}
 }
 
+function pcReadSidebarScrollTop(screen) {
+ var list = screen && screen.querySelector ? screen.querySelector('.pc-nav-scroll') : null;
+ return list ? list.scrollTop : null;
+}
+
+function pcRestoreSidebarScroll(screen, scrollTop, activeId) {
+ if (scrollTop === null || scrollTop === undefined || !screen) return;
+ var list = screen.querySelector('.pc-nav-scroll');
+ if (!list) return;
+ list.scrollTop = scrollTop;
+
+ // Biasanya menu yang baru ditekan sudah berada di area yang terlihat sehingga
+ // posisi tidak berubah sama sekali. Koreksi kecil hanya dilakukan bila tujuan
+ // dibuka dari tombol lain dan menu aktif berada di luar viewport sidebar.
+ var activeItem = activeId ? list.querySelector('.pc-nav-item[data-screen="' + activeId + '"]') : null;
+ if (!activeItem) return;
+ var itemTop = activeItem.offsetTop;
+ var itemBottom = itemTop + activeItem.offsetHeight;
+ if (itemTop < list.scrollTop) list.scrollTop = Math.max(0, itemTop - 8);
+ else if (itemBottom > list.scrollTop + list.clientHeight) list.scrollTop = itemBottom - list.clientHeight + 8;
+}
+
 function goTo(id) {
   var prev = document.querySelector('.screen.active');
   var prevId = prev ? prev.id : null;
+  var previousSidebarTop = pcReadSidebarScrollTop(prev);
   if (prevId === 's-absensi-camera' && id !== 's-absensi-camera') stopAttendanceCamera();
   if (id !== 's-home') _homeCategoryOpen = false;
   document.querySelectorAll('.screen').forEach(function(s){ s.classList.remove('active'); });
@@ -761,6 +784,7 @@ function goTo(id) {
  if (!el) return;
  el.classList.add('active');
  updateDesktopNavActive(id);
+ pcRestoreSidebarScroll(el, previousSidebarTop, id);
  if (id === 's-home') loadDesktopReports(false);
  try {
   window.scrollTo(0, 0);

@@ -24,6 +24,10 @@ assert.match(app, /event\.key === 'ArrowLeft'/);
 assert.match(app, /event\.key === 'ArrowRight'/);
 assert.match(app, /handle\.addEventListener\('dblclick'/);
 assert.match(app, /k !== 'hh_pc_sidebar_width'/);
+assert.match(app, /function pcReadSidebarScrollTop\(screen\)/);
+assert.match(app, /function pcRestoreSidebarScroll\(screen, scrollTop, activeId\)/);
+assert.match(app, /var previousSidebarTop = pcReadSidebarScrollTop\(prev\)/);
+assert.match(app, /updateDesktopNavActive\(id\);\r?\n pcRestoreSidebarScroll\(el, previousSidebarTop, id\);/);
 
 const clampSource = app.match(/function pcClampSidebarWidth\(value, maxWidth\) \{[\s\S]*?\n\}/)?.[0];
 assert.ok(clampSource, 'fungsi pembatas lebar sidebar tersedia');
@@ -35,5 +39,26 @@ assert.equal(sandbox.clamp(999, 380), 380);
 assert.equal(sandbox.clamp(312, 380), 312);
 assert.equal(sandbox.clamp(null, 380), 256);
 assert.equal(sandbox.clamp('', 380), 256);
+
+const readScrollSource = app.match(/function pcReadSidebarScrollTop\(screen\) \{[\s\S]*?\n\}/)?.[0];
+const restoreScrollSource = app.match(/function pcRestoreSidebarScroll\(screen, scrollTop, activeId\) \{[\s\S]*?\n\}/)?.[0];
+assert.ok(readScrollSource && restoreScrollSource, 'fungsi penjaga posisi scroll tersedia');
+const activeItem = { offsetTop: 430, offsetHeight: 42 };
+const navList = {
+  scrollTop: 380,
+  clientHeight: 200,
+  querySelector() { return activeItem; }
+};
+const screen = { querySelector() { return navList; } };
+const navSandbox = { Math };
+vm.createContext(navSandbox);
+vm.runInContext(`${readScrollSource}; ${restoreScrollSource}; this.readTop = pcReadSidebarScrollTop; this.restoreTop = pcRestoreSidebarScroll;`, navSandbox);
+assert.equal(navSandbox.readTop(screen), 380);
+navSandbox.restoreTop(screen, 380, 's-manage-users');
+assert.equal(navList.scrollTop, 380, 'menu yang masih terlihat tidak boleh mengubah posisi sidebar');
+
+activeItem.offsetTop = 620;
+navSandbox.restoreTop(screen, 380, 's-manage-users');
+assert.equal(navList.scrollTop, 470, 'menu di luar viewport digeser secukupnya agar terlihat');
 
 console.log('sidebar desktop scroll + resize: ok');
