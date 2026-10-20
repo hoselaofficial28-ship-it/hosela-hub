@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbw6q_5ZaIGrekeBwZ5TKh6X1GpWkFHsa5i6whdwacQkTEa-vvNezHlxFMEQFKZkmm5ffQ/exec';
-var APP_VERSION = '20261020c';
+var APP_VERSION = '20261020d';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -1876,7 +1876,7 @@ function pcSidebarMaxWidth() {
 
 function pcClampSidebarWidth(value, maxWidth) {
  var max = Number(maxWidth) || pcSidebarMaxWidth();
- var width = Number(value);
+ var width = (value === null || value === '') ? PC_SIDEBAR_DEFAULT_WIDTH : Number(value);
  if (!isFinite(width)) width = PC_SIDEBAR_DEFAULT_WIDTH;
  return Math.max(PC_SIDEBAR_MIN_WIDTH, Math.min(max, Math.round(width)));
 }

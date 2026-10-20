@@ -31,5 +31,7 @@ vm.runInContext(`${clampSource}; this.clamp = pcClampSidebarWidth;`, sandbox);
 assert.equal(sandbox.clamp(100, 380), 228);
 assert.equal(sandbox.clamp(999, 380), 380);
 assert.equal(sandbox.clamp(312, 380), 312);
+assert.equal(sandbox.clamp(null, 380), 256);
+assert.equal(sandbox.clamp('', 380), 256);
 
 console.log('sidebar desktop scroll + resize: ok');
