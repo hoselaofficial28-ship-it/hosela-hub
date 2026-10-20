@@ -3825,20 +3825,15 @@ body.phone-mode #app-wrap #s-daftar.screen.active{
     overflow-x:hidden;
     overflow-y:auto;
     overscroll-behavior:contain;
-    scrollbar-gutter:stable;
-    scrollbar-width:thin;
-    scrollbar-color:#b8cae6 transparent;
+    scrollbar-width:none;
+    -ms-overflow-style:none;
     padding:0 8px 12px 0;
   }
-  body:not(.phone-mode) .navbar .pc-nav-scroll::-webkit-scrollbar{width:8px}
-  body:not(.phone-mode) .navbar .pc-nav-scroll::-webkit-scrollbar-track{background:transparent}
-  body:not(.phone-mode) .navbar .pc-nav-scroll::-webkit-scrollbar-thumb{
-    background:#b8cae6;
-    border:2px solid transparent;
-    border-radius:999px;
-    background-clip:padding-box;
+  body:not(.phone-mode) .navbar .pc-nav-scroll::-webkit-scrollbar{
+    display:none;
+    width:0;
+    height:0;
   }
-  body:not(.phone-mode) .navbar .pc-nav-scroll::-webkit-scrollbar-thumb:hover{background:#8ba7cf;background-clip:padding-box}
 
   /* Pegangan di sisi kanan dapat ditarik, dioperasikan dengan tombol panah,
      atau diklik dua kali untuk kembali ke lebar awal. */

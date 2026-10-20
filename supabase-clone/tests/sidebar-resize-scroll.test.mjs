@@ -10,6 +10,8 @@ const app = fs.readFileSync(new URL('../app/js/app.js', import.meta.url), 'utf8'
 assert.match(css, /\.navbar\.pc-nav-full\{[\s\S]*?height:calc\(100dvh - 26px\)!important;[\s\S]*?min-height:0!important;[\s\S]*?overflow:hidden!important/);
 assert.match(css, /\.screen\.active>\.navbar\.pc-nav-full\{[\s\S]*?width:var\(--pc-sidebar-width\)!important/);
 assert.match(css, /\.navbar \.pc-nav-scroll\{[\s\S]*?min-height:0;[\s\S]*?overflow-y:auto;[\s\S]*?overscroll-behavior:contain/);
+assert.match(css, /\.navbar \.pc-nav-scroll\{[\s\S]*?scrollbar-width:none;[\s\S]*?-ms-overflow-style:none/);
+assert.match(css, /\.navbar \.pc-nav-scroll::\-webkit-scrollbar\{[\s\S]*?display:none;[\s\S]*?width:0/);
 assert.match(css, /\.pc-sidebar-resizer\{[\s\S]*?cursor:col-resize;[\s\S]*?touch-action:none/);
 
 // Lebar sidebar mengubah kartu dan track grid secara bersamaan, disimpan lokal,
