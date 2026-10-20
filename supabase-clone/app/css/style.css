@@ -6,7 +6,9 @@ body{font-family:'Manrope',system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI'
   --gold:#c9971f;--gold-light:#fef3c7;
   --gray-bg:#f7f9fc;--gray-border:#e2e8f0;
   --text-dark:#1e3a5f;--text-muted:#6b7280;
-  --green:#059669;--red:#dc2626;--orange:#d97706
+  --green:#059669;--red:#dc2626;--orange:#d97706;
+  --pc-sidebar-width:256px;
+  --pc-sidebar-track:294px
 }
 
 /* ===== Owner content tools + responsive polish (2026-10-12) ===== */
@@ -3776,7 +3778,7 @@ body.phone-mode #app-wrap #s-daftar.screen.active{
      kolom ke-2, kolom pertama tetap dipakai kartu sidebar. Layar sebelum login
      dan layar wajib ganti sandi dikecualikan (memang tanpa sidebar). */
   body:not(.phone-mode) .screen.active:not(#s-login):not(#s-daftar):not(#s-paksa-ganti-pin){
-    grid-template-columns:294px minmax(0,1fr)!important;
+    grid-template-columns:var(--pc-sidebar-track) minmax(0,1fr)!important;
     grid-template-rows:74px minmax(0,1fr)!important;
   }
   body:not(.phone-mode) .screen.active:not(#s-login):not(#s-daftar):not(#s-paksa-ganti-pin)>.content{
@@ -3794,23 +3796,90 @@ body.phone-mode #app-wrap #s-daftar.screen.active{
   /* Sidebar tidak ikut menggulir bersama isi menu. */
   body:not(.phone-mode) .screen.active>.navbar.pc-nav-full{
     grid-column:1!important;
+    grid-row:1 / 3!important;
     align-self:start!important;
+    width:var(--pc-sidebar-width)!important;
   }
 
-  /* Sidebar: seluruh menu, bisa digulir karena daftarnya panjang. */
+  /* Kartu sidebar selalu setinggi viewport. Logo tetap diam, sementara daftar
+     menu di bawahnya mempunyai area scroll sendiri. */
   body:not(.phone-mode) .navbar.pc-nav-full{
-    overflow-y:auto;
-    overflow-x:hidden;
-    padding:92px 12px 18px!important;
+    width:var(--pc-sidebar-width)!important;
+    height:calc(100vh - 26px)!important;
+    height:calc(100dvh - 26px)!important;
+    min-height:0!important;
+    max-height:calc(100vh - 26px)!important;
+    max-height:calc(100dvh - 26px)!important;
+    overflow:hidden!important;
+    padding:92px 10px 14px 12px!important;
     gap:0!important;
     align-items:stretch!important;
-    scrollbar-width:thin;
   }
   body:not(.phone-mode) .navbar .pc-nav-scroll{
     display:flex;
     flex-direction:column;
     gap:2px;
     width:100%;
+    min-height:0;
+    flex:1 1 auto;
+    overflow-x:hidden;
+    overflow-y:auto;
+    overscroll-behavior:contain;
+    scrollbar-gutter:stable;
+    scrollbar-width:thin;
+    scrollbar-color:#b8cae6 transparent;
+    padding:0 8px 12px 0;
+  }
+  body:not(.phone-mode) .navbar .pc-nav-scroll::-webkit-scrollbar{width:8px}
+  body:not(.phone-mode) .navbar .pc-nav-scroll::-webkit-scrollbar-track{background:transparent}
+  body:not(.phone-mode) .navbar .pc-nav-scroll::-webkit-scrollbar-thumb{
+    background:#b8cae6;
+    border:2px solid transparent;
+    border-radius:999px;
+    background-clip:padding-box;
+  }
+  body:not(.phone-mode) .navbar .pc-nav-scroll::-webkit-scrollbar-thumb:hover{background:#8ba7cf;background-clip:padding-box}
+
+  /* Pegangan di sisi kanan dapat ditarik, dioperasikan dengan tombol panah,
+     atau diklik dua kali untuk kembali ke lebar awal. */
+  body:not(.phone-mode) .pc-sidebar-resizer{
+    position:absolute;
+    z-index:8;
+    top:86px;
+    right:0;
+    bottom:10px;
+    width:13px;
+    border:0;
+    border-radius:8px;
+    background:transparent;
+    cursor:col-resize;
+    touch-action:none;
+  }
+  body:not(.phone-mode) .pc-sidebar-resizer::after{
+    content:"";
+    position:absolute;
+    top:50%;
+    right:3px;
+    width:3px;
+    height:54px;
+    border-radius:999px;
+    background:#d4e0f1;
+    transform:translateY(-50%);
+    transition:background .18s,box-shadow .18s;
+  }
+  body:not(.phone-mode) .pc-sidebar-resizer:hover::after,
+  body:not(.phone-mode) .pc-sidebar-resizer:focus-visible::after,
+  body.pc-sidebar-resizing .pc-sidebar-resizer::after{
+    background:#2e6de2;
+    box-shadow:0 0 0 4px rgba(46,109,226,.13);
+  }
+  body:not(.phone-mode) .pc-sidebar-resizer:focus-visible{outline:2px solid #2e6de2;outline-offset:-2px}
+  body.pc-sidebar-resizing,
+  body.pc-sidebar-resizing *{cursor:col-resize!important;user-select:none!important}
+  body.pc-sidebar-resizing .screen.active{transition:none!important}
+
+  @media (prefers-reduced-motion:reduce){
+    body:not(.phone-mode) .pc-sidebar-resizer::after{transition:none}
   }
   body:not(.phone-mode) .navbar .pc-nav-group{
     margin:14px 0 4px;

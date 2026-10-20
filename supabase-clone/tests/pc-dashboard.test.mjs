@@ -186,7 +186,8 @@ assert.match(app, /pcEnsureSidebars\(\);\r?\n var navs = pcNavbarEls\(\);/);
 assert.match(css, /\.pc-reports\{display:none\}/);
 assert.match(css, /body:not\(\.phone-mode\) \.pc-reports:not\(\[hidden\]\)\{/);
 assert.match(css, /body:not\(\.phone-mode\) #home-menu\{display:none!important\}/);
-assert.match(css, /body:not\(\.phone-mode\) \.navbar\.pc-nav-full\{[\s\S]*?overflow-y:auto/);
+assert.match(css, /body:not\(\.phone-mode\) \.navbar\.pc-nav-full\{[\s\S]*?overflow:hidden!important/);
+assert.match(css, /body:not\(\.phone-mode\) \.navbar \.pc-nav-scroll\{[\s\S]*?overflow-y:auto/);
 assert.match(css, /body:not\(\.phone-mode\) \.navbar \.pc-nav-item\.active\{background:linear-gradient/);
 assert.match(css, /body:not\(\.phone-mode\) \.pc-card\{[\s\S]*?border-radius:20px/);
 assert.match(css, /body:not\(\.phone-mode\) \.pc-metric-row\{[\s\S]*?grid-template-columns:repeat\(auto-fit/);
@@ -196,7 +197,7 @@ assert.match(css, /body:not\(\.phone-mode\) \.pc-metric-row\{[\s\S]*?grid-templa
 assert.match(css, /body:not\(\.phone-mode\) \.pc-reports:not\(\[hidden\]\)\{[\s\S]*?grid-row:2 \/ span 30/);
 assert.match(css, /body:not\(\.phone-mode\) \.home-clock-card,\s*\n\s*body:not\(\.phone-mode\) #reward-section,\s*\n\s*body:not\(\.phone-mode\) #profile-card,[\s\S]*?align-self:start!important/);
 // Semua layar menu memakai grid 2 kolom (sidebar + isi), kecuali layar sebelum login.
-assert.match(css, /body:not\(\.phone-mode\) \.screen\.active:not\(#s-login\):not\(#s-daftar\):not\(#s-paksa-ganti-pin\)\{\s*\n\s*grid-template-columns:294px minmax\(0,1fr\)!important/);
+assert.match(css, /body:not\(\.phone-mode\) \.screen\.active:not\(#s-login\):not\(#s-daftar\):not\(#s-paksa-ganti-pin\)\{\s*\n\s*grid-template-columns:var\(--pc-sidebar-track\) minmax\(0,1fr\)!important/);
 assert.match(css, /body:not\(\.phone-mode\) \.screen\.active:not\(#s-login\):not\(#s-daftar\):not\(#s-paksa-ganti-pin\)>\.content\{\s*\n\s*grid-column:2!important/);
 // Isi menu memakai SELURUH lebar kolom (dulu mentok 1160px → separuh kanan kosong,
 // dan sebagian dipusatkan → garis kiri tidak lurus/zigzag). Kolom isian dibatasi.
@@ -215,9 +216,9 @@ assert.doesNotMatch(css, /#s-slip-gaji\.screen\.active>\.header\{[\s\S]{0,220}?m
 // ---------------------------------------------------------------------------
 // 5) Versi cache naik serentak
 // ---------------------------------------------------------------------------
-assert.match(html, /css\/style\.css\?v=20261020b/);
-assert.match(html, /js\/app\.js\?v=20261020b/);
-assert.match(app, /APP_VERSION = '20261020b'/);
-assert.match(sw, /APP_VERSION = '20261020b'/);
+assert.match(html, /css\/style\.css\?v=20261020c/);
+assert.match(html, /js\/app\.js\?v=20261020c/);
+assert.match(app, /APP_VERSION = '20261020c'/);
+assert.match(sw, /APP_VERSION = '20261020c'/);
 
 console.log('dashboard PC (sidebar penuh + laporan kinerja): ok');

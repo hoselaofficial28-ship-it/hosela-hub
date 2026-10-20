@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbw6q_5ZaIGrekeBwZ5TKh6X1GpWkFHsa5i6whdwacQkTEa-vvNezHlxFMEQFKZkmm5ffQ/exec';
-var APP_VERSION = '20261020b';
+var APP_VERSION = '20261020c';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -266,7 +266,7 @@ function ensureFreshRuntime() {
  if (current === APP_VERSION) return;
  localStorage.setItem(key, APP_VERSION);
  Object.keys(localStorage).forEach(function(k) {
- if (k.indexOf('hh_') === 0 && k !== key && k !== 'hh_username' && k !== 'hh_session' && k.indexOf('hh_sb_session') !== 0) localStorage.removeItem(k);
+ if (k.indexOf('hh_') === 0 && k !== key && k !== 'hh_username' && k !== 'hh_session' && k !== 'hh_pc_sidebar_width' && k.indexOf('hh_sb_session') !== 0) localStorage.removeItem(k);
  });
  if (window.caches && caches.keys) {
  caches.keys().then(function(keys) { keys.forEach(function(k) { caches.delete(k); }); });
@@ -1866,6 +1866,94 @@ var _pcNavApplied = false;
 var _pcReportsLoading = false;
 var _pcReportsLoadedAt = 0;
 var _pcReportsStartedAt = 0;
+var PC_SIDEBAR_WIDTH_KEY = 'hh_pc_sidebar_width';
+var PC_SIDEBAR_DEFAULT_WIDTH = 256;
+var PC_SIDEBAR_MIN_WIDTH = 228;
+
+function pcSidebarMaxWidth() {
+ return Math.max(PC_SIDEBAR_MIN_WIDTH, Math.min(380, Math.floor(window.innerWidth * 0.38)));
+}
+
+function pcClampSidebarWidth(value, maxWidth) {
+ var max = Number(maxWidth) || pcSidebarMaxWidth();
+ var width = Number(value);
+ if (!isFinite(width)) width = PC_SIDEBAR_DEFAULT_WIDTH;
+ return Math.max(PC_SIDEBAR_MIN_WIDTH, Math.min(max, Math.round(width)));
+}
+
+function pcStoredSidebarWidth() {
+ try { return pcClampSidebarWidth(localStorage.getItem(PC_SIDEBAR_WIDTH_KEY)); }
+ catch (e) { return PC_SIDEBAR_DEFAULT_WIDTH; }
+}
+
+function pcApplySidebarWidth(value, persist) {
+ var max = pcSidebarMaxWidth();
+ var width = pcClampSidebarWidth(value, max);
+ document.documentElement.style.setProperty('--pc-sidebar-width', width + 'px');
+ document.documentElement.style.setProperty('--pc-sidebar-track', (width + 38) + 'px');
+ document.querySelectorAll('.pc-sidebar-resizer').forEach(function (handle) {
+  handle.setAttribute('aria-valuemin', String(PC_SIDEBAR_MIN_WIDTH));
+  handle.setAttribute('aria-valuemax', String(max));
+  handle.setAttribute('aria-valuenow', String(width));
+  handle.setAttribute('aria-valuetext', width + ' piksel');
+ });
+ if (persist) {
+  try { localStorage.setItem(PC_SIDEBAR_WIDTH_KEY, String(width)); } catch (e) {}
+ }
+ return width;
+}
+
+function pcAttachSidebarResizer(nav) {
+ if (!nav || nav.querySelector('.pc-sidebar-resizer')) return;
+ var handle = document.createElement('div');
+ handle.className = 'pc-sidebar-resizer';
+ handle.setAttribute('role', 'separator');
+ handle.setAttribute('aria-orientation', 'vertical');
+ handle.setAttribute('aria-label', 'Atur lebar sidebar');
+ handle.setAttribute('tabindex', '0');
+ handle.setAttribute('title', 'Tarik untuk mengubah lebar. Klik dua kali untuk kembali ke ukuran awal.');
+ nav.appendChild(handle);
+ pcApplySidebarWidth(parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--pc-sidebar-width')) || pcStoredSidebarWidth(), false);
+
+ handle.addEventListener('pointerdown', function (event) {
+  if (event.button !== undefined && event.button !== 0) return;
+  event.preventDefault();
+  var startX = event.clientX;
+  var startWidth = nav.getBoundingClientRect().width;
+  document.body.classList.add('pc-sidebar-resizing');
+  try { handle.setPointerCapture(event.pointerId); } catch (e) {}
+
+  function onMove(moveEvent) {
+   pcApplySidebarWidth(startWidth + moveEvent.clientX - startX, false);
+  }
+  function onEnd() {
+   window.removeEventListener('pointermove', onMove);
+   window.removeEventListener('pointerup', onEnd);
+   window.removeEventListener('pointercancel', onEnd);
+   document.body.classList.remove('pc-sidebar-resizing');
+   pcApplySidebarWidth(parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--pc-sidebar-width')), true);
+  }
+  window.addEventListener('pointermove', onMove);
+  window.addEventListener('pointerup', onEnd);
+  window.addEventListener('pointercancel', onEnd);
+ });
+
+ handle.addEventListener('keydown', function (event) {
+  var current = pcStoredSidebarWidth();
+  var next = current;
+  if (event.key === 'ArrowLeft') next = current - 12;
+  else if (event.key === 'ArrowRight') next = current + 12;
+  else if (event.key === 'Home') next = PC_SIDEBAR_MIN_WIDTH;
+  else if (event.key === 'End') next = pcSidebarMaxWidth();
+  else return;
+  event.preventDefault();
+  pcApplySidebarWidth(next, true);
+ });
+
+ handle.addEventListener('dblclick', function () {
+  pcApplySidebarWidth(PC_SIDEBAR_DEFAULT_WIDTH, true);
+ });
+}
 
 // Layar yang memang tidak boleh punya sidebar (sebelum login / wajib ganti sandi).
 var PC_SIDEBAR_SKIP = ['s-login', 's-daftar', 's-paksa-ganti-pin'];
@@ -1936,9 +2024,11 @@ function applyDesktopNavigation() {
   }
  });
  var html = pcRenderSidebarNav(pcSidebarModel());
+ pcApplySidebarWidth(pcStoredSidebarWidth(), false);
  navs.forEach(function (nav) {
   nav.innerHTML = html;
   nav.classList.add('pc-nav-full');
+  pcAttachSidebarResizer(nav);
  });
  _pcNavApplied = true;
 }
