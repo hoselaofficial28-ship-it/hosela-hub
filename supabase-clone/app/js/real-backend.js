@@ -110,6 +110,19 @@
       return r.data;
     },
 
+    // Pengiriman dilakukan server-side supaya token bot tidak pernah masuk
+    // bundle browser. Edge Function memverifikasi bahwa event milik user yang
+    // sedang login, berasal dari kamera, dan berstatus DITERIMA.
+    notifyAttendanceTelegram: async function (args) {
+      var eventId = String(args[0] || '').trim();
+      if (!eventId) return { success: false, msg: 'ID absensi tidak tersedia' };
+      var r = await window.sb.functions.invoke('notify-attendance-telegram', {
+        body: { eventId: eventId }
+      });
+      if (r.error) return { success: false, msg: r.error.message || 'Notifikasi Telegram gagal dikirim' };
+      return r.data || { success: false, msg: 'Tidak ada balasan dari layanan Telegram' };
+    },
+
     // args: [eventId, path, url, mime, size, sha256, provider, capturedAt]
     attachAbsensiPhoto: async function (args) {
       var r = await window.sb.rpc('attach_absensi_photo', {

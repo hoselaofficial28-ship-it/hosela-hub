@@ -3,3 +3,8 @@
 # - JWT pengguna harus berasal dari akun Owner, atau
 # - Cron harus mengirim project secret key lewat header `apikey`.
 verify_jwt = false
+
+[functions.notify-attendance-telegram]
+# JWT diverifikasi lagi di dalam function dan event wajib milik pemanggil.
+# Ini menghindari perbedaan metode validasi JWT gateway antar versi Supabase.
+verify_jwt = false

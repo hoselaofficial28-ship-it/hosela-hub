@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbw6q_5ZaIGrekeBwZ5TKh6X1GpWkFHsa5i6whdwacQkTEa-vvNezHlxFMEQFKZkmm5ffQ/exec';
-var APP_VERSION = '20261020f';
+var APP_VERSION = '20261021a';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -3827,6 +3827,7 @@ function submitAttendanceCamera() {
  var bulanKey = attendanceMonthKey(new Date());
  clearAttendanceMatrixCache(currentUser.id, bulanKey);
  showToast('Absensi diterima. Catatan kehadiran diperbarui.');
+ notifyAttendanceOwner(res.id || '');
  // Foto jangan dibuang: simpan di memori untuk diunggah ke penyimpanan. Kalau
  // unggahan gagal, tombol "Kirim Ulang Foto" memakai data ini.
  _pendingAttendancePhoto = _attendancePhotoData ? {
@@ -3843,6 +3844,23 @@ function submitAttendanceCamera() {
  refreshAttendanceMatrixIfOpen(currentUser.id, bulanKey);
  }
  setTimeout(doSubmitAttendance, 0);
+}
+
+// Notifikasi Owner tidak boleh menggagalkan atau memperlambat absensi karyawan.
+// Edge Function melakukan validasi event + pencegahan kirim ganda. Bila layanan
+// Telegram sedang bermasalah, absensi tetap sah dan kegagalan tercatat di server.
+function notifyAttendanceOwner(eventId) {
+ if (!eventId) {
+  console.warn('Notifikasi Telegram dilewati: ID absensi tidak tersedia.');
+  return;
+ }
+ gasCall('notifyAttendanceTelegram', [eventId], function(res) {
+  if (!res || res.success === false) {
+   console.warn('Notifikasi Telegram belum terkirim:', (res && res.msg) || 'balasan tidak valid');
+  }
+ }, function(err) {
+  console.warn('Notifikasi Telegram gagal dipanggil:', err && err.message ? err.message : err);
+ });
 }
 
 // ===== Unggah foto absensi ke penyimpanan (Supabase Storage) =================
