@@ -13,12 +13,17 @@ assert.match(app, /notifyAttendanceOwner\(res\.id \|\| ''\)/);
 assert.ok(app.indexOf("if (!res || res.success === false)") < app.indexOf("notifyAttendanceOwner(res.id || '')"));
 assert.match(real, /functions\.invoke\('notify-attendance-telegram'/);
 assert.match(real, /body: \{ eventId: eventId \}/);
+assert.match(real, /body: \{ test: true \}/);
 assert.match(mock, /notifyAttendanceTelegram/);
+assert.match(mock, /testAttendanceTelegram/);
 
 // Edge Function memegang semua pemeriksaan keamanan dan secret server-side.
 assert.match(edge, /TELEGRAM_BOT_TOKEN/);
 assert.match(edge, /TELEGRAM_CHAT_ID/);
 assert.match(edge, /callerClient\.auth\.getUser\(\)/);
+assert.match(edge, /body\?\.test === true/);
+assert.match(edge, /ownerProfile\?\.bagian !== 'Owner'/);
+assert.match(edge, /Uji Notifikasi Hosela Hub/);
 assert.match(edge, /event\.user_id !== callerData\.user\.id/);
 assert.match(edge, /event\.status !== 'DITERIMA'/);
 assert.match(edge, /event\.source !== 'CAMERA'/);

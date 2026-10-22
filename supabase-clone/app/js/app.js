@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbw6q_5ZaIGrekeBwZ5TKh6X1GpWkFHsa5i6whdwacQkTEa-vvNezHlxFMEQFKZkmm5ffQ/exec';
-var APP_VERSION = '20261021a';
+var APP_VERSION = '20261022a';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -2523,6 +2523,21 @@ function setUserAccess(userId, makeActive, nama) {
 
 function userCard(u, i) { return ownerAccountCard(u, i); }
 function tendang(userId, nama) { setUserAccess(userId, false, nama); }
+
+function testAttendanceTelegram(btn) {
+ if (!currentUser || currentUser.bagian !== 'Owner') { showToast('Menu ini khusus Owner'); return; }
+ if (btn && btn.disabled) return;
+ var originalText = btn ? btn.textContent : 'Uji Telegram';
+ if (btn) { btn.disabled = true; btn.textContent = 'Mengirim tes...'; }
+ gasCall('testAttendanceTelegram', [], function(res) {
+  if (btn) { btn.disabled = false; btn.textContent = originalText; }
+  if (!res || res.success === false) { showToast((res && res.msg) || 'Uji Telegram gagal'); return; }
+  showToast('Pesan uji Telegram berhasil dikirim');
+ }, function() {
+  if (btn) { btn.disabled = false; btn.textContent = originalText; }
+  showToast('Uji Telegram gagal. Periksa koneksi dan secret Supabase.');
+ });
+}
 
 function submitTambahKaryawan() {
  var nama = (document.getElementById('tk-nama').value || '').trim();

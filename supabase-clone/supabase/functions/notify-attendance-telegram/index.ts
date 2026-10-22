@@ -31,6 +31,18 @@ function safeError(value: unknown) {
   return text.replace(/bot\d+:[A-Za-z0-9_-]+/g, 'bot[REDACTED]').slice(0, 500)
 }
 
+async function sendTelegramMessage(botToken: string, chatId: string, message: string) {
+  const response = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ chat_id: chatId, text: message, parse_mode: 'HTML' }),
+  })
+  const result = await response.json().catch(() => ({}))
+  if (!response.ok || result?.ok !== true) {
+    throw new Error(result?.description || `Telegram HTTP ${response.status}`)
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
   if (req.method !== 'POST') return json({ success: false, msg: 'Metode tidak diizinkan' }, 405)
@@ -58,6 +70,26 @@ Deno.serve(async (req) => {
     if (callerError || !callerData.user) return json({ success: false, msg: 'Sesi tidak valid' }, 401)
 
     const body = await req.json().catch(() => ({}))
+
+    if (body?.test === true) {
+      if (!botToken || !chatId) throw new Error('Secret Telegram belum dipasang di Supabase')
+      const { data: ownerProfile, error: ownerError } = await createClient(supabaseUrl, serviceRoleKey)
+        .from('profiles')
+        .select('bagian')
+        .eq('id', callerData.user.id)
+        .single()
+      if (ownerError || ownerProfile?.bagian !== 'Owner') {
+        return json({ success: false, msg: 'Uji Telegram hanya dapat dilakukan Owner' }, 403)
+      }
+      const testMessage = [
+        '<b>Uji Notifikasi Hosela Hub</b>',
+        'Koneksi Telegram berhasil dan siap menerima notifikasi absensi kamera.',
+        `Waktu uji: ${escapeHtml(new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' }))} WIB`,
+      ].join('\n')
+      await sendTelegramMessage(botToken, chatId, testMessage)
+      return json({ success: true, test: true })
+    }
+
     eventId = String(body.eventId || '').trim()
     if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(eventId)) {
       return json({ success: false, msg: 'ID absensi tidak valid' }, 400)
@@ -133,15 +165,7 @@ Deno.serve(async (req) => {
       `Jarak kantor: ${Math.round(Number(event.jarak_kantor_meter || 0))} meter`,
     ].filter(Boolean).join('\n')
 
-    const telegramResponse = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ chat_id: chatId, text: message, parse_mode: 'HTML' }),
-    })
-    const telegramResult = await telegramResponse.json().catch(() => ({}))
-    if (!telegramResponse.ok || telegramResult?.ok !== true) {
-      throw new Error(telegramResult?.description || `Telegram HTTP ${telegramResponse.status}`)
-    }
+    await sendTelegramMessage(botToken, chatId, message)
 
     const { error: sentError } = await adminClient
       .from('attendance_telegram_notifications')
