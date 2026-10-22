@@ -8,6 +8,18 @@
 
   function profileRow(p) { return Array.isArray(p) ? p[0] : p; }
 
+  async function edgeFunctionErrorMessage(error, fallback) {
+    try {
+      if (error && error.context && typeof error.context.json === 'function') {
+        var body = await error.context.json();
+        if (body && body.msg) return String(body.msg);
+        if (body && body.message) return String(body.message);
+        if (body && body.error) return String(body.error);
+      }
+    } catch (e) {}
+    return (error && error.message) ? String(error.message) : fallback;
+  }
+
   var MONTH_ID = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
   function fmtTanggalId(isoDate) {
     if (!isoDate) return '';
@@ -119,7 +131,7 @@
       var r = await window.sb.functions.invoke('notify-attendance-telegram', {
         body: { eventId: eventId }
       });
-      if (r.error) return { success: false, msg: r.error.message || 'Notifikasi Telegram gagal dikirim' };
+      if (r.error) return { success: false, msg: await edgeFunctionErrorMessage(r.error, 'Notifikasi Telegram gagal dikirim') };
       return r.data || { success: false, msg: 'Tidak ada balasan dari layanan Telegram' };
     },
 
@@ -127,7 +139,7 @@
       var r = await window.sb.functions.invoke('notify-attendance-telegram', {
         body: { test: true }
       });
-      if (r.error) return { success: false, msg: r.error.message || 'Uji Telegram gagal' };
+      if (r.error) return { success: false, msg: await edgeFunctionErrorMessage(r.error, 'Uji Telegram gagal') };
       return r.data || { success: false, msg: 'Tidak ada balasan dari layanan Telegram' };
     },
 
