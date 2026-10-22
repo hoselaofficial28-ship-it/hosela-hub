@@ -43,6 +43,22 @@ async function sendTelegramMessage(botToken: string, chatId: string, message: st
   }
 }
 
+async function findLatestHumanPrivateChat(botToken: string) {
+  const response = await fetch(`https://api.telegram.org/bot${botToken}/getUpdates?limit=25&timeout=0`)
+  const result = await response.json().catch(() => ({}))
+  if (!response.ok || result?.ok !== true || !Array.isArray(result?.result)) return ''
+
+  for (let index = result.result.length - 1; index >= 0; index -= 1) {
+    const update = result.result[index]
+    const message = update?.message || update?.edited_message || update?.channel_post
+    const chat = message?.chat
+    if (chat?.type === 'private' && message?.from?.is_bot !== true && chat?.id) {
+      return String(chat.id)
+    }
+  }
+  return ''
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
   if (req.method !== 'POST') return json({ success: false, msg: 'Metode tidak diizinkan' }, 405)
@@ -86,7 +102,28 @@ Deno.serve(async (req) => {
         'Koneksi Telegram berhasil dan siap menerima notifikasi absensi kamera.',
         `Waktu uji: ${escapeHtml(new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' }))} WIB`,
       ].join('\n')
-      await sendTelegramMessage(botToken, chatId, testMessage)
+      try {
+        await sendTelegramMessage(botToken, chatId, testMessage)
+      } catch (telegramError) {
+        const telegramMessage = safeError(telegramError)
+        if (/can't send messages to (?:the )?bot/i.test(telegramMessage)) {
+          const detectedChatId = await findLatestHumanPrivateChat(botToken)
+          if (detectedChatId) {
+            return json({
+              success: false,
+              code: 'CHAT_ID_IS_BOT',
+              detectedChatId,
+              msg: `TELEGRAM_CHAT_ID salah. Gunakan ID chat pengguna yang terdeteksi: ${detectedChatId}`,
+            }, 400)
+          }
+          return json({
+            success: false,
+            code: 'CHAT_ID_IS_BOT_NO_UPDATES',
+            msg: 'TELEGRAM_CHAT_ID berisi ID bot. Buka bot Telegram Anda, tekan Start atau kirim /start, lalu uji lagi.',
+          }, 400)
+        }
+        throw telegramError
+      }
       return json({ success: true, test: true })
     }
 
