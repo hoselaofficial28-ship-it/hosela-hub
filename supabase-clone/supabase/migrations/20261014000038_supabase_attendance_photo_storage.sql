@@ -55,7 +55,7 @@ using (
 );
 
 -- UPDATE hanya untuk retry file pada folder sendiri. Tidak ada policy DELETE
--- untuk browser; penghapusan 30 hari hanya dilakukan Edge Function dengan
+-- untuk browser; penghapusan sesuai masa retensi hanya dilakukan Edge Function dengan
 -- service_role yang tidak pernah dikirim ke HP.
 
 alter table public.attendance_events

@@ -91,7 +91,7 @@ assert.match(migration, /Foto privat tidak boleh menyimpan URL permanen/);
 assert.doesNotMatch(migration, /bytea/);
 
 // Pembersih menghapus lewat Storage API dan menandai metadata EXPIRED.
-assert.match(cleanup, /30 \* 24 \* 60 \* 60 \* 1000/);
+assert.match(cleanup, /15 \* 24 \* 60 \* 60 \* 1000/);
 assert.match(cleanup, /bucket\.remove\(batch\)/);
 assert.match(cleanup, /upload_status: 'EXPIRED'/);
 assert.match(cleanup, /req\.headers\.get\('apikey'\)/);

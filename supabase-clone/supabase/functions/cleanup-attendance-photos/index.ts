@@ -63,7 +63,10 @@ Deno.serve(async (req) => {
     }
 
     const bucket = admin.storage.from('attendance-photos')
-    const cutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+    // Kebijakan Owner 23 Okt 2026: foto hanya disimpan selama 15 hari agar
+    // pemakaian Storage tetap kecil. File yang tepat berumur 15 hari atau
+    // lebih lama sudah masuk daftar pembersihan pada eksekusi berikutnya.
+    const cutoff = new Date(Date.now() - 15 * 24 * 60 * 60 * 1000)
     const pathsToDelete: string[] = []
 
     const { data: users, error: usersError } = await bucket.list('', {

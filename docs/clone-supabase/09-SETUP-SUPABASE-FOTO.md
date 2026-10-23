@@ -11,10 +11,10 @@ Keputusan aktif per 14 Oktober 2026. Firebase dan Google Drive tidak dipakai.
 - Karyawan hanya dapat unggah, mengulang unggahan, dan membaca foldernya sendiri.
 - Owner/Finance dapat membaca seluruh bukti absensi.
 - Tautan baca berlaku 2 menit dan tidak disimpan permanen.
-- Foto dihapus otomatis setelah berumur lebih dari 30 hari.
+- Foto dihapus otomatis setelah berumur 15 hari.
 
 Dengan 15 karyawan × 2 foto/hari × rata-rata 80 KB, pemakaian stabil untuk
-retensi 30 hari sekitar 72 MB. Bahkan jika seluruh foto mencapai batas 180 KB,
+retensi 15 hari sekitar 36 MB. Bahkan jika seluruh foto mencapai batas 180 KB,
 pemakaian stabil sekitar 162 MB—jauh di bawah kuota gratis Storage 1 GB.
 
 ## 1. Buat bucket dan policy
