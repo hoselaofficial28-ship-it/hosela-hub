@@ -117,12 +117,11 @@ Deno.serve(async (req) => {
         const testType = body?.testType === 'PULANG' ? 'Pulang' : 'Datang'
         const testRole = [testProfile.bagian, testProfile.jabatan].filter(Boolean).join(' · ')
         const sampleMessage = [
-          `<b>Uji Absensi ${testType}</b>`,
+          `<b>Absensi ${testType}</b>`,
           `Nama: <b>${escapeHtml(testProfile.nama)}</b>`,
           testRole ? `Bagian: ${escapeHtml(testRole)}` : '',
           `Waktu: ${escapeHtml(new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' }))} WIB`,
           'Jarak kantor: 12 meter',
-          '<i>Simulasi Owner — tidak membuat catatan kehadiran.</i>',
         ].filter(Boolean).join('\n')
         await sendTelegramMessage(botToken, chatId, sampleMessage)
         return json({ success: true, test: true, sampleAttendance: true })
