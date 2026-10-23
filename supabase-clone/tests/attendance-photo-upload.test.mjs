@@ -94,6 +94,9 @@ assert.doesNotMatch(migration, /bytea/);
 assert.match(cleanup, /15 \* 24 \* 60 \* 60 \* 1000/);
 assert.match(cleanup, /bucket\.remove\(batch\)/);
 assert.match(cleanup, /upload_status: 'EXPIRED'/);
+assert.match(cleanup, /\.from\('leave_requests'\)/);
+assert.match(cleanup, /\.update\(\{ link_foto: null \}\)/);
+assert.match(cleanup, /supabase:\/\/attendance-photos\/\$\{path\}/);
 assert.match(cleanup, /req\.headers\.get\('apikey'\)/);
 assert.match(cleanup, /CLEANUP_CRON_SECRET/);
 assert.match(cleanup, /SUPABASE_SECRET_KEYS/);
@@ -103,9 +106,9 @@ assert.match(functionConfig, /\[functions\.cleanup-attendance-photos\]/);
 assert.match(functionConfig, /verify_jwt = false/);
 
 // Versi cache serentak agar HP tidak mempertahankan kode Firebase lama.
-assert.match(html, /css\/style\.css\?v=20261023b/);
-assert.match(html, /js\/app\.js\?v=20261023b/);
-assert.match(app, /APP_VERSION = '20261023b'/);
-assert.match(sw, /APP_VERSION = '20261023b'/);
+assert.match(html, /css\/style\.css\?v=20261023c/);
+assert.match(html, /js\/app\.js\?v=20261023c/);
+assert.match(app, /APP_VERSION = '20261023c'/);
+assert.match(sw, /APP_VERSION = '20261023c'/);
 
 console.log('penyimpanan foto absensi (Supabase Storage): ok');

@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=20261023b">
+<link rel="stylesheet" href="css/style.css?v=20261023c">
 
 
 
@@ -688,9 +688,11 @@
  <textarea class="form-input" id="izin-keterangan" rows="3" placeholder="Jelaskan alasan ketidakhadiran..."></textarea>
  </div>
  <div class="form-group" id="foto-group">
- <label class="form-label" for="izin-foto">Link Surat Dokter <span class="required-note">Wajib untuk sakit</span></label>
- <input type="url" class="form-input" id="izin-foto" placeholder="https://drive.google.com/file/d/...">
- <div class="field-help">Upload foto ke Google Drive, izinkan “Siapa saja yang memiliki link”, lalu tempel link di sini.</div>
+ <label class="form-label" for="izin-foto">Foto Surat Dokter <span class="required-note">Wajib untuk sakit</span></label>
+ <input type="file" class="form-input" id="izin-foto" accept="image/*" capture="environment" onchange="handleIzinFoto(this)">
+ <div class="field-help">Ambil foto yang jelas. File dikompres otomatis dan disimpan privat maksimal 15 hari.</div>
+ <img id="izin-foto-preview" alt="Pratinjau surat dokter" style="display:none;width:100%;max-height:260px;object-fit:contain;margin-top:10px;border-radius:10px;border:1px solid var(--gray-border);background:#f8fafc">
+ <div id="izin-foto-status" class="field-help" style="display:none;margin-top:8px"></div>
  </div>
  <button class="btn btn-primary izin-submit-btn" onclick="submitIzin()">Kirim Pengajuan</button>
  </section>
@@ -873,11 +875,11 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="js/supabase-client.js"></script>
 <script src="js/photo-storage.js?v=20261015e"></script>
-<script src="js/real-backend.js?v=20261023b"></script>
+<script src="js/real-backend.js?v=20261023c"></script>
 <script src="js/dashboard-reports.js?v=20261015e"></script>
-<script src="js/mock-backend.js?v=20261023b"></script>
-<script src="js/app.js?v=20261023b"></script>
-<script src="js/payroll.js?v=20261023b"></script>
-<script src="js/preview.js?v=20261023b"></script>
+<script src="js/mock-backend.js?v=20261023c"></script>
+<script src="js/app.js?v=20261023c"></script>
+<script src="js/payroll.js?v=20261023c"></script>
+<script src="js/preview.js?v=20261023c"></script>
 </body>
 </html>

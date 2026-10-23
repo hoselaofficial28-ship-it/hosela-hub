@@ -117,6 +117,17 @@ Deno.serve(async (req) => {
         .in('photo_path', batch)
         .eq('photo_provider', 'SUPABASE')
       if (metadataError) throw metadataError
+
+      // Bukti sakit memakai bucket dan pola path yang sama, tetapi locator-nya
+      // disimpan sebagai `supabase://attendance-photos/<path>` di leave_requests.
+      // Bersihkan locator sesudah file terhapus agar Owner tidak melihat tombol
+      // yang mengarah ke bukti kedaluwarsa.
+      const sickPhotoLocators = batch.map((path) => `supabase://attendance-photos/${path}`)
+      const { error: leaveMetadataError } = await admin
+        .from('leave_requests')
+        .update({ link_foto: null })
+        .in('link_foto', sickPhotoLocators)
+      if (leaveMetadataError) throw leaveMetadataError
     }
 
     return json({

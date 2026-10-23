@@ -269,11 +269,11 @@
     getIzinKaryawan: async function (args) {
       var userId = args[0];
       var r = await window.sb.from('leave_requests')
-        .select('id,tanggal,jenis,keterangan,status')
+        .select('id,tanggal,jenis,keterangan,status,link_foto')
         .eq('user_id', userId).order('submitted_at', { ascending: false }).limit(10);
       if (r.error) return [];
       return (r.data || []).map(function (row) {
-        return { id: row.id, tanggal: fmtTanggalId(row.tanggal), jenis: row.jenis, keterangan: row.keterangan, status: row.status };
+        return { id: row.id, tanggal: fmtTanggalId(row.tanggal), jenis: row.jenis, keterangan: row.keterangan, status: row.status, hasPhoto: !!row.link_foto };
       });
     },
 

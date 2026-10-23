@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbw6q_5ZaIGrekeBwZ5TKh6X1GpWkFHsa5i6whdwacQkTEa-vvNezHlxFMEQFKZkmm5ffQ/exec';
-var APP_VERSION = '20261023b';
+var APP_VERSION = '20261023c';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -2843,6 +2843,9 @@ function submitPaksaGantiPIN() {
 }
 
 // ─── IZIN / SAKIT ────────────────────────────────
+var _izinPhotoData = '';
+var _izinPhotoTakenAt = '';
+
 function loadIzin() {
  // Pakai tanggal lokal agar tidak bergeser sehari karena zona waktu UTC.
  var now = new Date();
@@ -2858,7 +2861,7 @@ function loadIzin() {
  var statusClass = d.status === 'DISETUJUI' ? 'success' : d.status === 'DITOLAK' ? 'danger' : 'warning';
  return '<article class="izin-history-item">'+
  '<div class="izin-history-main"><strong>'+jobdeskSafe(d.jenis)+' · '+jobdeskSafe(d.tanggal)+'</strong>'+
- '<p>'+jobdeskSafe(d.keterangan || '-')+'</p></div>'+
+ '<p>'+jobdeskSafe(d.keterangan || '-')+(d.hasPhoto ? ' · Bukti terlampir' : '')+'</p></div>'+
  '<span class="status-pill status-pill-'+statusClass+'">'+jobdeskSafe(d.status || 'MENUNGGU')+'</span></article>';
  }).join('');
  });
@@ -2868,21 +2871,118 @@ function submitIzin() {
  var tgl = document.getElementById('izin-tanggal').value;
  var jenis = document.getElementById('izin-jenis').value;
  var ket = document.getElementById('izin-keterangan').value.trim();
- var foto = document.getElementById('izin-foto').value.trim();
  if (!tgl) { showToast('Pilih tanggal dulu'); return; }
  if (!ket) { showToast('Keterangan wajib diisi'); return; }
- if (jenis === 'SAKIT' && !foto) { showToast('Surat dokter wajib untuk izin SAKIT'); return; }
+ if (jenis === 'SAKIT' && !_izinPhotoData) { showToast('Foto surat dokter wajib untuk izin SAKIT'); return; }
  var btn = document.querySelector('.izin-submit-btn');
- btn.textContent = 'Mengirim...'; btn.disabled = true;
- gasCall('submitIzin', [currentUser.id, tgl, jenis, ket, foto], function(r) {
+ btn.textContent = jenis === 'SAKIT' ? 'Mengunggah bukti...' : 'Mengirim...'; btn.disabled = true;
+
+ function kirimPengajuan(fotoLocator) {
+  btn.textContent = 'Mengirim...';
+  gasCall('submitIzin', [currentUser.id, tgl, jenis, ket, fotoLocator || ''], function(r) {
  btn.textContent = 'Kirim Pengajuan'; btn.disabled = false;
  if (r.success) {
  document.getElementById('izin-keterangan').value = '';
  document.getElementById('izin-foto').value = '';
+ _izinPhotoData = '';
+ _izinPhotoTakenAt = '';
+ var preview = document.getElementById('izin-foto-preview');
+ var status = document.getElementById('izin-foto-status');
+ if (preview) { preview.src = ''; preview.style.display = 'none'; }
+ if (status) { status.textContent = ''; status.style.display = 'none'; }
  showToast('Pengajuan berhasil dikirim! ');
  loadIzin();
  } else { showToast((r && r.msg) || 'Gagal mengirim. Coba lagi.'); }
- }, function(){ btn.textContent = 'Kirim Pengajuan'; btn.disabled = false; showToast('Koneksi gagal'); });
+  }, function(){ btn.textContent = 'Kirim Pengajuan'; btn.disabled = false; showToast('Koneksi gagal'); });
+ }
+
+ if (jenis !== 'SAKIT') { kirimPengajuan(''); return; }
+ var uploadId = (window.crypto && typeof window.crypto.randomUUID === 'function')
+  ? window.crypto.randomUUID()
+  : String(Date.now()) + '-' + Math.random().toString(16).slice(2);
+ photoStorageUpload({
+  userId: currentUser.id,
+  eventId: uploadId,
+  tipe: 'SAKIT',
+  dataUrl: _izinPhotoData,
+  takenAt: _izinPhotoTakenAt || new Date().toISOString()
+ }, function(err, uploaded) {
+  if (err || !uploaded || !uploaded.path) {
+   btn.textContent = 'Kirim Pengajuan'; btn.disabled = false;
+   showToast((err && err.message) || 'Gagal menyimpan foto surat dokter');
+   return;
+  }
+  kirimPengajuan('supabase://attendance-photos/' + uploaded.path);
+ });
+}
+
+function handleIzinFoto(input) {
+ var file = input && input.files && input.files[0];
+ var preview = document.getElementById('izin-foto-preview');
+ var status = document.getElementById('izin-foto-status');
+ _izinPhotoData = '';
+ _izinPhotoTakenAt = '';
+ if (!file) {
+  if (preview) { preview.src = ''; preview.style.display = 'none'; }
+  if (status) status.style.display = 'none';
+  return;
+ }
+ if (!/^image\//i.test(file.type || '')) { showToast('Pilih file gambar surat dokter'); input.value = ''; return; }
+ if (status) { status.textContent = 'Menyiapkan dan mengompres foto...'; status.style.display = 'block'; }
+ var reader = new FileReader();
+ reader.onerror = function() { if (status) status.textContent = 'Foto tidak dapat dibaca.'; input.value = ''; };
+ reader.onload = function() {
+  var img = new Image();
+  img.onerror = function() { if (status) status.textContent = 'Format foto tidak didukung.'; input.value = ''; };
+  img.onload = function() {
+   var canvas = document.createElement('canvas');
+   var scale = Math.min(1, 1400 / Math.max(img.width, img.height));
+   canvas.width = Math.max(1, Math.round(img.width * scale));
+   canvas.height = Math.max(1, Math.round(img.height * scale));
+   canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+   _izinPhotoData = encodeIzinPhoto(canvas);
+   var photoBytes = attendanceDataUrlByteLength(_izinPhotoData);
+   if (!_izinPhotoData || photoBytes > 180 * 1024) {
+    _izinPhotoData = '';
+    _izinPhotoTakenAt = '';
+    if (preview) { preview.src = ''; preview.style.display = 'none'; }
+    if (status) status.textContent = 'Foto belum dapat diperkecil. Coba ambil ulang dengan pencahayaan lebih baik.';
+    input.value = '';
+    return;
+   }
+   _izinPhotoTakenAt = new Date().toISOString();
+   var kb = Math.round(photoBytes / 1024);
+   if (preview) { preview.src = _izinPhotoData; preview.style.display = 'block'; }
+   if (status) status.textContent = 'Foto siap diunggah (' + kb + ' KB).';
+  };
+  img.src = String(reader.result || '');
+ };
+ reader.readAsDataURL(file);
+}
+
+function encodeIzinPhoto(sourceCanvas) {
+ var hardLimit = 180 * 1024;
+ var canvas = sourceCanvas;
+ var quality = 0.76;
+ var data = canvas.toDataURL('image/jpeg', quality);
+ while (attendanceDataUrlByteLength(data) > hardLimit && quality > 0.42) {
+  quality = Math.max(0.42, quality - 0.06);
+  data = canvas.toDataURL('image/jpeg', quality);
+ }
+ while (attendanceDataUrlByteLength(data) > hardLimit && Math.max(canvas.width, canvas.height) > 480) {
+  var smaller = document.createElement('canvas');
+  smaller.width = Math.max(1, Math.round(canvas.width * 0.84));
+  smaller.height = Math.max(1, Math.round(canvas.height * 0.84));
+  smaller.getContext('2d').drawImage(canvas, 0, 0, smaller.width, smaller.height);
+  canvas = smaller;
+  data = canvas.toDataURL('image/jpeg', 0.48);
+ }
+ quality = 0.44;
+ while (attendanceDataUrlByteLength(data) > hardLimit && quality >= 0.28) {
+  data = canvas.toDataURL('image/jpeg', quality);
+  quality -= 0.04;
+ }
+ return data;
 }
 
 function hapusSemuaNotif() {
@@ -2910,6 +3010,16 @@ function hapusSemuaNotif() {
 function toggleFotoField(jenis) {
  var fg = document.getElementById('foto-group');
  if (fg) fg.style.display = jenis === 'SAKIT' ? 'block' : 'none';
+ if (jenis !== 'SAKIT') {
+  _izinPhotoData = '';
+  _izinPhotoTakenAt = '';
+  var input = document.getElementById('izin-foto');
+  var preview = document.getElementById('izin-foto-preview');
+  var status = document.getElementById('izin-foto-status');
+  if (input) input.value = '';
+  if (preview) { preview.src = ''; preview.style.display = 'none'; }
+  if (status) { status.textContent = ''; status.style.display = 'none'; }
+ }
 }
 
 function switchKelolaTab(tab) {
@@ -2930,7 +3040,7 @@ function loadKelolaIzin() {
  return;
  }
  list.innerHTML = data.map(function(d) {
- var fotoHtml = d.linkFoto ? '<a href="'+d.linkFoto+'" target="_blank" style="font-size:11px;color:var(--blue);font-weight:600"> Lihat Surat Dokter</a>' : '';
+ var fotoHtml = d.linkFoto ? '<button type="button" class="btn btn-secondary" style="padding:7px 10px;font-size:11px" onclick="openIzinPhoto(\''+attendancePhotoAttr(d.linkFoto)+'\')">Lihat Surat Dokter</button>' : '';
  return '<div class="card" style="margin-bottom:10px">'+
  '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">'+
  '<div><div style="font-size:13px;font-weight:700;color:var(--text-dark)">'+d.nama+'</div>'+
@@ -2945,6 +3055,25 @@ function loadKelolaIzin() {
  '</div></div>';
  }).join('');
  }, function(){ list.innerHTML = '<div class="empty-state">Gagal memuat</div>'; });
+}
+
+function openIzinPhoto(locator) {
+ var value = String(locator || '').trim();
+ var prefix = 'supabase://attendance-photos/';
+ if (value.indexOf(prefix) === 0) {
+  var popup = window.open('', '_blank');
+  photoStorageCreateSignedUrl(value.substring(prefix.length), function(err, signedUrl) {
+   if (err || !signedUrl) {
+    if (popup) popup.close();
+    showToast((err && err.message) || 'Foto surat dokter tidak dapat dibuka');
+    return;
+   }
+   if (popup) popup.location.href = signedUrl;
+   else window.open(signedUrl, '_blank', 'noopener');
+  });
+  return;
+ }
+ if (/^https?:\/\//i.test(value)) window.open(value, '_blank', 'noopener');
 }
 
 function loadAnomaliPending() {

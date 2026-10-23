@@ -1,4 +1,4 @@
-# 09 — Foto Absensi di Supabase Storage
+# 09 — Foto Absensi dan Surat Dokter di Supabase Storage
 
 Keputusan aktif per 14 Oktober 2026. Firebase dan Google Drive tidak dipakai.
 
@@ -11,7 +11,8 @@ Keputusan aktif per 14 Oktober 2026. Firebase dan Google Drive tidak dipakai.
 - Karyawan hanya dapat unggah, mengulang unggahan, dan membaca foldernya sendiri.
 - Owner/Finance dapat membaca seluruh bukti absensi.
 - Tautan baca berlaku 2 menit dan tidak disimpan permanen.
-- Foto dihapus otomatis setelah berumur 15 hari.
+- Foto absensi dan surat dokter dihapus otomatis setelah berumur 15 hari.
+- Penunjuk bukti surat dokter ikut dibersihkan agar tombol foto kedaluwarsa tidak tampil.
 
 Dengan 15 karyawan × 2 foto/hari × rata-rata 80 KB, pemakaian stabil untuk
 retensi 15 hari sekitar 36 MB. Bahkan jika seluruh foto mencapai batas 180 KB,
@@ -58,7 +59,7 @@ menaruh service role di JavaScript aplikasi atau repository.
 
 ## 4. Verifikasi
 
-1. Login sebagai karyawan dan kirim satu absensi kamera.
+1. Login sebagai karyawan dan kirim satu absensi kamera serta satu pengajuan sakit.
 2. Pastikan status berubah menjadi **Foto absensi tersimpan**.
 3. Storage → `attendance-photos` harus berisi folder UUID karyawan.
 4. Tombol **Lihat Foto Absensi** harus membuat tautan sementara dan membuka foto.
