@@ -14,8 +14,11 @@ assert.ok(app.indexOf("if (!res || res.success === false)") < app.indexOf("notif
 assert.match(real, /functions\.invoke\('notify-attendance-telegram'/);
 assert.match(real, /body: \{ eventId: eventId \}/);
 assert.match(real, /body: \{ test: true \}/);
+assert.match(real, /testEmployeeAttendanceTelegram/);
+assert.match(real, /testUserId: args\[0\]/);
 assert.match(mock, /notifyAttendanceTelegram/);
 assert.match(mock, /testAttendanceTelegram/);
+assert.match(mock, /testEmployeeAttendanceTelegram/);
 
 // Edge Function memegang semua pemeriksaan keamanan dan secret server-side.
 assert.match(edge, /TELEGRAM_BOT_TOKEN/);
@@ -24,6 +27,9 @@ assert.match(edge, /callerClient\.auth\.getUser\(\)/);
 assert.match(edge, /body\?\.test === true/);
 assert.match(edge, /ownerProfile\?\.bagian !== 'Owner'/);
 assert.match(edge, /Uji Notifikasi Hosela Hub/);
+assert.match(edge, /sampleAttendance: true/);
+assert.match(edge, /Simulasi Owner — tidak membuat catatan kehadiran/);
+assert.match(edge, /\.eq\('id', testUserId\)/);
 assert.match(edge, /findLatestHumanPrivateChat/);
 assert.match(edge, /chat\?\.type === 'private'/);
 assert.match(edge, /message\?\.from\?\.is_bot !== true/);

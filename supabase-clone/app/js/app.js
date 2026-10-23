@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbw6q_5ZaIGrekeBwZ5TKh6X1GpWkFHsa5i6whdwacQkTEa-vvNezHlxFMEQFKZkmm5ffQ/exec';
-var APP_VERSION = '20261022b';
+var APP_VERSION = '20261023a';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -2496,6 +2496,9 @@ function ownerAccountCard(u, i) {
   ? '<span class="badge badge-green">Aktif</span>'
   : '<span class="badge badge-red">Nonaktif</span>';
  var action = '';
+ var telegramAction = !isOwner && u.status === 'AKTIF'
+  ? '<button class="btn btn-light btn-sm" aria-label="Uji laporan absensi Telegram '+nama+'" onclick="testEmployeeAttendanceTelegram(\''+u.id+'\',\''+esc(u.nama)+'\',this)">Uji Absensi Telegram</button>'
+  : '';
  if (isOwner || (currentUser && u.id === currentUser.id)) {
   action = '<span class="badge badge-gray">Akun Owner</span>';
  } else if (u.status === 'AKTIF') {
@@ -2507,7 +2510,7 @@ function ownerAccountCard(u, i) {
   '<div class="avatar" style="background:'+AVT_BG[ci]+';color:'+AVT_TXT[ci]+'">'+htmlEscape(initials(u.nama))+'</div>'+
   '<div class="list-info"><h4>'+nama+'</h4><p>'+jabatan+' · '+bagian+'</p>'+
   '<p class="owner-user-meta">'+email+' · Terdaftar '+tanggal+'</p></div>'+
-  '<div class="owner-user-actions">'+statusBadge+action+'</div></div>';
+  '<div class="owner-user-actions">'+statusBadge+telegramAction+action+'</div></div>';
 }
 
 function setUserAccess(userId, makeActive, nama) {
@@ -2536,6 +2539,21 @@ function testAttendanceTelegram(btn) {
  }, function() {
   if (btn) { btn.disabled = false; btn.textContent = originalText; }
   showToast('Uji Telegram gagal. Periksa koneksi dan secret Supabase.');
+ });
+}
+
+function testEmployeeAttendanceTelegram(userId, nama, btn) {
+ if (!currentUser || currentUser.bagian !== 'Owner') { showToast('Menu ini khusus Owner'); return; }
+ if (btn && btn.disabled) return;
+ var originalText = btn ? btn.textContent : 'Uji Absensi Telegram';
+ if (btn) { btn.disabled = true; btn.textContent = 'Mengirim...'; }
+ gasCall('testEmployeeAttendanceTelegram', [userId, 'MASUK'], function(res) {
+  if (btn) { btn.disabled = false; btn.textContent = originalText; }
+  if (!res || res.success === false) { showToast((res && res.msg) || 'Uji laporan absensi gagal'); return; }
+  showToast('Contoh laporan absensi '+nama+' berhasil dikirim');
+ }, function() {
+  if (btn) { btn.disabled = false; btn.textContent = originalText; }
+  showToast('Uji laporan absensi gagal. Periksa koneksi Telegram.');
  });
 }
 

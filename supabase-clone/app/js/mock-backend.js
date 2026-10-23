@@ -351,6 +351,7 @@
     submitAbsensiCamera: function () { return { success: true, status: 'DITERIMA', msg: 'Absensi tercatat (demo — tanpa validasi lokasi/foto asli)' }; },
     notifyAttendanceTelegram: function () { return { success: true, demo: true }; },
     testAttendanceTelegram: function () { return { success: true, demo: true }; },
+    testEmployeeAttendanceTelegram: function () { return { success: true, demo: true }; },
 
     // ---- Sanksi manual ----
     getSanksiManual: function () { return SANKSI; },

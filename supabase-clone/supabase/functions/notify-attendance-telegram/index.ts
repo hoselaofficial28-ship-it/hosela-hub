@@ -97,6 +97,36 @@ Deno.serve(async (req) => {
       if (ownerError || ownerProfile?.bagian !== 'Owner') {
         return json({ success: false, msg: 'Uji Telegram hanya dapat dilakukan Owner' }, 403)
       }
+
+      const testUserId = String(body?.testUserId || '').trim()
+      if (testUserId) {
+        if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(testUserId)) {
+          return json({ success: false, msg: 'ID karyawan untuk simulasi tidak valid' }, 400)
+        }
+        const { data: testProfile, error: testProfileError } = await createClient(supabaseUrl, serviceRoleKey)
+          .from('profiles')
+          .select('nama,bagian,jabatan,status')
+          .eq('id', testUserId)
+          .single()
+        if (testProfileError || !testProfile) {
+          return json({ success: false, msg: 'Profil karyawan untuk simulasi tidak ditemukan' }, 404)
+        }
+        if (testProfile.status !== 'AKTIF') {
+          return json({ success: false, msg: 'Simulasi hanya dapat dilakukan untuk akun aktif' }, 400)
+        }
+        const testType = body?.testType === 'PULANG' ? 'Pulang' : 'Datang'
+        const testRole = [testProfile.bagian, testProfile.jabatan].filter(Boolean).join(' · ')
+        const sampleMessage = [
+          `<b>Uji Absensi ${testType}</b>`,
+          `Nama: <b>${escapeHtml(testProfile.nama)}</b>`,
+          testRole ? `Bagian: ${escapeHtml(testRole)}` : '',
+          `Waktu: ${escapeHtml(new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' }))} WIB`,
+          'Jarak kantor: 12 meter',
+          '<i>Simulasi Owner — tidak membuat catatan kehadiran.</i>',
+        ].filter(Boolean).join('\n')
+        await sendTelegramMessage(botToken, chatId, sampleMessage)
+        return json({ success: true, test: true, sampleAttendance: true })
+      }
       const testMessage = [
         '<b>Uji Notifikasi Hosela Hub</b>',
         'Koneksi Telegram berhasil dan siap menerima notifikasi absensi kamera.',

@@ -143,6 +143,14 @@
       return r.data || { success: false, msg: 'Tidak ada balasan dari layanan Telegram' };
     },
 
+    testEmployeeAttendanceTelegram: async function (args) {
+      var r = await window.sb.functions.invoke('notify-attendance-telegram', {
+        body: { test: true, testUserId: args[0], testType: args[1] || 'MASUK' }
+      });
+      if (r.error) return { success: false, msg: await edgeFunctionErrorMessage(r.error, 'Uji laporan absensi gagal') };
+      return r.data || { success: false, msg: 'Tidak ada balasan dari layanan Telegram' };
+    },
+
     // args: [eventId, path, url, mime, size, sha256, provider, capturedAt]
     attachAbsensiPhoto: async function (args) {
       var r = await window.sb.rpc('attach_absensi_photo', {
