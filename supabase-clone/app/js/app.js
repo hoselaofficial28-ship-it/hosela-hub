@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbw6q_5ZaIGrekeBwZ5TKh6X1GpWkFHsa5i6whdwacQkTEa-vvNezHlxFMEQFKZkmm5ffQ/exec';
-var APP_VERSION = '20261023a';
+var APP_VERSION = '20261023b';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -652,14 +652,21 @@ function gasCall(action, args, success, failure) {
   });
   return;
  }
- // Belum tersambung ke Supabase asli untuk aksi ini — dialihkan ke data
- // contoh di js/mock-backend.js supaya tampilan & alur tetap bisa dicek.
+ // Data contoh hanya boleh hidup saat pengembangan lokal. Di domain produksi,
+ // aksi yang belum tersambung harus gagal terang-terangan agar tidak pernah
+ // menampilkan status sukses palsu kepada Owner/karyawan.
+ var host = String(window.location.hostname || '').toLowerCase();
+ var localDemo = window.location.protocol === 'file:' || host === 'localhost' || host === '127.0.0.1';
+ if (!localDemo) {
+  tutup(false, new Error('Fitur "' + action + '" belum tersambung ke layanan produksi.'));
+  return;
+ }
  setTimeout(function () {
   try {
    if (typeof window.mockBackend !== 'function') throw new Error('mock-backend.js belum termuat');
    tutup(true, window.mockBackend(action, args || []));
   } catch (e) {
-   console.error('[DEMO] mockBackend error, action=' + action, e);
+   console.error('[LOCAL DEMO] mockBackend error, action=' + action, e);
    tutup(false, e);
   }
  }, 220 + Math.random() * 180);
@@ -3383,11 +3390,9 @@ function batalkanSanksi(id) {
 // ─── REKAP BULANAN ───────────────────────────────
 // Absensi kamera disimpan terpisah dulu agar tidak mengubah rekap fingerprint lama.
 
-// Menu "Review Telat" BELUM tersambung ke Supabase: aturan bisnisnya belum
-// diputuskan Ko (aplikasi lama tidak punya fungsi ini — lihat DECISION-LOG
-// 2026-10-05). Selama saklar ini false, aplikasi menampilkan keterangan jujur
-// "belum tersambung", bukan data contoh yang seolah-olah berhasil.
-var REVIEW_TELAT_TERSAMBUNG = false;
+// Menu Review Telat kini memakai ledger Supabase. Keputusan disimpan per
+// karyawan + tanggal agar tetap berlaku saat rekap absensi diproses ulang.
+var REVIEW_TELAT_TERSAMBUNG = true;
 
 function loadReviewTelat(force) {
  var list = document.getElementById('review-telat-list');

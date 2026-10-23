@@ -43,11 +43,11 @@ assert.match(backend, /msg: 'Cek email baru untuk konfirmasi'/);
 assert.match(app, /showToast\(r\.msg \|\| 'Email berhasil disimpan '\)/);
 
 // ---------------------------------------------------------------------------
-// 2) Menu Review Telat: jujur "belum tersambung", bukan data contoh
+// 2) Menu Review Telat tersambung ke RPC Supabase asli
 // ---------------------------------------------------------------------------
-assert.match(app, /var REVIEW_TELAT_TERSAMBUNG = false;/);
-assert.match(app, /if \(!REVIEW_TELAT_TERSAMBUNG\) \{\s*\n\s*fillReviewTelatMonthSelect\(\);\s*\n\s*list\.innerHTML = '[\s\S]{0,200}belum tersambung ke database/);
-assert.match(app, /function submitReviewTelat\(id, safeId\) \{\s*\n\s*if \(!REVIEW_TELAT_TERSAMBUNG\) \{\s*\n\s*showToast\('Menu Review Telat belum tersambung ke database'\)/);
+assert.match(app, /var REVIEW_TELAT_TERSAMBUNG = true;/);
+assert.match(backend, /getIzinTelatReview:[\s\S]*get_late_reviews/);
+assert.match(backend, /reviewIzinTelat:[\s\S]*review_late_attendance/);
 
 // ---------------------------------------------------------------------------
 // 3) Migration 030: hak akses & penjagaan

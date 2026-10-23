@@ -1,7 +1,5 @@
 // ============================================================================
-// REAL BACKEND — aksi yang SUDAH tersambung ke Supabase asli (bukan contoh).
-// Aksi lain yang belum ada di sini tetap pakai mock-backend.js (lihat
-// gasCall di app.js, real-backend dicoba dulu baru fallback ke mock).
+// REAL BACKEND — aksi yang tersambung ke Supabase asli.
 // ============================================================================
 (function () {
   'use strict';
@@ -188,6 +186,28 @@
       return { success: true, data: (r.data || []).map(function (row) {
         return { id: row.id, tanggal: row.tanggal, jam: row.jam, tipe: row.tipe, status: row.status, distance: row.jarak_kantor_meter, jarak: row.jarak_kantor_meter, catatan: row.catatan, fotoUrl: row.photo_url, photoPath: row.photo_path, uploadStatus: row.upload_status, uploadError: row.upload_error, provider: row.photo_provider };
       }) };
+    },
+
+    getIzinTelatReview: async function (args) {
+      var r = await window.sb.rpc('get_late_reviews', {
+        p_status: args[0] || 'MENUNGGU',
+        p_bulan: args[1] || 'ALL'
+      });
+      if (r.error) throw r.error;
+      return r.data || [];
+    },
+
+    reviewIzinTelat: async function (args) {
+      var r = await window.sb.rpc('review_late_attendance', {
+        p_attendance_detail_id: args[0],
+        p_jenis: args[1],
+        p_durasi: Number(args[2] || 0),
+        p_alasan: args[3] || '',
+        p_catatan: args[4] || '',
+        p_reviewer_name: args[5] || ''
+      });
+      if (r.error) throw r.error;
+      return r.data || { success: false, msg: 'Tidak ada balasan dari database' };
     },
 
     processAbsensiAppToRekap: async function (args) {
