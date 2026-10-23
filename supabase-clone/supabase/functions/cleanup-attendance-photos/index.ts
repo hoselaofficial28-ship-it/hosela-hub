@@ -14,6 +14,8 @@ function json(body: unknown, status = 200) {
 
 function configuredSecretKeys() {
   const keys = new Set<string>()
+  const cleanupCronSecret = Deno.env.get('CLEANUP_CRON_SECRET') || ''
+  if (cleanupCronSecret) keys.add(cleanupCronSecret)
   const legacyServiceRole = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
   if (legacyServiceRole) keys.add(legacyServiceRole)
 

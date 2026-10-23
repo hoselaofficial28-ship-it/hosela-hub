@@ -36,6 +36,10 @@ Deploy folder berikut sebagai Edge Function bernama `cleanup-attendance-photos`:
 supabase-clone/supabase/functions/cleanup-attendance-photos/index.ts
 ```
 
+Untuk jadwal otomatis, gunakan secret khusus `CLEANUP_CRON_SECRET` yang sama
+di Edge Function dan Supabase Vault. Jangan memakai service-role utama sebagai
+credential Cron.
+
 Fungsi hanya menerima pemanggilan Owner atau `service_role`. Fungsi menghapus
 file melalui Storage API (bukan DELETE SQL, supaya tidak membuat file yatim),
 lalu mengubah metadata absensi menjadi `EXPIRED`.

@@ -95,6 +95,7 @@ assert.match(cleanup, /15 \* 24 \* 60 \* 60 \* 1000/);
 assert.match(cleanup, /bucket\.remove\(batch\)/);
 assert.match(cleanup, /upload_status: 'EXPIRED'/);
 assert.match(cleanup, /req\.headers\.get\('apikey'\)/);
+assert.match(cleanup, /CLEANUP_CRON_SECRET/);
 assert.match(cleanup, /SUPABASE_SECRET_KEYS/);
 assert.match(cleanup, /configuredSecretKeys\(\)\.has\(apiKey\)/);
 assert.match(cleanup, /profile\.bagian !== 'Owner'/);
