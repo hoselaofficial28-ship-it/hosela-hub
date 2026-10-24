@@ -15,7 +15,9 @@ Tanggal audit: **24 Oktober 2026**.
   otomatis setelah 15 hari.
 - Cron pembersihan berjalan setiap 02.30 WIB dengan secret khusus di Vault.
 - Notifikasi Telegram untuk absensi datang/pulang sudah aktif.
-- Test regresi lokal terakhir: **29/29 lulus**.
+- Test regresi lokal terakhir: **30/30 lulus**, termasuk pemeriksaan otomatis
+  28 layar aktif dan 80 aksi frontend tanpa handler yang hilang. Layar lama
+  `s-tambah-pengumuman` sudah digantikan panel Owner langsung di Pengumuman.
 
 ## Masih perlu diselesaikan
 

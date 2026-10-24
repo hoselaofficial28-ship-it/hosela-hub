@@ -1,6 +1,8 @@
 # Acceptance Test Wajib
 
-> **Status 24 Oktober 2026:** 29 test regresi otomatis lulus. Checklist yang
+> **Status 24 Oktober 2026:** 30 test regresi otomatis lulus. Tes parity memastikan
+> 28 layar aktif tersedia dan seluruh 80 aksi frontend memiliki handler Supabase.
+> Checklist yang
 > masih kosong di dokumen ini berarti verifikasi manual lintas perangkat/role
 > belum dicatat lengkap, bukan otomatis berarti fiturnya belum dibuat.
 
@@ -14,7 +16,7 @@
 
 ## Navigasi dan tampilan
 
-- [ ] Seluruh 29 layar dapat dibuka di HP dan PC tanpa blank putih.
+- [ ] Seluruh 28 layar aktif dapat dibuka di HP dan PC tanpa blank putih.
 - [ ] Browser back/deep link/hash bekerja seperti aplikasi aktif.
 - [ ] Search menu, badge, loading, toast, dan error tampil benar.
 - [ ] Notifikasi/badge tidak tertutup kartu lain.

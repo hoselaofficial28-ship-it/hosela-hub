@@ -24,7 +24,11 @@ Role harus diperiksa di backend/RLS, bukan hanya menyembunyikan menu.
 
 ## Layar yang wajib tersedia
 
-`s-login`, `s-daftar`, `s-home`, `s-jobdesk`, `s-staff`, `s-detail`, `s-pengumuman`, `s-tambah-pengumuman`, `s-ide`, `s-peraturan`, `s-kalender`, `s-manage-users`, `s-tambah-karyawan`, `s-absensi-upload`, `s-laporan-absensi`, `s-kpi-check`, `s-papan-peringkat`, `s-ganti-pin`, `s-paksa-ganti-pin`, `s-absensi-camera`, `s-izin`, `s-kelola-izin`, `s-notifikasi`, `s-sanksi-manual`, `s-review-telat`, `s-catatan-kehadiran`, `s-setting-gaji`, `s-payroll`, `s-slip-gaji`.
+`s-login`, `s-daftar`, `s-home`, `s-jobdesk`, `s-staff`, `s-detail`, `s-pengumuman`, `s-ide`, `s-peraturan`, `s-kalender`, `s-manage-users`, `s-tambah-karyawan`, `s-absensi-upload`, `s-laporan-absensi`, `s-kpi-check`, `s-papan-peringkat`, `s-ganti-pin`, `s-paksa-ganti-pin`, `s-absensi-camera`, `s-izin`, `s-kelola-izin`, `s-notifikasi`, `s-sanksi-manual`, `s-review-telat`, `s-catatan-kehadiran`, `s-setting-gaji`, `s-payroll`, `s-slip-gaji`.
+
+Form membuat pengumuman tidak lagi memakai layar terpisah
+`s-tambah-pengumuman`; Owner membuatnya langsung dari panel di halaman
+`s-pengumuman` sesuai desain produksi terbaru.
 
 ## Kelompok kontrak backend
 

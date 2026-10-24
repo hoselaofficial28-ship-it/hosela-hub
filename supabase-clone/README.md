@@ -37,7 +37,8 @@ Kondisi ringkas:
 - Foto absensi dan surat dokter memakai bucket privat Supabase Storage, maksimal
   180 KB, retensi 15 hari.
 - Notifikasi absensi Telegram dan Cron pembersihan foto sudah aktif.
-- Test regresi lokal: 29/29 lulus pada 23 Oktober 2026.
+- Test regresi lokal: 30/30 lulus pada 24 Oktober 2026, termasuk parity otomatis
+  untuk 28 layar aktif dan seluruh aksi frontend.
 - Sisa utama adalah acceptance test perangkat/role, rekonsiliasi data lama bila
   diperlukan, dan keputusan denda gabungan telat + absen.
 
