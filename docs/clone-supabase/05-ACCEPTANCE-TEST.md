@@ -1,5 +1,9 @@
 # Acceptance Test Wajib
 
+> **Status 24 Oktober 2026:** 29 test regresi otomatis lulus. Checklist yang
+> masih kosong di dokumen ini berarti verifikasi manual lintas perangkat/role
+> belum dicatat lengkap, bukan otomatis berarti fiturnya belum dibuat.
+
 ## Identitas dan akses
 
 - [ ] Login berhasil/gagal sesuai kredensial dan user nonaktif ditolak.
@@ -16,11 +20,11 @@
 - [ ] Notifikasi/badge tidak tertutup kartu lain.
 - [ ] Cache/PWA tidak mengembalikan data versi lama setelah perubahan.
 
-## Absensi dan Drive
+## Absensi dan Supabase Storage
 
 - [ ] Kamera, lokasi, radius, akurasi, preview, retake, dan submit bekerja.
-- [ ] Foto benar-benar ada di Drive dan metadata cocok dengan event Supabase.
-- [ ] Kredensial Drive tidak terlihat di browser/network bundle.
+- [ ] Foto benar-benar ada di bucket privat Supabase dan metadata cocok dengan event absensi/izin.
+- [ ] Service-role dan secret Cron tidak terlihat di browser/network bundle.
 - [ ] Retry upload tidak membuat tap atau file duplikat.
 - [ ] Jam 08:12 pada jadwal 08:00 ditandai telat dan tampil merah dengan simbol, bukan biru.
 - [ ] Jadwal khusus mengubah batas telat sesuai tanggal.

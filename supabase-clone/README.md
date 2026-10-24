@@ -23,11 +23,31 @@ tests/e2e/
 
 Kredensial Supabase dan Google Drive harus berada di environment/secrets dan tidak boleh di-commit.
 
-## Status lanjutan (12 Oktober 2026)
+## Status produksi terbaru (24 Oktober 2026)
+
+Sumber status operasional terbaru ada di
+[`../docs/clone-supabase/11-STATUS-PRODUKSI.md`](../docs/clone-supabase/11-STATUS-PRODUKSI.md).
+Catatan di bawah bagian ini adalah riwayat pembangunan dan tidak lagi menjadi
+status aktif.
+
+Kondisi ringkas:
+
+- Aplikasi produksi: `https://hosela-hub.vercel.app`.
+- Seluruh 80 aksi frontend yang terdeteksi sudah memiliki handler Supabase nyata.
+- Foto absensi dan surat dokter memakai bucket privat Supabase Storage, maksimal
+  180 KB, retensi 15 hari.
+- Notifikasi absensi Telegram dan Cron pembersihan foto sudah aktif.
+- Test regresi lokal: 29/29 lulus pada 23 Oktober 2026.
+- Sisa utama adalah acceptance test perangkat/role, rekonsiliasi data lama bila
+  diperlukan, dan keputusan denda gabungan telat + absen.
+
+## Riwayat status (12 Oktober 2026)
 
 - Modul Pengumuman, Ide Tim, Kalender Libur, Peraturan, dan Notifikasi sudah teruji di backend + browser (migration 0018–0020).
 - Kalender/Matrix Absensi sudah diimplementasikan di frontend dan migration `20261012000021_attendance_matrix.sql`.
 - Test kontrak lokal: `node tests/attendance-matrix.test.mjs`.
 - Migration 0021 sudah dijalankan pada 12 Oktober 2026. Empat RPC terdeteksi aktif; uji baca Owner (`get_absensi_rekap`, `get_all_absensi_rekap`) mengembalikan HTTP 200 dan target edit palsu ditolak tanpa write.
 - Uji end-to-end isi matrix/edit/perhitungan masih membutuhkan satu akun karyawan + fixture absensi sementara karena project saat ini hanya memiliki satu profil aktif (Owner).
-- Upload foto absensi/izin ke Google Drive, acceptance test menyeluruh, dan migrasi data produksi masih belum selesai.
+- Pada tanggal ini upload foto, acceptance test menyeluruh, dan migrasi data
+  produksi memang belum selesai. Kondisi tersebut sudah berubah; lihat status
+  produksi terbaru di atas.

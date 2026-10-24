@@ -1,8 +1,13 @@
 # Mulai di Sini
 
+> **Status aktif 24 Oktober 2026:** implementasi produksi sudah memakai Supabase
+> untuk database dan bucket privat `attendance-photos` untuk foto. Google Drive
+> dan Firebase hanya tersisa sebagai riwayat rancangan. Baca
+> `11-STATUS-PRODUKSI.md` sebelum memakai dokumen perencanaan di bawah.
+
 ## Sasaran
 
-Membuat Hosela Hub versi Supabase tanpa kehilangan perilaku aplikasi yang sekarang. Backend data berpindah dari Apps Script/Spreadsheet ke Supabase. Foto absensi kamera dan bukti foto disimpan di Google Drive.
+Membuat Hosela Hub versi Supabase tanpa kehilangan perilaku aplikasi yang sekarang. Backend data berpindah dari Apps Script/Spreadsheet ke Supabase. Implementasi aktif menyimpan foto absensi kamera dan bukti sakit di Supabase Storage privat.
 
 ## Sumber kebenaran saat ini
 
@@ -48,12 +53,11 @@ hosela-hub/
 5. `05-ACCEPTANCE-TEST.md`
 6. `06-API-PARITY.md`
 
-## Informasi yang perlu diminta sebelum koneksi nyata
+## Informasi yang dulu diperlukan sebelum koneksi nyata
 
 - Supabase project URL dan anon key.
 - Konfirmasi project Supabase yang benar berdasarkan akun pada `supabase-clone/HANDOFF.local.md`.
-- Metode akses Drive: rekomendasi service account dengan folder khusus yang dibagikan kepadanya.
-- ID folder Drive untuk foto absensi dan, bila dipisah, bukti izin/sakit.
+- Rencana Drive dibatalkan; penyimpanan aktif memakai Supabase Storage privat.
 - Data fixture anonim untuk membandingkan hasil perhitungan.
 
 Semua nilai rahasia harus berada di environment/secrets dan `.env` harus di-ignore.

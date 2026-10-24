@@ -1,4 +1,10 @@
-# Arsitektur Supabase dan Google Drive
+# Arsitektur Supabase
+
+> **Catatan aktif 24 Oktober 2026:** diagram Drive di bawah adalah rancangan awal
+> dan dipertahankan sebagai jejak keputusan. Arsitektur produksi sekarang memakai
+> Supabase Auth, PostgreSQL/RPC/Edge Functions, serta bucket privat Supabase
+> Storage `attendance-photos`. Detail aktif ada di `09-SETUP-SUPABASE-FOTO.md`
+> dan `11-STATUS-PRODUKSI.md`.
 
 ## Alur sistem
 
@@ -72,7 +78,10 @@ Jangan menyimpan base64 foto di PostgreSQL setelah upload berhasil.
 
 Rekomendasi akses Drive: service account khusus, lalu folder foto dibagikan ke email service account. Simpan private key di Supabase secrets, bukan `.env` frontend.
 
-> **Diubah 2026-10-14:** jalur Google Drive di atas **tidak dipakai**. Service account tidak punya kuota penyimpanan di Drive pribadi (Gmail), dan solusi resmi Google (Shared Drive) hanya ada di Google Workspace. Foto absensi kamera sekarang disimpan di **Firebase Storage** (`app/js/photo-storage.js`, unggah REST tanpa SDK) dan yang perlu diisi adalah konfigurasi publik Firebase di file itu — lihat `08-SETUP-FIREBASE-FOTO.md` dan `DECISION-LOG.md`. Kolom metadata `drive_*` dipertahankan sebagai jalur cadangan.
+> **Riwayat perubahan:** Google Drive sempat diganti Firebase pada 14 Oktober,
+> lalu keputusan final berpindah ke **Supabase Storage privat**. Implementasi
+> aktif ada di `app/js/photo-storage.js`; panduan Firebase di dokumen 08 sekarang
+> hanya arsip. Kolom metadata `drive_*` dipertahankan untuk kompatibilitas data lama.
 
 ## Keamanan/RLS minimum
 
