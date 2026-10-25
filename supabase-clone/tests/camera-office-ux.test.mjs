@@ -24,13 +24,20 @@ assert.match(app, /btn\.textContent = isCollapsed \? 'Ubah' : 'Tutup'/);
 
 // --- Akurasi GPS ditampilkan agar titik kantor tidak asal pasang ---
 assert.match(html, /id="office-location-hint"/);
-assert.match(app, /var acc = Math\.round\(pos\.coords\.accuracy \|\| 0\)/);
+assert.match(html, /id="office-current-location-btn"/);
+assert.match(html, /id="attendance-location-retry"[\s\S]*?Baca Ulang Lokasi/);
+assert.match(app, /MAX_ATTENDANCE_LOCATION_ACCURACY_M = 100/);
+assert.match(app, /MAX_OFFICE_LOCATION_ACCURACY_M = 100/);
 assert.match(app, /Akurasi bacaan: ±/);
-assert.match(app, /acc > 100 \? ' — terlalu kasar/);
+assert.match(app, /Lokasi belum disimpan karena akurasi masih ±/);
+assert.match(app, /acc > MAX_ATTENDANCE_LOCATION_ACCURACY_M/);
+assert.match(app, /maximumAge: 0/);
+assert.doesNotMatch(app, /enableHighAccuracy: false/);
 
 assert.match(css, /\.office-setting-card\.is-collapsed \.office-editor-body\{display:none\}/);
 assert.match(css, /\.office-summary\{[\s\S]*?display:flex/);
 assert.match(css, /\.office-summary\[hidden\]\{display:none\}/);
+assert.match(css, /\.attendance-location-row\{display:grid/);
 
 // --- Tombol kamera: gradasi biru muda, bukan biru solid + emas ---
 assert.doesNotMatch(html, /id="camera-capture-btn"[^>]*class="btn btn-gold"/);
@@ -48,9 +55,9 @@ assert.match(css, /@media \(max-width:599px\)\{[\s\S]*?\.office-toggle-btn\{min-
 assert.match(css, /\.camera-actions\{display:grid;grid-template-columns:1fr 1fr/);
 
 // --- Versi cache harus naik serentak supaya HP tidak memakai file lama ---
-assert.match(html, /css\/style\.css\?v=20261025a/);
-assert.match(html, /js\/app\.js\?v=20261025a/);
-assert.match(app, /APP_VERSION = '20261025a'/);
-assert.match(sw, /APP_VERSION = '20261025a'/);
+assert.match(html, /css\/style\.css\?v=20261025b/);
+assert.match(html, /js\/app\.js\?v=20261025b/);
+assert.match(app, /APP_VERSION = '20261025b'/);
+assert.match(sw, /APP_VERSION = '20261025b'/);
 
 console.log('camera + office settings UX: ok');

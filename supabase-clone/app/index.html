@@ -9,14 +9,14 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=20261025a">
+<link rel="stylesheet" href="css/style.css?v=20261025b">
 
 
 
 
 
 
-<link rel="manifest" href="/manifest.webmanifest?v=20261025a">
+<link rel="manifest" href="/manifest.webmanifest?v=20261025b">
 <meta name="theme-color" content="#1557d8">
 <meta name="application-name" content="Hosela Hub">
 <meta name="mobile-web-app-capable" content="yes">
@@ -626,7 +626,7 @@
    <div class="form-group"><label class="form-label" for="office-lng">Longitude</label><input type="number" step="any" class="form-input" id="office-lng" placeholder="106.800000"></div>
    <div class="form-group"><label class="form-label" for="office-radius">Radius diterima (meter)</label><input type="number" min="20" max="2000" class="form-input" id="office-radius" value="120"></div>
   </div>
-  <div class="owner-editor-actions"><button class="btn btn-secondary" onclick="useCurrentLocationForOffice()">Gunakan Lokasi Saya</button><button class="btn btn-primary" id="office-save-btn" onclick="saveOfficeSettings()">Simpan Lokasi Kantor</button></div>
+  <div class="owner-editor-actions"><button class="btn btn-secondary" id="office-current-location-btn" onclick="useCurrentLocationForOffice()">Gunakan Lokasi Saya</button><button class="btn btn-primary" id="office-save-btn" onclick="saveOfficeSettings()">Simpan Lokasi Kantor</button></div>
   <div class="field-help" id="office-location-hint">Lakukan pengaturan ini saat Owner berada di kantor agar titik koordinat akurat.</div>
   </div>
  </section>
@@ -651,7 +651,7 @@
  <option value="PULANG">Pulang</option>
  </select>
  </div>
- <div id="attendance-location-status" class="camera-status">Lokasi belum dibaca</div>
+ <div class="attendance-location-row"><div id="attendance-location-status" class="camera-status">Lokasi belum dibaca</div><button type="button" class="btn btn-secondary attendance-location-retry" id="attendance-location-retry" onclick="getAttendanceLocation()">Baca Ulang Lokasi</button></div>
  <button class="btn btn-primary" id="attendance-submit-btn" onclick="submitAttendanceCamera()" disabled>Kirim Absensi</button>
  <div id="attendance-photo-status" class="camera-status" style="display:none"></div>
  <div class="camera-note">Absensi akan ditolak jika lokasi berada di luar radius kantor. Foto disimpan di penyimpanan file (Firebase Storage), bukan di database — yang dicatat di database hanya tautannya.</div>
@@ -881,11 +881,11 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="js/supabase-client.js"></script>
 <script src="js/photo-storage.js?v=20261015e"></script>
-<script src="js/real-backend.js?v=20261025a"></script>
+<script src="js/real-backend.js?v=20261025b"></script>
 <script src="js/dashboard-reports.js?v=20261015e"></script>
-<script src="js/mock-backend.js?v=20261025a"></script>
-<script src="js/app.js?v=20261025a"></script>
-<script src="js/payroll.js?v=20261025a"></script>
-<script src="js/preview.js?v=20261025a"></script>
+<script src="js/mock-backend.js?v=20261025b"></script>
+<script src="js/app.js?v=20261025b"></script>
+<script src="js/payroll.js?v=20261025b"></script>
+<script src="js/preview.js?v=20261025b"></script>
 </body>
 </html>

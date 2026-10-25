@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbw6q_5ZaIGrekeBwZ5TKh6X1GpWkFHsa5i6whdwacQkTEa-vvNezHlxFMEQFKZkmm5ffQ/exec';
-var APP_VERSION = '20261025a';
+var APP_VERSION = '20261025b';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -3687,6 +3687,12 @@ var _attendancePhotoData = '';
 var _attendancePhotoTakenAt = '';
 var _attendanceLocation = null;
 var _attendanceSubmitting = false;
+var _attendanceLocationWatchId = null;
+var _attendanceLocationTimer = null;
+var _officeLocationWatchId = null;
+var _officeLocationTimer = null;
+var MAX_ATTENDANCE_LOCATION_ACCURACY_M = 100;
+var MAX_OFFICE_LOCATION_ACCURACY_M = 100;
 // Foto yang sudah diambil tapi belum berhasil tersimpan di penyimpanan. Disimpan
 // di memori saja (bukan database) supaya tombol "Kirim Ulang Foto" bisa dipakai
 // kalau unggahan gagal. Konsekuensinya: kalau halaman di-refresh, foto hilang.
@@ -3788,23 +3794,57 @@ function toggleOfficeSettings() {
 
 function useCurrentLocationForOffice() {
  if (!navigator.geolocation) { showToast('Browser tidak mendukung lokasi'); return; }
- showToast('Sedang membaca lokasi Owner...');
- navigator.geolocation.getCurrentPosition(function(pos) {
-   var acc = Math.round(pos.coords.accuracy || 0);
-   document.getElementById('office-lat').value = Number(pos.coords.latitude).toFixed(7);
-   document.getElementById('office-lng').value = Number(pos.coords.longitude).toFixed(7);
-   var hint = document.getElementById('office-location-hint');
-   if (hint) {
-     hint.textContent = acc > 0
-       ? ('Akurasi bacaan: ±' + acc + ' meter' + (acc > 100 ? ' — terlalu kasar, coba lagi di luar ruangan atau pakai HP.' : ' — koordinat siap disimpan.'))
-       : 'Akurasi bacaan tidak tersedia dari perangkat ini.';
+ clearOfficeLocationReading();
+ var button = document.getElementById('office-current-location-btn');
+ var hint = document.getElementById('office-location-hint');
+ var bestPosition = null;
+ if (button) { button.disabled = true; button.textContent = 'Mencari GPS...'; }
+ if (hint) hint.textContent = 'Mencari lokasi presisi. Tunggu sampai akurasi maksimal ±100 meter.';
+ showToast('Sedang mencari lokasi kantor yang akurat...');
+ function finishOfficeLocation(position, error) {
+   clearOfficeLocationReading();
+   if (button) { button.disabled = false; button.textContent = 'Gunakan Lokasi Saya'; }
+   if (!position || !position.coords) {
+     var errorText = locationPermissionMessage(error);
+     if (hint) hint.textContent = errorText;
+     showToast(errorText);
+     return;
    }
-   showToast(acc > 100
-     ? ('Akurasi ±' + acc + ' m (kurang teliti). Ulangi di tempat terbuka.')
-     : ('Koordinat terisi (akurasi ±' + acc + ' m). Tekan Simpan Lokasi Kantor.'));
- }, function(){ showToast('Lokasi gagal dibaca. Pastikan GPS dan izin lokasi aktif.'); }, {
-   enableHighAccuracy: true, timeout: 20000, maximumAge: 0
- });
+   var acc = Math.round(position.coords.accuracy || 99999);
+   if (acc > MAX_OFFICE_LOCATION_ACCURACY_M) {
+     var coarseText = 'Lokasi belum disimpan karena akurasi masih ±' + acc + ' meter. Aktifkan lokasi presisi dan coba lewat HP atau dekat jendela.';
+     if (hint) hint.textContent = coarseText;
+     showToast(coarseText);
+     return;
+   }
+   document.getElementById('office-lat').value = Number(position.coords.latitude).toFixed(7);
+   document.getElementById('office-lng').value = Number(position.coords.longitude).toFixed(7);
+   if (hint) hint.textContent = 'Akurasi bacaan: ±' + acc + ' meter — koordinat siap disimpan.';
+   showToast('Koordinat akurat ±' + acc + ' m. Tekan Simpan Lokasi Kantor.');
+ }
+ _officeLocationWatchId = navigator.geolocation.watchPosition(function(pos) {
+   var acc = Number(pos.coords && pos.coords.accuracy) || 99999;
+   if (!bestPosition || acc < Number(bestPosition.coords.accuracy || 99999)) bestPosition = pos;
+   if (hint) hint.textContent = 'Mencari GPS... akurasi terbaik saat ini ±' + Math.round(acc) + ' meter.';
+   if (acc <= MAX_OFFICE_LOCATION_ACCURACY_M) finishOfficeLocation(pos, null);
+ }, function(error) {
+   if (error && error.code === 1) finishOfficeLocation(null, error);
+ }, { enableHighAccuracy: true, timeout: 25000, maximumAge: 0 });
+ _officeLocationTimer = setTimeout(function() { finishOfficeLocation(bestPosition, null); }, 25000);
+}
+
+function clearOfficeLocationReading() {
+ if (_officeLocationWatchId !== null && navigator.geolocation) navigator.geolocation.clearWatch(_officeLocationWatchId);
+ if (_officeLocationTimer) clearTimeout(_officeLocationTimer);
+ _officeLocationWatchId = null;
+ _officeLocationTimer = null;
+}
+
+function locationPermissionMessage(error) {
+ if (error && error.code === 1) return 'Akses lokasi ditolak. Tekan ikon setelan di kiri alamat web, ubah Lokasi menjadi Izinkan, lalu muat ulang halaman.';
+ if (error && error.code === 2) return 'Sinyal lokasi tidak tersedia. Aktifkan GPS/Layanan Lokasi dan Lokasi Presisi, lalu coba lagi.';
+ if (error && error.code === 3) return 'GPS terlalu lama merespons. Coba dekat jendela atau gunakan HP.';
+ return 'Lokasi belum dapat dibaca. Pastikan izin lokasi dan GPS aktif.';
 }
 
 function saveOfficeSettings() {
@@ -3827,56 +3867,44 @@ function saveOfficeSettings() {
 
 function getAttendanceLocation() {
  if (!navigator.geolocation) { updateAttendanceLocationStatus('Browser tidak mendukung lokasi.', 'bad'); return; }
- var triedFastFallback = false;
- var watchId = null;
- var done = false;
+ clearAttendanceLocationReading();
+ _attendanceLocation = null;
+ syncAttendanceSubmitState();
+ var bestAccuracy = null;
+ updateAttendanceLocationStatus('Mencari lokasi presisi. Mohon tunggu...', '');
  function acceptPosition(pos) {
  if (!pos || !pos.coords) return;
- var acc = pos.coords.accuracy || 999;
- var newLoc = { lat: pos.coords.latitude, lng: pos.coords.longitude, accuracy: acc };
- // Simpan jika lebih akurat dari pembacaan sebelumnya (atau belum ada)
- if (!_attendanceLocation || acc < _attendanceLocation.accuracy) {
-   _attendanceLocation = newLoc;
-   var accLabel = acc <= 50 ? 'Sangat baik' : acc <= 150 ? 'Baik' : acc <= 300 ? 'Cukup' : 'Kurang baik';
-   var accState = acc <= 150 ? 'ok' : '';
-   updateAttendanceLocationStatus('Lokasi terbaca. Akurasi sekitar '+Math.round(acc)+' m ('+accLabel+').', accState);
-   syncAttendanceSubmitState();
+ var acc = Number(pos.coords.accuracy) || 99999;
+ if (bestAccuracy === null || acc < bestAccuracy) bestAccuracy = acc;
+ if (acc > MAX_ATTENDANCE_LOCATION_ACCURACY_M) {
+   updateAttendanceLocationStatus('GPS belum cukup akurat (±'+Math.round(acc)+' m). Menunggu lokasi presisi; coba dekat jendela atau gunakan HP.', 'bad');
+   return;
  }
- // Hentikan update hanya jika akurasi sudah cukup baik (≤ 50m)
- if (acc <= 50 && !done) {
-   done = true;
-   if (watchId !== null) { navigator.geolocation.clearWatch(watchId); watchId = null; }
+ _attendanceLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude, accuracy: acc };
+ updateAttendanceLocationStatus('Lokasi siap. Akurasi sekitar '+Math.round(acc)+' m.', 'ok');
+ syncAttendanceSubmitState();
+ clearAttendanceLocationReading();
  }
- }
- function locationErrorMessage(err) {
- if (err && err.code === 1) return 'Akses lokasi ditolak. Buka izin lokasi Chrome dan pilih Izinkan.';
- if (err && err.code === 2) return 'Sinyal lokasi belum tersedia. Aktifkan GPS dan coba lagi.';
- if (err && err.code === 3) return 'GPS terlalu lama merespons. Coba dekat jendela atau matikan-nyalakan lokasi.';
- return 'Gagal membaca lokasi. Pastikan GPS aktif dan izin lokasi Chrome sudah diizinkan.';
- }
- function failLocation(err) {
- if (!triedFastFallback) {
- triedFastFallback = true;
- updateAttendanceLocationStatus('GPS belum stabil, mencoba mode cepat...', '');
- navigator.geolocation.getCurrentPosition(acceptPosition, failLocation, { enableHighAccuracy: false, timeout: 8000, maximumAge: 300000 });
- return;
- }
- if (watchId === null && !done) {
- updateAttendanceLocationStatus('Menunggu sinyal GPS...', '');
- watchId = navigator.geolocation.watchPosition(acceptPosition, function(watchErr) {
- if (!done) updateAttendanceLocationStatus(locationErrorMessage(watchErr), 'bad');
- }, { enableHighAccuracy: false, timeout: 15000, maximumAge: 300000 });
- setTimeout(function() {
- if (!done) {
- if (watchId !== null) navigator.geolocation.clearWatch(watchId);
- updateAttendanceLocationStatus(locationErrorMessage(err), 'bad');
- }
- }, 15000);
- return;
- }
- updateAttendanceLocationStatus(locationErrorMessage(err), 'bad');
- }
- navigator.geolocation.getCurrentPosition(acceptPosition, failLocation, { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 });
+ _attendanceLocationWatchId = navigator.geolocation.watchPosition(acceptPosition, function(error) {
+   if (error && error.code === 1) {
+     clearAttendanceLocationReading();
+     updateAttendanceLocationStatus(locationPermissionMessage(error), 'bad');
+   }
+ }, { enableHighAccuracy: true, timeout: 25000, maximumAge: 0 });
+ _attendanceLocationTimer = setTimeout(function() {
+   clearAttendanceLocationReading();
+   if (!_attendanceLocation) {
+     var suffix = bestAccuracy === null ? '' : ' Akurasi terbaik baru ±' + Math.round(bestAccuracy) + ' m.';
+     updateAttendanceLocationStatus('Lokasi belum cukup akurat untuk absensi.' + suffix + ' Aktifkan Lokasi Presisi, lalu tekan Baca Ulang Lokasi.', 'bad');
+   }
+ }, 25000);
+}
+
+function clearAttendanceLocationReading() {
+ if (_attendanceLocationWatchId !== null && navigator.geolocation) navigator.geolocation.clearWatch(_attendanceLocationWatchId);
+ if (_attendanceLocationTimer) clearTimeout(_attendanceLocationTimer);
+ _attendanceLocationWatchId = null;
+ _attendanceLocationTimer = null;
 }
 
 function updateAttendanceLocationStatus(text, state) {

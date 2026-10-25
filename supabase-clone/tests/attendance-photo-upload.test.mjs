@@ -106,9 +106,9 @@ assert.match(functionConfig, /\[functions\.cleanup-attendance-photos\]/);
 assert.match(functionConfig, /verify_jwt = false/);
 
 // Versi cache serentak agar HP tidak mempertahankan kode Firebase lama.
-assert.match(html, /css\/style\.css\?v=20261025a/);
-assert.match(html, /js\/app\.js\?v=20261025a/);
-assert.match(app, /APP_VERSION = '20261025a'/);
-assert.match(sw, /APP_VERSION = '20261025a'/);
+assert.match(html, /css\/style\.css\?v=20261025b/);
+assert.match(html, /js\/app\.js\?v=20261025b/);
+assert.match(app, /APP_VERSION = '20261025b'/);
+assert.match(sw, /APP_VERSION = '20261025b'/);
 
 console.log('penyimpanan foto absensi (Supabase Storage): ok');
