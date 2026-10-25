@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbw6q_5ZaIGrekeBwZ5TKh6X1GpWkFHsa5i6whdwacQkTEa-vvNezHlxFMEQFKZkmm5ffQ/exec';
-var APP_VERSION = '20261023c';
+var APP_VERSION = '20261025a';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -715,27 +715,69 @@ function warmUpGAS() {
 }
 
 function setupPWAInstall() {
+ updatePWAInstallUI();
  if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1')) {
- navigator.serviceWorker.register('sw.js?v=' + APP_VERSION).catch(function(err){ console.warn('Service worker gagal:', err); });
+ navigator.serviceWorker.register('/sw.js?v=' + APP_VERSION, { scope: '/' }).catch(function(err){ console.warn('Service worker gagal:', err); });
  }
  window.addEventListener('beforeinstallprompt', function(e) {
  e.preventDefault();
  _deferredInstallPrompt = e;
- var row = document.getElementById('install-app-row');
- if (row) row.style.display = 'flex';
+ updatePWAInstallUI();
  });
+ window.addEventListener('appinstalled', function() {
+ _deferredInstallPrompt = null;
+ updatePWAInstallUI();
+ showToast('Hosela Hub berhasil diinstall.');
+ });
+ if (window.matchMedia) {
+ var displayMode = window.matchMedia('(display-mode: standalone)');
+ if (displayMode.addEventListener) displayMode.addEventListener('change', updatePWAInstallUI);
+ }
+}
+
+function isPWAInstalled() {
+ return !!(window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone === true;
+}
+
+function updatePWAInstallUI() {
+ var installed = isPWAInstalled();
+ var loginPanel = document.getElementById('login-install-panel');
+ var row = document.getElementById('install-app-row');
+ if (loginPanel) loginPanel.style.display = installed ? 'none' : 'block';
+ if (row) row.style.display = installed ? 'none' : 'flex';
+}
+
+function pwaInstallInstruction() {
+ var ua = navigator.userAgent || '';
+ if (/iphone|ipad|ipod/i.test(ua)) return 'Di iPhone/iPad: tekan tombol Bagikan di Safari, lalu pilih Tambahkan ke Layar Utama.';
+ return 'Di Android: buka menu browser (tiga titik), lalu pilih Instal aplikasi atau Tambahkan ke layar utama.';
+}
+
+function showPWAInstallHelp(message) {
+ var help = document.getElementById('pwa-install-help');
+ if (help) {
+ help.textContent = message;
+ help.style.display = 'block';
+ }
+ showToast(message);
 }
 
 function installApp() {
+ if (isPWAInstalled()) {
+ showToast('Hosela Hub sudah terinstall di perangkat ini.');
+ updatePWAInstallUI();
+ return;
+ }
  if (!_deferredInstallPrompt) {
- showToast('Gunakan menu browser lalu pilih Install app / Tambahkan ke layar utama');
+ showPWAInstallHelp(pwaInstallInstruction());
  return;
  }
  _deferredInstallPrompt.prompt();
- _deferredInstallPrompt.userChoice.finally(function() {
+ _deferredInstallPrompt.userChoice.then(function(choice) {
+ if (choice && choice.outcome === 'dismissed') showPWAInstallHelp(pwaInstallInstruction());
+ }).finally(function() {
  _deferredInstallPrompt = null;
- var row = document.getElementById('install-app-row');
- if (row) row.style.display = 'none';
+ updatePWAInstallUI();
  });
 }
 
