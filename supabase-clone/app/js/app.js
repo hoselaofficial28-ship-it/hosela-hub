@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbw6q_5ZaIGrekeBwZ5TKh6X1GpWkFHsa5i6whdwacQkTEa-vvNezHlxFMEQFKZkmm5ffQ/exec';
-var APP_VERSION = '20261025b';
+var APP_VERSION = '20261025c';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -454,6 +454,8 @@ function invalidateReadCacheAfterMutation(action) {
   tandaiDibaca: ['getNotifikasi','getHomeData'],
   tandaiMenuDibaca: ['getNotifikasi','getHomeData'],
   submitAbsensiCamera: ['getAbsensiCameraToday','getAbsensiMatrix','getAbsensiMatrixUser','getHomeData'],
+  attachAbsensiPhoto: ['getAbsensiCameraToday'],
+  markAbsensiPhotoFailed: ['getAbsensiCameraToday'],
   updateAbsensiMatrixDay: ['getAbsensiMatrix','getAbsensiMatrixUser','getAbsensiRekap','getRekapBulananSemua','getAllAbsensiRekap','getHomeData','getPayrollPreview'],
   importAbsensiUploadToApp: ['getAbsensiMatrix','getAbsensiMatrixUser'],
   processAttendanceAppRecap: ['getAbsensiMatrix','getAbsensiMatrixUser','getAbsensiRekap','getRekapBulananSemua','getAllAbsensiRekap','getHomeData','getPayrollPreview'],
@@ -4150,6 +4152,7 @@ function sendAttendancePhoto() {
    _pendingAttendancePhoto = null;
    updateAttendancePhotoStatus('Foto absensi tersimpan.', 'ok');
    showToast('Foto absensi tersimpan');
+   cacheClear('getAbsensiCameraToday' + JSON.stringify([currentUser.id]));
    loadAttendanceToday();
   }, function() {
    _attendancePhotoUploading = false;
@@ -4214,7 +4217,7 @@ function attendancePhotoRowHtml(r) {
  // sekali (biar tidak ada tulisan "belum tersimpan" di layar karyawan).
  if (!photoStorageEnabled()) return '';
  if (r.uploadStatus === 'EXPIRED') {
-  return '<div style="margin-top:4px;font-size:11px;color:var(--text-muted);font-weight:600">Foto otomatis dihapus setelah 30 hari.</div>';
+  return '<div style="margin-top:4px;font-size:11px;color:var(--text-muted);font-weight:600">Foto otomatis dihapus setelah 15 hari.</div>';
  }
  var bisaKirimUlang = !!(_pendingAttendancePhoto && r.id && _pendingAttendancePhoto.eventId === r.id);
  var teks = r.uploadStatus === 'FAILED'

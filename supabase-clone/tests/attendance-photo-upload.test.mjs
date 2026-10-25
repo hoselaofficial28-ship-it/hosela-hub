@@ -69,6 +69,10 @@ assert.match(app, /var hardLimit = 180 \* 1024/);
 assert.match(app, /function openAttendancePhoto\(path\)/);
 assert.match(app, /function retryAttendancePhoto\(eventId\)/);
 assert.match(app, /Kirim Ulang Foto/);
+assert.match(app, /attachAbsensiPhoto: \['getAbsensiCameraToday'\]/);
+assert.match(app, /markAbsensiPhotoFailed: \['getAbsensiCameraToday'\]/);
+assert.match(app, /cacheClear\('getAbsensiCameraToday' \+ JSON\.stringify\(\[currentUser\.id\]\)\)/);
+assert.match(app, /Foto otomatis dihapus setelah 15 hari/);
 
 // Backend tetap mencatat metadata lewat RPC dan membaca kolom foto.
 assert.match(backend, /attachAbsensiPhoto: async function \(args\)/);
@@ -106,9 +110,9 @@ assert.match(functionConfig, /\[functions\.cleanup-attendance-photos\]/);
 assert.match(functionConfig, /verify_jwt = false/);
 
 // Versi cache serentak agar HP tidak mempertahankan kode Firebase lama.
-assert.match(html, /css\/style\.css\?v=20261025b/);
-assert.match(html, /js\/app\.js\?v=20261025b/);
-assert.match(app, /APP_VERSION = '20261025b'/);
-assert.match(sw, /APP_VERSION = '20261025b'/);
+assert.match(html, /css\/style\.css\?v=20261025c/);
+assert.match(html, /js\/app\.js\?v=20261025c/);
+assert.match(app, /APP_VERSION = '20261025c'/);
+assert.match(sw, /APP_VERSION = '20261025c'/);
 
 console.log('penyimpanan foto absensi (Supabase Storage): ok');
