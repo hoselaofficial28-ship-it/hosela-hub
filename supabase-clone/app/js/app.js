@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbw6q_5ZaIGrekeBwZ5TKh6X1GpWkFHsa5i6whdwacQkTEa-vvNezHlxFMEQFKZkmm5ffQ/exec';
-var APP_VERSION = '20261025c';
+var APP_VERSION = '20261026a';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -4153,7 +4153,7 @@ function sendAttendancePhoto() {
    updateAttendancePhotoStatus('Foto absensi tersimpan.', 'ok');
    showToast('Foto absensi tersimpan');
    cacheClear('getAbsensiCameraToday' + JSON.stringify([currentUser.id]));
-   loadAttendanceToday();
+   loadAttendanceToday(true);
   }, function() {
    _attendancePhotoUploading = false;
    markAttendancePhotoFailed('Foto terkirim ke penyimpanan, tapi tautannya gagal dicatat ke database (koneksi ke server terputus).');
@@ -4227,11 +4227,14 @@ function attendancePhotoRowHtml(r) {
   (bisaKirimUlang ? '<button type="button" class="btn btn-secondary attendance-retry-btn" onclick="retryAttendancePhoto(\'' + esc(r.id) + '\')">Kirim Ulang Foto</button>' : '');
 }
 
-function loadAttendanceToday() {
+function loadAttendanceToday(forceFresh) {
  var el = document.getElementById('attendance-today');
  if (!el || !currentUser) return;
  el.innerHTML = '<div class="empty-state"><div class="empty-icon"></div>Memuat...</div>';
- gasCall('getAbsensiCameraToday', [currentUser.id], function(res) {
+ // Token tambahan membuat pembacaan setelah unggah foto tidak bergabung dengan
+ // request PENDING lama yang mungkin masih berjalan. Backend hanya memakai argumen pertama.
+ var requestArgs = forceFresh ? [currentUser.id, 'fresh-' + Date.now()] : [currentUser.id];
+ gasCall('getAbsensiCameraToday', requestArgs, function(res) {
  var data = (res && res.data) || [];
  if (!data.length) {
  el.innerHTML = '<div class="empty-state"><div class="empty-icon"></div>Belum ada absensi kamera hari ini</div>';

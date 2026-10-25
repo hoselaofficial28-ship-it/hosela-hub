@@ -1,4 +1,4 @@
-const APP_VERSION = '20261025c';
+const APP_VERSION = '20261026a';
 const CACHE_NAME = 'hosela-hub-' + APP_VERSION;
 const ASSETS = [
   './',
