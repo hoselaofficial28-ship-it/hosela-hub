@@ -9,14 +9,14 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=20261026a">
+<link rel="stylesheet" href="css/style.css?v=20261026b">
 
 
 
 
 
 
-<link rel="manifest" href="/manifest.webmanifest?v=20261026a">
+<link rel="manifest" href="/manifest.webmanifest?v=20261026b">
 <meta name="theme-color" content="#1557d8">
 <meta name="application-name" content="Hosela Hub">
 <meta name="mobile-web-app-capable" content="yes">
@@ -824,6 +824,62 @@
  </div>
 </div>
 
+<!-- PENGATURAN SHIFT (Owner/Finance) -->
+<div class="screen" id="s-shift-settings">
+ <div class="statusbar"></div>
+ <div class="header">
+  <div class="header-row"><button class="back-btn" onclick="goBack()">&lsaquo;</button><div><h1>Pengaturan Shift</h1><p>Atur jam kerja tim tanpa edit absensi satu per satu</p></div></div>
+  <div class="gold-line"></div>
+ </div>
+ <div class="content shift-page-content">
+  <section class="shift-hero">
+   <div><span class="shift-eyebrow">JADWAL KERJA TIM</span><h2>Pilih karyawan, pilih shift, lalu simpan</h2><p>Karyawan tidak bisa mengubah shift sendiri. Perhitungan telat, lembur, rekap, dan payroll mengikuti pengaturan ini.</p></div>
+   <div class="shift-hero-badge">Owner &amp; Finance</div>
+  </section>
+
+  <div id="shift-summary" class="shift-summary" aria-live="polite"></div>
+
+  <section class="shift-card shift-assign-card">
+   <div class="shift-card-head"><div><span class="shift-step">LANGKAH 1</span><h3>Pilih karyawan</h3><p>Gunakan pencarian atau filter bagian, lalu centang nama.</p></div><strong id="shift-selected-count">0 dipilih</strong></div>
+   <div class="shift-toolbar">
+    <label class="shift-search"><span>Cari karyawan</span><input id="shift-search" class="form-input" type="search" placeholder="Nama, bagian, atau jabatan" oninput="renderShiftEmployees()"></label>
+    <label><span>Bagian</span><select id="shift-department-filter" class="form-input" onchange="renderShiftEmployees()"><option value="ALL">Semua bagian</option></select></label>
+    <label><span>Shift saat ini</span><select id="shift-current-filter" class="form-input" onchange="renderShiftEmployees()"><option value="ALL">Semua shift</option></select></label>
+   </div>
+   <label class="shift-select-all"><input id="shift-select-all" type="checkbox" onchange="toggleAllVisibleShiftEmployees(this.checked)"><span>Centang semua yang tampil</span></label>
+   <div id="shift-employee-list" class="shift-employee-list"><div class="empty-state">Memuat data karyawan...</div></div>
+  </section>
+
+  <section class="shift-card shift-apply-card">
+   <div class="shift-card-head"><div><span class="shift-step">LANGKAH 2</span><h3>Terapkan shift</h3><p>Tanggal mulai menentukan sejak kapan aturan baru dihitung.</p></div></div>
+   <div id="shift-choice-list" class="shift-choice-list"></div>
+   <div class="shift-apply-fields">
+    <label><span>Berlaku mulai</span><input id="shift-effective-date" class="form-input" type="date"></label>
+    <label><span>Catatan (opsional)</span><input id="shift-assignment-note" class="form-input" type="text" maxlength="120" placeholder="Contoh: pindah ke shift siang"></label>
+   </div>
+   <button id="shift-apply-btn" class="btn btn-primary shift-primary-btn" type="button" onclick="applySelectedShift()" disabled>Terapkan ke Karyawan Terpilih</button>
+  </section>
+
+  <details class="shift-card shift-advanced-card">
+   <summary><span><b>Pengecualian satu hari</b><small>Untuk tukar shift atau jadwal khusus pada tanggal tertentu</small></span><span class="shift-summary-chevron">&rsaquo;</span></summary>
+   <div class="shift-advanced-body">
+    <div class="shift-override-grid">
+     <label><span>Karyawan</span><select id="shift-override-user" class="form-input"></select></label>
+     <label><span>Tanggal</span><input id="shift-override-date" class="form-input" type="date"></label>
+     <label><span>Shift hari itu</span><select id="shift-override-shift" class="form-input"></select></label>
+     <label><span>Alasan</span><input id="shift-override-note" class="form-input" maxlength="120" placeholder="Contoh: tukar jadwal"></label>
+    </div>
+    <button id="shift-override-btn" class="btn btn-secondary" type="button" onclick="saveShiftOverride()">Simpan Pengecualian</button>
+   </div>
+  </details>
+
+  <details class="shift-card shift-advanced-card">
+   <summary><span><b>Atur jam shift</b><small>Ubah jam template untuk penempatan berikutnya</small></span><span class="shift-summary-chevron">&rsaquo;</span></summary>
+   <div id="shift-template-list" class="shift-template-list"></div>
+  </details>
+ </div>
+</div>
+
 <!-- PAYROLL / GAJI (Finance/Owner) -->
 <div class="screen" id="s-setting-gaji">
  <div class="statusbar"></div>
@@ -881,11 +937,11 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="js/supabase-client.js"></script>
 <script src="js/photo-storage.js?v=20261015e"></script>
-<script src="js/real-backend.js?v=20261026a"></script>
+<script src="js/real-backend.js?v=20261026b"></script>
 <script src="js/dashboard-reports.js?v=20261015e"></script>
-<script src="js/mock-backend.js?v=20261026a"></script>
-<script src="js/app.js?v=20261026a"></script>
-<script src="js/payroll.js?v=20261026a"></script>
-<script src="js/preview.js?v=20261026a"></script>
+<script src="js/mock-backend.js?v=20261026b"></script>
+<script src="js/app.js?v=20261026b"></script>
+<script src="js/payroll.js?v=20261026b"></script>
+<script src="js/preview.js?v=20261026b"></script>
 </body>
 </html>

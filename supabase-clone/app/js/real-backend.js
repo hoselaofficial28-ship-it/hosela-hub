@@ -870,6 +870,45 @@
       var r = await window.sb.rpc('tandai_menu_dibaca', { p_menu: args[1] });
       if (r.error) return { success: false };
       return r.data;
+    },
+
+    getShiftManagementData: async function (args) {
+      var r = await window.sb.rpc('get_shift_management_data', { p_tanggal: args[0] || null });
+      if (r.error) return { success: false, msg: r.error.message };
+      return Object.assign({ success: true }, r.data || {});
+    },
+
+    bulkAssignEmployeeShift: async function (args) {
+      var r = await window.sb.rpc('bulk_assign_employee_shift', {
+        p_user_ids: args[0] || [],
+        p_shift_id: args[1],
+        p_berlaku_mulai: args[2],
+        p_catatan: args[3] || ''
+      });
+      if (r.error) return { success: false, msg: r.error.message };
+      return r.data;
+    },
+
+    saveShiftTemplate: async function (args) {
+      var r = await window.sb.rpc('save_shift_template', {
+        p_shift_id: args[0],
+        p_nama: args[1],
+        p_jam_masuk: args[2],
+        p_jam_pulang: args[3]
+      });
+      if (r.error) return { success: false, msg: r.error.message };
+      return r.data;
+    },
+
+    saveEmployeeShiftOverride: async function (args) {
+      var r = await window.sb.rpc('save_employee_shift_override', {
+        p_user_id: args[0],
+        p_shift_id: args[1],
+        p_tanggal: args[2],
+        p_catatan: args[3] || ''
+      });
+      if (r.error) return { success: false, msg: r.error.message };
+      return r.data;
     }
   };
 
@@ -908,7 +947,7 @@
       window.sb.from('attendance_events').select('id,user_id,tanggal,jam,tipe,status,source,catatan').gte('tanggal', start).lte('tanggal', endKey).order('created_at'),
       window.sb.from('attendance_details').select('id,user_id,tanggal,waktu,tipe,keterangan').gte('tanggal', start).lte('tanggal', endKey),
       window.sb.from('attendance_anomalies').select('id,user_id,tanggal,tipe,status').gte('tanggal', start).lte('tanggal', endKey).eq('status', 'MENUNGGU'),
-      window.sb.from('work_schedules').select('dari,sampai,jam_masuk,jam_pulang,urutan').lte('dari', endKey).gte('sampai', start).order('urutan')
+      window.sb.rpc('get_employee_schedule_month', { p_bulan: bulanKey, p_user_id: targetUserId || null })
     ]);
     var failed = results.find(function (x) { return x.error; });
     if (failed) return { success: false, msg: failed.error.message };
@@ -941,11 +980,18 @@
       if (tipe === 'MASUK') { cell.masuk = jam; totalMasuk++; }
       if (tipe === 'PULANG') { cell.pulang = jam; totalPulang++; }
     });
+    var employeeSchedules = results[4].data || [];
+    var employeeScheduleMap = {};
+    employeeSchedules.forEach(function (row) {
+      employeeScheduleMap[row.userId + '|' + row.tanggal] = row;
+    });
     users.forEach(function (u) {
       Object.keys(u.days).forEach(function (day) {
         var cell = u.days[day], dateKey = bulanKey + '-' + String(day).padStart(2, '0');
-        var schedule = attendanceScheduleForDate(results[4].data || [], dateKey);
-        cell.jadwalMasuk = attendanceTime(schedule.jam_masuk).substring(0, 5) || '08:00';
+        var schedule = employeeScheduleMap[u.id + '|' + dateKey] || { jamMasuk: '08:00', jamPulang: '18:00', shiftName: 'Shift Pagi' };
+        cell.jadwalMasuk = attendanceTime(schedule.jamMasuk).substring(0, 5) || '08:00';
+        cell.jadwalPulang = attendanceTime(schedule.jamPulang).substring(0, 5) || '18:00';
+        cell.shiftName = schedule.shiftName || 'Shift Pagi';
         if (cell.masuk && cell.pulang) cell.anomali = false;
         if (cell.anomali || cell.masuk || cell.pulang) cell.absen = false;
         var actual = attendanceMinutes(cell.masuk), required = attendanceMinutes(cell.jadwalMasuk);

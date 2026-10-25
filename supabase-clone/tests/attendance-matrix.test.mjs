@@ -42,6 +42,10 @@ const window = {
       rpcCalls.push({ name, args });
       if (name === 'get_absensi_rekap') return { data: { bulanIni: '2026-10', data: [] }, error: null };
       if (name === 'get_all_absensi_rekap') return { data: { minggu: 'Okt 2026', data: [] }, error: null };
+      if (name === 'get_employee_schedule_month') return {
+        data: [{ userId: 'u-1', tanggal: '2026-10-06', shiftName: 'Shift Pagi', jamMasuk: '08:00', jamPulang: '18:00', sumber: 'DEFAULT' }],
+        error: null,
+      };
       return { data: { success: true }, error: null };
     },
     auth: { getUser: async () => ({ data: { user: { id: 'u-1' } } }) },

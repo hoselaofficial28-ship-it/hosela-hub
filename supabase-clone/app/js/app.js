@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbw6q_5ZaIGrekeBwZ5TKh6X1GpWkFHsa5i6whdwacQkTEa-vvNezHlxFMEQFKZkmm5ffQ/exec';
-var APP_VERSION = '20261026a';
+var APP_VERSION = '20261026b';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -160,6 +160,7 @@ var MENU_I18N = {
  's-payroll': { en:['Payroll','Review and publish payslips'], zh:['薪资发放','审核并发布工资单'] },
  's-tambah-pengumuman': { en:['Create Announcement','New update'], zh:['新建公告','发布新信息'] },
  's-manage-users': { en:['Manage Team','Activate / deactivate'], zh:['团队管理','启用 / 停用'] },
+ 's-shift-settings': { en:['Shift Settings','Assign employee work hours'], zh:['班次设置','安排员工工作时间'] },
  's-laporan-absensi': { en:['Attendance Report','Attendance recap'], zh:['考勤报告','考勤汇总'] },
  's-ganti-pin': { en:['Change Password','Update your login password'], zh:['修改密码','更新登录密码'] }
 };
@@ -384,7 +385,7 @@ var CACHEABLE = [
  'getNotifikasi','getIzinKaryawan','getIzinPendingCount','getSanksiManual',
  'getAbsensiMatrix','getAbsensiMatrixUser','getAllAbsensiRekap','getKPITemplate','getIzinPending',
  'getAnomaliPending','getPengaturan','getAbsensiCameraToday','getPayrollDetail',
- 'getIzinTelatReview'
+ 'getIzinTelatReview','getShiftManagementData'
 ];
 
 var CACHE_TTL_BY_ACTION = {
@@ -417,6 +418,7 @@ var CACHE_TTL_BY_ACTION = {
  getIzinTelatReview: 60 * 1000,
  getPayrollPreview: 5 * 60 * 1000,
  getPayrollDetail: 5 * 60 * 1000
+ ,getShiftManagementData: 60 * 1000
 };
 
 function cacheTtlForAction(action) {
@@ -460,6 +462,9 @@ function invalidateReadCacheAfterMutation(action) {
   importAbsensiUploadToApp: ['getAbsensiMatrix','getAbsensiMatrixUser'],
   processAttendanceAppRecap: ['getAbsensiMatrix','getAbsensiMatrixUser','getAbsensiRekap','getRekapBulananSemua','getAllAbsensiRekap','getHomeData','getPayrollPreview'],
   processAbsensiUpload: ['getAbsensiRekap','getRekapBulananSemua','getAllAbsensiRekap','getHomeData','getPayrollPreview']
+  ,bulkAssignEmployeeShift: ['getShiftManagementData','getAbsensiMatrix','getAbsensiMatrixUser','getAbsensiRekap','getRekapBulananSemua','getPayrollPreview']
+  ,saveEmployeeShiftOverride: ['getShiftManagementData','getAbsensiMatrix','getAbsensiMatrixUser','getAbsensiRekap','getRekapBulananSemua','getPayrollPreview']
+  ,saveShiftTemplate: ['getShiftManagementData']
  };
  (affected[action] || []).forEach(cacheClearAction);
 }
@@ -880,6 +885,7 @@ function goTo(id) {
  if (id === 's-jobdesk') loadJobdeskList();
  if (id === 's-kalender') loadKalender();
  if (id === 's-manage-users') loadUsers();
+ if (id === 's-shift-settings') loadShiftSettings();
  if (id === 's-laporan-absensi') loadLaporanAbsensi();
  if (id === 's-peraturan') loadPeraturan();
  if (id === 's-kpi-check') loadKPICheck();
@@ -1284,6 +1290,7 @@ menus.push({id:'s-slip-gaji', icon:'receipt', bg:'#e0f2fe', label:'Slip Gaji', s
  if (u.bagian === 'Owner' || u.bagian === 'Finance')
  menus.push({id:'s-kalender', icon:'calendar', bg:'#fee2e2', label:'Kalender Libur', sub:'Atur hari libur'});
  if (u.bagian === 'Finance') {
+ menus.push({id:'s-shift-settings', icon:'clock', bg:'#e0f2fe', label:'Pengaturan Shift', sub:'Atur jam kerja tim'});
  menus.push({id:'s-kelola-izin', icon:'check', bg:'#d1fae5', label:'Kelola Izin', sub:'Setujui pengajuan'});
  menus.push({id:'s-kpi-check', icon:'clipboard', bg:'#fef3c7', label:'KPI Checklist', sub:'Update KPI kamu'});
  menus.push({id:'s-sanksi-manual', icon:'scale', bg:'#fce7f3', label:'Penghargaan & Denda', sub:'Denda dan penghargaan manual'});
@@ -1291,6 +1298,7 @@ menus.push({id:'s-slip-gaji', icon:'receipt', bg:'#e0f2fe', label:'Slip Gaji', s
  menus.push({id:'s-payroll', icon:'card', bg:'#ede9fe', label:'Penggajian', sub:'Pratinjau dan terbitkan slip'});
  }
  if (u.bagian === 'Owner') {
+ menus.push({id:'s-shift-settings', icon:'clock', bg:'#e0f2fe', label:'Pengaturan Shift', sub:'Atur jam kerja tim'});
  menus.push({id:'s-manage-users', icon:'users', bg:'#fef3c7', label:'Pendaftar & Akses', sub:'Pantau dan kelola akun'});
  // Owner sebelumnya TIDAK punya cara melihat/menyetujui pengajuan izin (menu itu
  // hanya ada untuk Finance). Ko minta bisa melihatnya sendiri.
@@ -1820,7 +1828,7 @@ function startHomeClock() {
 
 function menuCategory(m) {
  if (['s-absensi-camera','s-catatan-kehadiran','s-izin','s-slip-gaji'].indexOf(m.id) !== -1) return 'Kehadiran & Personal';
- if (['s-kelola-izin','s-payroll','s-setting-gaji','s-sanksi-manual','s-review-telat','s-laporan-absensi','s-kalender'].indexOf(m.id) !== -1) return 'Finance & Owner';
+ if (['s-kelola-izin','s-payroll','s-setting-gaji','s-sanksi-manual','s-review-telat','s-laporan-absensi','s-kalender','s-shift-settings'].indexOf(m.id) !== -1) return 'Finance & Owner';
  if (['s-jobdesk','s-kpi-check','s-papan-peringkat','s-peraturan'].indexOf(m.id) !== -1) return 'Kerja & Produktivitas';
  if (['s-pengumuman','s-ide','s-notifikasi','s-tambah-pengumuman'].indexOf(m.id) !== -1) return 'Komunikasi Tim';
  return 'Akun';
@@ -4857,6 +4865,222 @@ function processAttendanceAppRecap() {
  if (btn) { btn.textContent = 'Proses ke Rekap Resmi'; btn.disabled = false; }
  showToast('Koneksi gagal saat proses rekap');
  });
+}
+
+// ===== PENGATURAN SHIFT ====================================================
+var _shiftManagement = { shifts: [], employees: [] };
+var _shiftSelectedEmployees = {};
+
+function shiftTodayKey() {
+ var d = new Date();
+ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+
+function loadShiftSettings(force) {
+ var list = document.getElementById('shift-employee-list');
+ if (!list) return;
+ if (!currentUser || (currentUser.bagian !== 'Owner' && currentUser.bagian !== 'Finance')) {
+  list.innerHTML = '<div class="empty-state">Menu ini hanya dapat dibuka oleh Owner atau Finance.</div>';
+  return;
+ }
+ if (force) cacheClear('getShiftManagementData'+JSON.stringify([shiftTodayKey()]));
+ list.innerHTML = '<div class="empty-state">Memuat jadwal tim...</div>';
+ var effective = document.getElementById('shift-effective-date');
+ var overrideDate = document.getElementById('shift-override-date');
+ if (effective && !effective.value) effective.value = shiftTodayKey();
+ if (overrideDate && !overrideDate.value) overrideDate.value = shiftTodayKey();
+
+ gasCall('getShiftManagementData', [shiftTodayKey()], function(res) {
+  if (!res || res.success === false) {
+   var msg = (res && res.msg) || 'Data shift gagal dimuat.';
+   list.innerHTML = '<div class="shift-error-state"><b>Pengaturan shift belum siap</b><p>'+htmlEscape(msg)+'</p><button class="btn btn-secondary" onclick="loadShiftSettings(true)">Coba Lagi</button></div>';
+   return;
+  }
+  _shiftManagement = { shifts: res.shifts || [], employees: res.employees || [] };
+  _shiftSelectedEmployees = {};
+  prepareShiftFilters();
+  renderShiftSummary();
+  renderShiftChoices();
+  renderShiftEmployees();
+  renderShiftOverrideOptions();
+  renderShiftTemplates();
+ }, function(err) {
+  list.innerHTML = '<div class="shift-error-state"><b>Database belum dapat dihubungi</b><p>'+htmlEscape((err && err.message) || 'Periksa koneksi lalu coba lagi.')+'</p><button class="btn btn-secondary" onclick="loadShiftSettings(true)">Coba Lagi</button></div>';
+ });
+}
+
+function prepareShiftFilters() {
+ var dept = document.getElementById('shift-department-filter');
+ var current = document.getElementById('shift-current-filter');
+ if (dept) {
+  var departments = [];
+  _shiftManagement.employees.forEach(function(e){ if (departments.indexOf(e.bagian) === -1) departments.push(e.bagian); });
+  departments.sort();
+  dept.innerHTML = '<option value="ALL">Semua bagian</option>'+departments.map(function(v){ return '<option value="'+htmlEscape(v)+'">'+htmlEscape(v)+'</option>'; }).join('');
+ }
+ if (current) {
+  current.innerHTML = '<option value="ALL">Semua shift</option>'+_shiftManagement.shifts.filter(function(s){ return s.aktif; }).map(function(s){ return '<option value="'+s.id+'">'+htmlEscape(s.nama)+'</option>'; }).join('');
+ }
+}
+
+function renderShiftSummary() {
+ var el = document.getElementById('shift-summary');
+ if (!el) return;
+ var cards = _shiftManagement.shifts.filter(function(s){ return s.aktif; }).map(function(s) {
+  var count = _shiftManagement.employees.filter(function(e){ return e.shiftId === s.id; }).length;
+  return '<article><span>'+uiIcon('clock')+'</span><div><b>'+count+'</b><small>'+htmlEscape(s.nama)+'</small><em>'+htmlEscape(s.jamMasuk)+'–'+htmlEscape(s.jamPulang)+'</em></div></article>';
+ });
+ cards.push('<article><span>'+uiIcon('users')+'</span><div><b>'+_shiftManagement.employees.length+'</b><small>Total Karyawan</small><em>Aktif</em></div></article>');
+ el.innerHTML = cards.join('');
+}
+
+function renderShiftChoices() {
+ var el = document.getElementById('shift-choice-list');
+ if (!el) return;
+ var active = _shiftManagement.shifts.filter(function(s){ return s.aktif; });
+ el.innerHTML = active.map(function(s, i) {
+  return '<label class="shift-choice"><input type="radio" name="shift-target" value="'+s.id+'" '+(i===0?'checked':'')+' onchange="updateShiftApplyState()"><span class="shift-choice-icon">'+uiIcon('clock')+'</span><span><b>'+htmlEscape(s.nama)+'</b><small>'+htmlEscape(s.jamMasuk)+' sampai '+htmlEscape(s.jamPulang)+'</small></span><i></i></label>';
+ }).join('');
+ updateShiftApplyState();
+}
+
+function filteredShiftEmployees() {
+ var q = String((document.getElementById('shift-search') || {}).value || '').trim().toLowerCase();
+ var dept = String((document.getElementById('shift-department-filter') || {}).value || 'ALL');
+ var shift = String((document.getElementById('shift-current-filter') || {}).value || 'ALL');
+ return _shiftManagement.employees.filter(function(e) {
+  if (dept !== 'ALL' && e.bagian !== dept) return false;
+  if (shift !== 'ALL' && e.shiftId !== shift) return false;
+  return !q || [e.nama,e.bagian,e.jabatan,e.shiftName].join(' ').toLowerCase().indexOf(q) !== -1;
+ });
+}
+
+function renderShiftEmployees() {
+ var list = document.getElementById('shift-employee-list');
+ if (!list) return;
+ var rows = filteredShiftEmployees();
+ if (!rows.length) {
+  list.innerHTML = '<div class="empty-state">Tidak ada karyawan yang cocok dengan filter.</div>';
+ } else {
+  list.innerHTML = rows.map(function(e) {
+   var selected = !!_shiftSelectedEmployees[e.id];
+   return '<label class="shift-employee-row '+(selected?'is-selected':'')+'"><input type="checkbox" value="'+e.id+'" '+(selected?'checked':'')+' onchange="toggleShiftEmployee(\''+e.id+'\',this.checked)"><span class="shift-avatar">'+htmlEscape(initials(e.nama))+'</span><span class="shift-person"><b>'+htmlEscape(e.nama)+'</b><small>'+htmlEscape(e.jabatan)+' · '+htmlEscape(e.bagian)+'</small></span><span class="shift-current"><b>'+htmlEscape(e.shiftName || 'Shift Pagi')+'</b><small>'+htmlEscape(e.jamMasuk || '08:00')+'–'+htmlEscape(e.jamPulang || '18:00')+'</small></span></label>';
+  }).join('');
+ }
+ syncShiftSelectionControls(rows);
+}
+
+function toggleShiftEmployee(userId, checked) {
+ if (checked) _shiftSelectedEmployees[userId] = true;
+ else delete _shiftSelectedEmployees[userId];
+ renderShiftEmployees();
+}
+
+function toggleAllVisibleShiftEmployees(checked) {
+ filteredShiftEmployees().forEach(function(e) {
+  if (checked) _shiftSelectedEmployees[e.id] = true;
+  else delete _shiftSelectedEmployees[e.id];
+ });
+ renderShiftEmployees();
+}
+
+function syncShiftSelectionControls(visibleRows) {
+ var count = Object.keys(_shiftSelectedEmployees).length;
+ var countEl = document.getElementById('shift-selected-count');
+ var selectAll = document.getElementById('shift-select-all');
+ if (countEl) countEl.textContent = count+' dipilih';
+ if (selectAll) {
+  var selectedVisible = visibleRows.filter(function(e){ return !!_shiftSelectedEmployees[e.id]; }).length;
+  selectAll.checked = visibleRows.length > 0 && selectedVisible === visibleRows.length;
+  selectAll.indeterminate = selectedVisible > 0 && selectedVisible < visibleRows.length;
+ }
+ updateShiftApplyState();
+}
+
+function updateShiftApplyState() {
+ var btn = document.getElementById('shift-apply-btn');
+ var radio = document.querySelector('input[name="shift-target"]:checked');
+ if (btn) btn.disabled = !radio || Object.keys(_shiftSelectedEmployees).length === 0;
+}
+
+function applySelectedShift() {
+ var ids = Object.keys(_shiftSelectedEmployees);
+ var radio = document.querySelector('input[name="shift-target"]:checked');
+ var date = (document.getElementById('shift-effective-date') || {}).value;
+ var note = (document.getElementById('shift-assignment-note') || {}).value || '';
+ if (!ids.length) { showToast('Pilih minimal satu karyawan'); return; }
+ if (!radio || !date) { showToast('Pilih shift dan tanggal mulai'); return; }
+ var shift = _shiftManagement.shifts.find(function(s){ return s.id === radio.value; });
+ if (!confirm('Terapkan '+(shift ? shift.nama : 'shift ini')+' kepada '+ids.length+' karyawan mulai '+date+'?')) return;
+ var btn = document.getElementById('shift-apply-btn');
+ btn.disabled = true; btn.textContent = 'Menyimpan Jadwal...';
+ gasCall('bulkAssignEmployeeShift', [ids, radio.value, date, note], function(res) {
+  if (!res || !res.success) { btn.disabled = false; btn.textContent = 'Terapkan ke Karyawan Terpilih'; showToast((res && res.msg) || 'Jadwal gagal disimpan'); return; }
+  function done(message) {
+   showToast(message || res.msg || 'Jadwal berhasil disimpan');
+   btn.textContent = 'Terapkan ke Karyawan Terpilih';
+   loadShiftSettings(true);
+  }
+  if (res.reprocessMonth) {
+   btn.textContent = 'Menyelaraskan Absensi...';
+   gasCall('processAbsensiAppToRekap', [res.reprocessMonth, currentUser.nama], function(sync) {
+    done(sync && sync.success ? res.msg+' Absensi '+res.reprocessMonth+' ikut diselaraskan.' : res.msg+' Namun rekap perlu diproses ulang dari Catatan Kehadiran.');
+   }, function(){ done(res.msg+' Namun rekap perlu diproses ulang dari Catatan Kehadiran.'); });
+  } else done(res.msg);
+ }, function() {
+  btn.disabled = false; btn.textContent = 'Terapkan ke Karyawan Terpilih'; showToast('Koneksi gagal saat menyimpan jadwal');
+ });
+}
+
+function renderShiftOverrideOptions() {
+ var user = document.getElementById('shift-override-user');
+ var shift = document.getElementById('shift-override-shift');
+ if (user) user.innerHTML = '<option value="">Pilih karyawan</option>'+_shiftManagement.employees.map(function(e){ return '<option value="'+e.id+'">'+htmlEscape(e.nama)+' · '+htmlEscape(e.bagian)+'</option>'; }).join('');
+ if (shift) shift.innerHTML = '<option value="">Pilih shift</option>'+_shiftManagement.shifts.filter(function(s){ return s.aktif; }).map(function(s){ return '<option value="'+s.id+'">'+htmlEscape(s.nama)+' · '+htmlEscape(s.jamMasuk)+'–'+htmlEscape(s.jamPulang)+'</option>'; }).join('');
+}
+
+function saveShiftOverride() {
+ var userId = (document.getElementById('shift-override-user') || {}).value;
+ var shiftId = (document.getElementById('shift-override-shift') || {}).value;
+ var date = (document.getElementById('shift-override-date') || {}).value;
+ var note = (document.getElementById('shift-override-note') || {}).value || '';
+ if (!userId || !shiftId || !date) { showToast('Pilih karyawan, tanggal, dan shift'); return; }
+ var btn = document.getElementById('shift-override-btn');
+ btn.disabled = true; btn.textContent = 'Menyimpan...';
+ gasCall('saveEmployeeShiftOverride', [userId, shiftId, date, note], function(res) {
+  if (!res || !res.success) { btn.disabled = false; btn.textContent = 'Simpan Pengecualian'; showToast((res && res.msg) || 'Pengecualian gagal disimpan'); return; }
+  function doneOverride(message) {
+   btn.disabled = false; btn.textContent = 'Simpan Pengecualian';
+   showToast(message || res.msg); loadShiftSettings(true);
+  }
+  if (res.reprocessMonth) {
+   btn.textContent = 'Menyelaraskan Absensi...';
+   gasCall('processAbsensiAppToRekap', [res.reprocessMonth, currentUser.nama], function(sync) {
+    doneOverride(sync && sync.success ? res.msg+' Absensi bulan itu ikut diselaraskan.' : res.msg+' Namun rekap perlu diproses ulang dari Catatan Kehadiran.');
+   }, function(){ doneOverride(res.msg+' Namun rekap perlu diproses ulang dari Catatan Kehadiran.'); });
+  } else doneOverride(res.msg);
+ }, function(){ btn.disabled = false; btn.textContent = 'Simpan Pengecualian'; showToast('Koneksi gagal'); });
+}
+
+function renderShiftTemplates() {
+ var el = document.getElementById('shift-template-list');
+ if (!el) return;
+ el.innerHTML = _shiftManagement.shifts.filter(function(s){ return s.aktif; }).map(function(s) {
+  return '<article class="shift-template-row"><div><b>'+htmlEscape(s.nama)+'</b><small>Perubahan berlaku untuk penempatan baru</small></div><label><span>Masuk</span><input id="shift-start-'+s.id+'" class="form-input" type="time" value="'+htmlEscape(s.jamMasuk)+'"></label><label><span>Pulang</span><input id="shift-end-'+s.id+'" class="form-input" type="time" value="'+htmlEscape(s.jamPulang)+'"></label><button class="btn btn-secondary" onclick="saveShiftTemplateRow(\''+s.id+'\',this)">Simpan Jam</button></article>';
+ }).join('');
+}
+
+function saveShiftTemplateRow(shiftId, btn) {
+ var shift = _shiftManagement.shifts.find(function(s){ return s.id === shiftId; });
+ var start = (document.getElementById('shift-start-'+shiftId) || {}).value;
+ var end = (document.getElementById('shift-end-'+shiftId) || {}).value;
+ if (!shift || !start || !end) { showToast('Jam masuk dan pulang wajib diisi'); return; }
+ btn.disabled = true; btn.textContent = 'Menyimpan...';
+ gasCall('saveShiftTemplate', [shiftId, shift.nama, start, end], function(res) {
+  btn.disabled = false; btn.textContent = 'Simpan Jam';
+  if (!res || !res.success) { showToast((res && res.msg) || 'Jam shift gagal disimpan'); return; }
+  showToast(res.msg); loadShiftSettings(true);
+ }, function(){ btn.disabled = false; btn.textContent = 'Simpan Jam'; showToast('Koneksi gagal'); });
 }
 
 function initials(nama) { return (nama||'').split(' ').map(function(w){return w[0];}).join('').substring(0,2).toUpperCase(); }

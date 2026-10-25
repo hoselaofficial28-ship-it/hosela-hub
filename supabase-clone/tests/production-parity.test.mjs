@@ -16,7 +16,7 @@ const realHandlers = new Set(
 );
 const missingHandlers = [...calledActions].filter((action) => !realHandlers.has(action)).sort();
 
-assert.equal(calledActions.size, 80, 'Jumlah aksi frontend berubah; audit handler Supabase wajib diperbarui');
+assert.equal(calledActions.size, 84, 'Jumlah aksi frontend berubah; audit handler Supabase wajib diperbarui');
 assert.deepEqual(missingHandlers, [], `Aksi frontend tanpa handler Supabase: ${missingHandlers.join(', ')}`);
 
 const expectedScreens = [
@@ -26,13 +26,14 @@ const expectedScreens = [
   's-kpi-check', 's-papan-peringkat', 's-ganti-pin', 's-paksa-ganti-pin',
   's-absensi-camera', 's-izin', 's-kelola-izin', 's-notifikasi', 's-sanksi-manual',
   's-review-telat', 's-catatan-kehadiran', 's-setting-gaji', 's-payroll', 's-slip-gaji',
+  's-shift-settings',
 ];
 
 const screenIds = [...html.matchAll(/<div class="screen" id="([^"]+)"/g)].map((match) => match[1]);
 const duplicates = screenIds.filter((id, index) => screenIds.indexOf(id) !== index);
 assert.deepEqual(duplicates, [], `ID layar duplikat: ${duplicates.join(', ')}`);
 assert.deepEqual(expectedScreens.filter((id) => !screenIds.includes(id)), [], 'Ada layar wajib yang hilang');
-assert.equal(expectedScreens.length, 28);
+assert.equal(expectedScreens.length, 29);
 assert.match(html, /id="announcement-owner-panel"/, 'Panel Owner untuk membuat pengumuman langsung tidak ditemukan');
 
 assert.match(app, /if \(!localDemo\) \{[\s\S]*Fitur "' \+ action \+ '" belum tersambung ke layanan produksi\./);
