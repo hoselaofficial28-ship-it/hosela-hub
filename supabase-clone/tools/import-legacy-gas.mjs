@@ -1,4 +1,4 @@
-// ============================================================================
+﻿// ============================================================================
 // Impor data Hosela Hub LAMA (Google Apps Script + Google Sheets)
 // ke Hosela Hub BARU (Supabase).
 //
@@ -96,11 +96,22 @@ export function keWaktu(v) {
   return null;
 }
 
-const keAngka = v => (kosong(v) ? 0 : Math.round(Number(v) || 0));
-const keAngkaAtauNull = v => (kosong(v) ? null : Math.round(Number(v) || 0));
+const keAngka = v => (kosong(v) ? 0 : Math.round(Number(v) || 0));const keAngkaAtauNull = v => (kosong(v) ? null : Math.round(Number(v) || 0));
 const keBool = v => (kosong(v) ? false : /^(ya|true|1|y)$/i.test(String(v).trim()));
 const keTeks = v => (kosong(v) ? null : String(v).trim());
 const keTeksWajib = (v, bawaan = '-') => (kosong(v) ? bawaan : String(v).trim());
+
+// Kode minggu ISO dari tanggal ('2026-03-02' -> '2026-W10').
+export function mingguDariTanggal(tanggal) {
+  if (!tanggal) return null;
+  const d = new Date(`${tanggal}T00:00:00Z`);
+  if (Number.isNaN(d.getTime())) return null;
+  const hari = d.getUTCDay() || 7; // Senin=1 ... Minggu=7
+  d.setUTCDate(d.getUTCDate() + 4 - hari); // Kamis pada minggu itu
+  const awalTahun = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  const minggu = Math.ceil(((d - awalTahun) / 86400000 + 1) / 7);
+  return `${d.getUTCFullYear()}-W${String(minggu).padStart(2, '0')}`;
+}
 
 // ---------------------------------------------------------------------------
 // Baca JSON hasil ekspor
@@ -461,7 +472,7 @@ async function main() {
     const tanggal = keTanggal(r.Tanggal);
     if (!tanggal) { laporan.galat.push(`absensi ${r.ID}: tanggal tidak valid (${r.Tanggal})`); continue; }
     events.push({
-      legacy_id: String(r.ID), user_id: user.id, tanggal, jam: keJam(r.Jam),
+      legacy_id: String(r.ID), user_id: user.id, tanggal, jam: keJam(r.Jam) || '00:00:00',
       tipe: keTeksWajib(r.Tipe, 'MASUK'), latitude: r.Latitude ?? null, longitude: r.Longitude ?? null,
       akurasi_meter: keAngkaAtauNull(r.Akurasi_Meter), jarak_kantor_meter: keAngkaAtauNull(r.Jarak_Kantor_Meter),
       status: keTeksWajib(r.Status, 'DITERIMA'), source: 'LEGACY_GAS',
@@ -478,7 +489,7 @@ async function main() {
     const tanggal = keTanggal(r.Tanggal);
     if (!tanggal) { laporan.galat.push(`detail ${r.ID_Detail}: tanggal tidak valid (${r.Tanggal})`); continue; }
     details.push({
-      legacy_id: String(r.ID_Detail), user_id: user.id, minggu: keTeks(r.Minggu), tanggal,
+      legacy_id: String(r.ID_Detail), user_id: user.id, minggu: keTeks(r.Minggu) || mingguDariTanggal(tanggal), tanggal,
       tipe: keTeksWajib(r.Tipe), keterangan: keTeks(r.Keterangan), nilai: keAngka(r.Nilai),
       is_generated: true,
     });
@@ -489,7 +500,7 @@ async function main() {
     const user = peta.byLegacy.get(String(r.ID_User || '').trim());
     if (!user) { laporan.galat.push(`rekap ${r.KOLOM_0}: user ${r.ID_User} tidak dikenal`); return null; }
     return {
-      legacy_id: String(r.KOLOM_0), user_id: user.id, minggu: keTeks(r.Minggu),
+      legacy_id: String(r.KOLOM_0), user_id: user.id, minggu: keTeksWajib(r.Minggu),
       hadir: keAngka(r.Total_Hadir), telat: keAngka(r.Total_Telat), absen: keAngka(r.Total_Absen),
       lembur_minggu: keAngka(r.Total_Lembur_Minggu), lembur_libur: keAngka(r.Total_Lembur_Libur),
       status: keTeksWajib(r.Status_Peringatan, 'BAIK'), total_denda: 0,
@@ -713,7 +724,7 @@ async function main() {
     const user = peta.byLegacy.get(String(r.ID_User || '').trim());
     if (!user) { laporan.galat.push(`KPI ${r.ID_Laporan}: user ${r.ID_User} tidak dikenal`); return null; }
     return {
-      legacy_id: String(r.ID_Laporan), user_id: user.id, minggu: keTeks(r.Minggu),
+      legacy_id: String(r.ID_Laporan), user_id: user.id, minggu: keTeksWajib(r.Minggu),
       kpi_template_id: petaKpi.get(String(r.ID_KPI || '')) || null,
       indikator: keTeksWajib(r.Indikator), selesai: keBool(r.Selesai),
       catatan: keTeks(r.Catatan), submitted_at: keWaktu(r.Tgl_Submit) || null,

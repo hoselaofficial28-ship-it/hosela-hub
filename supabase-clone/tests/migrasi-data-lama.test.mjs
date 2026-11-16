@@ -1,4 +1,4 @@
-﻿import assert from 'node:assert/strict';
+import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 const mig = readFileSync(new URL('../supabase/migrations/20261116000050_import_legacy_gas.sql', import.meta.url), 'utf8');
@@ -58,6 +58,19 @@ assert.ok((fix.match(/where true;/g) || []).length >= 17);
 assert.doesNotMatch(fix, /delete from public\.app_settings/);
 
 // ---------------------------------------------------------------------------
+// 4b) Nilai kosong pada kolom wajib memakai nilai bawaan kolom (migrasi 052)
+//     Tanpa ini impor ditolak: "null value in column created_at ... violates
+//     not-null constraint" (23502).
+// ---------------------------------------------------------------------------
+const fixNilai = readFileSync(new URL('../supabase/migrations/20261116000052_fix_import_nilai_kosong.sql', import.meta.url), 'utf8');
+assert.match(fixNilai, /create or replace function public\.import_legacy_rows\(/);
+assert.match(fixNilai, /is_nullable = 'NO' and column_default is not null/);
+assert.match(fixNilai, /format\('coalesce\(%1\$I, %2\$s\)', column_name, column_default\)/);
+assert.match(fixNilai, /format\('%1\$I = coalesce\(excluded\.%1\$I, %2\$s\)', column_name, column_default\)/);
+assert.match(fixNilai, /from jsonb_populate_recordset\(null::public\.%1\$I, \$1\)/);
+assert.doesNotMatch(fixNilai, /delete from/i, 'migrasi 052 tidak boleh menghapus data');
+
+// ---------------------------------------------------------------------------
 // 5) Rekonsiliasi + daftar payroll yang perlu disusulkan
 // ---------------------------------------------------------------------------
 assert.match(mig, /create or replace function public\.legacy_import_summary\(\)/);
@@ -78,6 +91,10 @@ assert.match(alat, /export function keTanggal/);
 assert.match(alat, /export function keBulan/);
 assert.match(alat, /export function keJam/);
 assert.match(alat, /export function keWaktu/);
+// Kolom wajib terisi: minggu dihitung dari tanggal, jam tidak boleh kosong
+assert.match(alat, /export function mingguDariTanggal/);
+assert.match(alat, /minggu: keTeks\(r\.Minggu\) \|\| mingguDariTanggal\(tanggal\)/);
+assert.match(alat, /jam: keJam\(r\.Jam\) \|\| '00:00:00'/);
 
 // Konversi koordinat kantor yang tersimpan tanpa desimal
 assert.match(alat, /kunci === 'OFFICE_LAT' \|\| kunci === 'OFFICE_LNG'/);
