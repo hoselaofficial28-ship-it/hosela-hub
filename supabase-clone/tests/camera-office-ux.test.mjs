@@ -1,4 +1,4 @@
-import assert from 'node:assert/strict';
+﻿import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 const html = readFileSync(new URL('../app/index.html', import.meta.url), 'utf8');
@@ -25,11 +25,11 @@ assert.match(app, /btn\.textContent = isCollapsed \? 'Ubah' : 'Tutup'/);
 // --- Akurasi GPS ditampilkan agar titik kantor tidak asal pasang ---
 assert.match(html, /id="office-location-hint"/);
 assert.match(html, /id="office-current-location-btn"/);
-assert.match(html, /id="attendance-location-retry"[\s\S]*?Baca Ulang Lokasi/);
+assert.match(html, /id="attendance-location-retry"[\s\S]{0,120}Baca ulang/);
 assert.match(app, /MAX_ATTENDANCE_LOCATION_ACCURACY_M = 100/);
 assert.match(app, /MAX_OFFICE_LOCATION_ACCURACY_M = 100/);
-assert.match(app, /Akurasi bacaan: ±/);
-assert.match(app, /Lokasi belum disimpan karena akurasi masih ±/);
+assert.match(app, /Akurasi bacaan: \u00b1/);
+assert.match(app, /Lokasi belum disimpan karena akurasi masih \u00b1/);
 assert.match(app, /acc > MAX_ATTENDANCE_LOCATION_ACCURACY_M/);
 assert.match(app, /maximumAge: 0/);
 assert.doesNotMatch(app, /enableHighAccuracy: false/);
@@ -37,22 +37,43 @@ assert.doesNotMatch(app, /enableHighAccuracy: false/);
 assert.match(css, /\.office-setting-card\.is-collapsed \.office-editor-body\{display:none\}/);
 assert.match(css, /\.office-summary\{[\s\S]*?display:flex/);
 assert.match(css, /\.office-summary\[hidden\]\{display:none\}/);
-assert.match(css, /\.attendance-location-row\{display:grid/);
+assert.match(css, /\.cam-loc\{display:inline-flex/);
 
-// --- Tombol kamera: gradasi biru muda, bukan biru solid + emas ---
-assert.doesNotMatch(html, /id="camera-capture-btn"[^>]*class="btn btn-gold"/);
-assert.match(html, /id="camera-start-btn"[^>]*>Aktifkan Kamera</);
-assert.match(html, /id="camera-capture-btn"[^>]*>Ambil Foto</);
-assert.match(css, /#camera-start-btn\{background:linear-gradient\(135deg,#4f8cff 0%,#1557d8 100%\)\}/);
-assert.match(css, /#camera-capture-btn\{background:linear-gradient\(135deg,#9ec7ff 0%,#4f8cff 100%\)/);
-assert.match(css, /#camera-start-btn:disabled,#camera-capture-btn:disabled\{background:linear-gradient/);
-assert.match(css, /#camera-start-btn,#camera-capture-btn\{min-height:48px/);
+// --- Kamera absensi desain baru (17 Nov 2026):
+//     kamera menyala sendiri, cincin warna berputar saat memindai wajah,
+//     lalu karyawan tinggal pilih Absen Masuk / Absen Pulang.
+assert.match(html, /id="cam-stage"/);
+assert.match(html, /class="cam-ring"/);
+assert.match(html, /id="cam-status-chip"/);
+assert.match(html, /id="cam-submit"/);
+assert.match(html, /id="absen-masuk-btn"[^>]*>Absen Masuk</);
+assert.match(html, /id="absen-pulang-btn"[^>]*>Absen Pulang</);
+assert.match(html, /id="camera-retake-btn"[^>]*onclick="ulangiFotoAbsen\(\)"/);
+assert.match(html, /id="attendance-type"/);
+// tombol "Aktifkan Kamera" bukan lagi langkah wajib
+assert.doesNotMatch(html, />Aktifkan Kamera</);
+assert.doesNotMatch(html, /id="camera-capture-btn"/);
 
-// --- Absensi kamera tetap mobile friendly ---
-assert.match(css, /@media \(max-width:599px\)\{[\s\S]*?#camera-start-btn,#camera-capture-btn\{min-height:52px/);
-assert.match(css, /@media \(max-width:380px\)\{[\s\S]*?\.camera-actions\{grid-template-columns:1fr\}/);
-assert.match(css, /@media \(max-width:599px\)\{[\s\S]*?\.office-toggle-btn\{min-height:44px\}/);
-assert.match(css, /\.camera-actions\{display:grid;grid-template-columns:1fr 1fr/);
+// cincin: gradasi berputar, dan berubah warna mengikuti keadaan
+assert.match(css, /\.cam-stage\{/);
+assert.match(css, /\.cam-frame \.cam-ring\{[^}]*conic-gradient/);
+assert.match(css, /@keyframes cam-spin\{to\{transform:rotate\(1turn\)\}\}/);
+assert.match(css, /@keyframes cam-glow\{/);
+assert.match(css, /\.cam-stage\[data-state="scanning"\] \.cam-frame,\n\.cam-stage\[data-state="locking"\] \.cam-frame\{animation:cam-glow/);
+assert.match(css, /\.cam-stage\[data-state="ready"\] \.cam-frame \.cam-ring\{background:#22c55e;animation:none/);
+assert.match(css, /\.cam-stage\[data-state="ready"\] \.cam-frame\{animation:none;box-shadow:inset 0 0 0 4px rgba\(34,197,94/);
+assert.match(css, /\.cam-stage\[data-state="error"\] \.cam-frame \.cam-ring\{background:#ef4444/);
+assert.match(css, /\.cam-pick-in\{background:linear-gradient/);
+assert.match(css, /\.cam-pick-out\{background:linear-gradient/);
+assert.match(css, /\.cam-submit-grid\{display:grid;grid-template-columns:1fr 1fr/);
+
+// alur kamera otomatis
+assert.match(app, /function mulaiPindaiWajah\(/);
+assert.match(app, /_camJejakBagus >= 4/);
+assert.match(app, /function ulangiFotoAbsen\(/);
+assert.match(app, /function kirimAbsenDariKamera\(/);
+assert.match(app, /function loadAbsensiCamera\(\) \{[\s\S]{0,900}startAttendanceCamera\(\);/);
+assert.match(app, /getUserMedia\(\{ video: \{ facingMode: 'user'/);
 
 // --- Versi cache harus naik serentak supaya HP tidak memakai file lama ---
 // Versi mengikuti APP_VERSION di app.js (jangan di-hardcode supaya tidak perlu diubah tiap rilis).

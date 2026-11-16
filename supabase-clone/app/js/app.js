@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbw6q_5ZaIGrekeBwZ5TKh6X1GpWkFHsa5i6whdwacQkTEa-vvNezHlxFMEQFKZkmm5ffQ/exec';
-var APP_VERSION = '20261116c';
+var APP_VERSION = '20261117a';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -3779,22 +3779,21 @@ function pilihShiftSaya(kode) {
 
 function loadAbsensiCamera() {
  loadShiftSaya();
+ resetCameraUi();
  _attendancePhotoData = '';
  _attendanceLocation = null;
  var video = document.getElementById('attendance-video');
- var img = document.getElementById('attendance-photo-preview');
  var placeholder = document.getElementById('attendance-camera-placeholder');
  var submitBtn = document.getElementById('attendance-submit-btn');
- var captureBtn = document.getElementById('camera-capture-btn');
  if (video) video.style.display = 'block';
- if (img) { img.style.display = 'none'; img.removeAttribute('src'); }
- if (placeholder) { placeholder.style.display = 'flex'; placeholder.textContent = 'Kamera belum aktif'; }
- if (submitBtn) submitBtn.disabled = true;
- if (captureBtn) captureBtn.disabled = true;
+ // Panel Lokasi Kantor (khusus Owner) tetap ada, tapi kamera langsung menyala.
  var officeCard = document.getElementById('office-setting-card');
  var isOwner = currentUser && currentUser.bagian === 'Owner';
  if (officeCard) officeCard.style.display = isOwner ? 'block' : 'none';
  if (isOwner) loadOfficeSettings();
+ if (placeholder) placeholder.style.display = 'none';
+ if (submitBtn) submitBtn.disabled = true;
+ startAttendanceCamera();
  updateAttendanceLocationStatus('Membaca lokasi...', '');
  updateAttendancePhotoStatus('', '');
  getAttendanceLocation();
@@ -3993,31 +3992,158 @@ function updateAttendanceLocationStatus(text, state) {
  el.textContent = text;
 }
 
+// ===== Kamera absensi: pindai wajah otomatis + pilih Masuk/Pulang (17 Nov 2026) =====
+var _camScanTimer = null;
+var _camJejakBagus = 0;
+var _camSudahAmbil = false;
+var _camDetektor = (typeof window !== 'undefined' && window.FaceDetector)
+ ? new window.FaceDetector({ fastMode: true, maxDetectedFaces: 1 }) : null;
+
+function setCamState(state, teks) {
+ var stage = document.getElementById('cam-stage');
+ if (stage) stage.setAttribute('data-state', state);
+ var chip = document.getElementById('cam-status-chip');
+ if (chip && teks) chip.textContent = teks;
+}
+
+function hentikanPindai() {
+ if (_camScanTimer) { clearTimeout(_camScanTimer); _camScanTimer = null; }
+ _camJejakBagus = 0;
+}
+
+function resetCameraUi() {
+ _camSudahAmbil = false;
+ _attendancePhotoData = '';
+ var sub = document.getElementById('cam-submit');
+ if (sub) sub.hidden = true;
+ var retake = document.getElementById('camera-retake-btn');
+ if (retake) retake.style.display = 'none';
+ var startBtn = document.getElementById('camera-start-btn');
+ if (startBtn) startBtn.style.display = 'none';
+ var img = document.getElementById('attendance-photo-preview');
+ if (img) { img.style.display = 'none'; img.removeAttribute('src'); }
+ var video = document.getElementById('attendance-video');
+ if (video) video.style.display = 'block';
+ var placeholder = document.getElementById('attendance-camera-placeholder');
+ if (placeholder) placeholder.style.display = 'none';
+ updateAttendancePhotoStatus('', '');
+ syncAttendanceSubmitState();
+}
+
+// Pindai berulang: terang + kontras area tengah sebagai penanda wajah terlihat.
+// Kalau browser punya FaceDetector, dipakai sebagai penentu tambahan.
+function mulaiPindaiWajah() {
+ hentikanPindai();
+ _camSudahAmbil = false;
+ setCamState('scanning', 'Dekatkan wajah ke kamera');
+ var video = document.getElementById('attendance-video');
+ if (!video) return;
+ var kecil = document.createElement('canvas');
+ kecil.width = 96; kecil.height = 128;
+ var ctx = kecil.getContext('2d', { willReadFrequently: true });
+
+ function lanjut() {
+  if (_camSudahAmbil) return;
+  _camScanTimer = setTimeout(analisa, 260);
+ }
+
+ function analisa() {
+  if (_camSudahAmbil) return;
+  if (!video.videoWidth || video.paused || video.readyState < 2) { lanjut(); return; }
+  var bagus = false;
+  try {
+   ctx.drawImage(video, 0, 0, kecil.width, kecil.height);
+   var data = ctx.getImageData(0, 0, kecil.width, kecil.height).data;
+   var n = 0, j1 = 0, j2 = 0, t1 = 0, tn = 0;
+   for (var i = 0; i < data.length; i += 4) {
+    var baris = ((i / 4) / kecil.width) | 0;
+    var l = data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114;
+    j1 += l; j2 += l * l; n++;
+    if (baris > kecil.height * 0.18 && baris < kecil.height * 0.82) { t1 += l; tn++; }
+   }
+   var rata = n ? j1 / n : 0;
+   var simpangan = Math.sqrt(Math.max(0, (n ? j2 / n : 0) - rata * rata));
+   var rataTengah = tn ? t1 / tn : 0;
+   bagus = rata > 35 && rata < 215 && simpangan > 14 && rataTengah > 30;
+  } catch (e) { bagus = false; }
+
+  if (_camDetektor && typeof _camDetektor.detect === 'function') {
+   _camDetektor.detect(video).then(function(hasil) {
+    proses(hasil && hasil.length > 0 ? bagus : false);
+   }).catch(function() { proses(bagus); });
+  } else {
+   proses(bagus);
+  }
+ }
+
+ function proses(bagus) {
+  if (_camSudahAmbil) return;
+  if (bagus) {
+   _camJejakBagus++;
+   if (_camJejakBagus === 2) setCamState('locking', 'Wajah terdeteksi — tahan sebentar…');
+   if (_camJejakBagus >= 4) { setCamState('ready', 'Wajah tertangkap'); captureAttendancePhoto(true); return; }
+  } else {
+   _camJejakBagus = 0;
+   setCamState('scanning', 'Dekatkan wajah ke kamera');
+  }
+  lanjut();
+ }
+
+ analisa();
+}
+
+function ulangiFotoAbsen() {
+ resetCameraUi();
+ startAttendanceCamera();
+}
+
+function kirimAbsenDariKamera(tipe) {
+ var t = document.getElementById('attendance-type');
+ if (t) t.value = tipe === 'PULANG' ? 'PULANG' : 'MASUK';
+ if (!_attendancePhotoData) { showToast('Foto belum siap'); return; }
+ if (!_attendanceLocation) { showToast('Membaca lokasi, tunggu sebentar…'); getAttendanceLocation(); return; }
+ submitAttendanceCamera();
+}
+
 function startAttendanceCamera() {
  var video = document.getElementById('attendance-video');
  var placeholder = document.getElementById('attendance-camera-placeholder');
+ var startBtn = document.getElementById('camera-start-btn');
+ hentikanPindai();
+ if (startBtn) startBtn.style.display = 'none';
  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
- if (placeholder) placeholder.textContent = 'Browser tidak mendukung kamera.';
- return;
+  setCamState('error', 'Browser tidak mendukung kamera');
+  if (placeholder) { placeholder.style.display = 'flex'; placeholder.textContent = 'Browser ini tidak mendukung kamera.'; }
+  return;
  }
+ if (_attendanceStream) { _attendanceStream.getTracks().forEach(function(t){ t.stop(); }); _attendanceStream = null; }
+ setCamState('scanning', 'Menyiapkan kamera…');
  navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 900 }, height: { ideal: 1200 } }, audio: false })
  .then(function(stream) {
- _attendanceStream = stream;
- if (video) { video.srcObject = stream; video.style.display = 'block'; }
- if (placeholder) placeholder.style.display = 'none';
- var captureBtn = document.getElementById('camera-capture-btn');
- if (captureBtn) captureBtn.disabled = false;
+  _attendanceStream = stream;
+  if (video) { video.srcObject = stream; video.style.display = 'block'; video.play().catch(function(){}); }
+  if (placeholder) placeholder.style.display = 'none';
+  setCamState('scanning', 'Dekatkan wajah ke kamera');
+  mulaiPindaiWajah();
  })
- .catch(function() {
- if (placeholder) { placeholder.style.display = 'flex'; placeholder.textContent = 'Akses kamera ditolak.'; }
+ .catch(function(e) {
+  setCamState('error', 'Kamera tidak bisa dibuka');
+  if (placeholder) {
+   placeholder.style.display = 'flex';
+   placeholder.textContent = (e && /denied|NotAllowed/i.test(String(e.name || e.message)))
+    ? 'Akses kamera ditolak. Izinkan kamera di pengaturan browser, lalu coba lagi.'
+    : 'Kamera tidak bisa dibuka. Tutup aplikasi lain yang memakai kamera.';
+  }
+  if (startBtn) startBtn.style.display = 'inline-flex';
  });
 }
 
-function captureAttendancePhoto() {
+function captureAttendancePhoto(otomatis) {
+ if (_camSudahAmbil) return;
  var video = document.getElementById('attendance-video');
  var canvas = document.getElementById('attendance-canvas');
  var img = document.getElementById('attendance-photo-preview');
- if (!video || !canvas || !video.videoWidth) { showToast('Kamera belum siap'); return; }
+ if (!video || !canvas || !video.videoWidth) { if (!otomatis) showToast('Kamera belum siap'); return; }
  // Lebar 640 px cukup untuk mengenali wajah, tetapi jauh lebih hemat daripada
  // menyimpan resolusi kamera asli. JPEG dikompres adaptif sampai sekitar
  // 40–110 KB; kualitas tidak diturunkan di bawah batas yang membuat wajah pecah.
@@ -4032,12 +4158,19 @@ function captureAttendancePhoto() {
  }
  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
  ctx.restore();
+ _camSudahAmbil = true;
+ hentikanPindai();
  _attendancePhotoData = encodeAttendancePhoto(canvas);
  _attendancePhotoTakenAt = new Date().toISOString();
  if (img) { img.src = _attendancePhotoData; img.style.display = 'block'; }
  video.style.display = 'none';
  stopAttendanceCamera();
  var ukuranKb = Math.round(attendanceDataUrlByteLength(_attendancePhotoData) / 1024);
+ setCamState('ready', 'Foto siap');
+ var kotakPilih = document.getElementById('cam-submit');
+ if (kotakPilih) kotakPilih.hidden = false;
+ var ulangiBtn = document.getElementById('camera-retake-btn');
+ if (ulangiBtn) ulangiBtn.style.display = 'inline-flex';
  updateAttendancePhotoStatus('Foto siap dikirim (' + ukuranKb + ' KB).', 'ok');
  syncAttendanceSubmitState();
 }

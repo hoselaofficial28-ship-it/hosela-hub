@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="id">
 <head>
 <meta charset="UTF-8">
@@ -9,14 +9,14 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=20261116c">
+<link rel="stylesheet" href="css/style.css?v=20261117a">
 
 
 
 
 
 
-<link rel="manifest" href="/manifest.webmanifest?v=20261116c">
+<link rel="manifest" href="/manifest.webmanifest?v=20261117a">
 <meta name="theme-color" content="#1557d8">
 <meta name="application-name" content="Hosela Hub">
 <meta name="mobile-web-app-capable" content="yes">
@@ -163,7 +163,7 @@
  <select class="desktop-lang-select" id="desktop-lang-select" onchange="setAppLanguage(this.value)" aria-label="Pilih bahasa">
   <option value="id">Bahasa Indonesia</option>
   <option value="en">English</option>
-  <option value="zh">中文</option>
+  <option value="zh">ä¸­æ–‡</option>
  </select>
  <div id="home-jabatan-badge"></div>
  <div id="home-quote" style="font-size:12px;color:rgba(255,255,255,0.75);font-weight:400;margin-top:8px;font-style:italic;line-height:1.5"></div>
@@ -257,7 +257,7 @@
    <div class="owner-form-grid">
     <div class="form-group"><label class="form-label" for="jobdesk-admin-bagian">Bagian</label><select class="form-input" id="jobdesk-admin-bagian" onchange="updateOwnerJobdeskRoles()"><option value="">Pilih bagian</option></select></div>
     <div class="form-group"><label class="form-label" for="jobdesk-admin-jabatan">Jabatan</label><select class="form-input" id="jobdesk-admin-jabatan"><option value="">Pilih bagian dahulu</option></select></div>
-    <div class="form-group owner-form-span"><label class="form-label" for="jobdesk-admin-link">Link dokumen Google Drive</label><input type="url" class="form-input" id="jobdesk-admin-link" placeholder="https://drive.google.com/..."><div class="field-help">Atur akses Drive menjadi “Siapa saja yang memiliki link dapat melihat”.</div></div>
+    <div class="form-group owner-form-span"><label class="form-label" for="jobdesk-admin-link">Link dokumen Google Drive</label><input type="url" class="form-input" id="jobdesk-admin-link" placeholder="https://drive.google.com/..."><div class="field-help">Atur akses Drive menjadi â€œSiapa saja yang memiliki link dapat melihatâ€.</div></div>
    </div>
    <button class="btn btn-primary owner-primary-action" id="jobdesk-save-btn" onclick="saveOwnerJobdesk()">Simpan Jobdesk</button>
   </section>
@@ -323,7 +323,7 @@
   <section class="announcement-hero" aria-labelledby="announcement-heading">
    <div class="announcement-hero-icon" aria-hidden="true"></div>
    <div><div class="eyebrow">INFORMASI TIM</div><h2 id="announcement-heading">Tetap terhubung dengan tim</h2><p>Pengumuman penting, informasi operasional, dan pembaruan terbaru tersedia di satu tempat.</p></div>
-   <div class="announcement-stats" aria-label="Ringkasan pengumuman"><div><strong id="announcement-total">—</strong><span>Total</span></div><div><strong id="announcement-important">—</strong><span>Penting</span></div></div>
+   <div class="announcement-stats" aria-label="Ringkasan pengumuman"><div><strong id="announcement-total">â€”</strong><span>Total</span></div><div><strong id="announcement-important">â€”</strong><span>Penting</span></div></div>
   </section>
   <section class="announcement-composer" id="announcement-owner-panel" style="display:none" aria-labelledby="announcement-compose-title">
    <div class="announcement-composer-head"><div><div class="eyebrow">KHUSUS OWNER</div><h2 id="announcement-compose-title">Buat Pengumuman</h2><p>Kirim informasi ke seluruh tim, bagian tertentu, atau satu orang.</p></div><span class="status-pill status-pill-info">Owner</span></div>
@@ -386,7 +386,7 @@
   <div class="peraturan-owner-grid" id="peraturan-owner-tools" style="display:none">
    <section class="owner-editor peraturan-drive-editor" aria-labelledby="peraturan-drive-owner-title">
     <div class="owner-editor-head"><div><div class="eyebrow">DOKUMEN UTAMA</div><h2 id="peraturan-drive-owner-title">Link Google Drive</h2><p>Pasang dokumen peraturan kantor yang selalu dapat dibuka oleh seluruh tim.</p></div><span class="status-pill status-pill-info">Khusus Owner</span></div>
-    <div class="form-group"><label class="form-label" for="peraturan-drive-link">Link dokumen Google Drive</label><input type="url" class="form-input" id="peraturan-drive-link" placeholder="https://drive.google.com/..."><div class="field-help">Atur akses Drive menjadi “Siapa saja yang memiliki link dapat melihat”.</div></div>
+    <div class="form-group"><label class="form-label" for="peraturan-drive-link">Link dokumen Google Drive</label><input type="url" class="form-input" id="peraturan-drive-link" placeholder="https://drive.google.com/..."><div class="field-help">Atur akses Drive menjadi â€œSiapa saja yang memiliki link dapat melihatâ€.</div></div>
     <button class="btn btn-primary peraturan-drive-save" id="peraturan-drive-save-btn" onclick="savePeraturanDriveLink()">Simpan Link Drive</button>
    </section>
    <section class="owner-editor" id="peraturan-owner-panel" aria-labelledby="peraturan-owner-title">
@@ -429,14 +429,14 @@
 <div class="screen" id="s-manage-users">
  <div class="statusbar"></div>
  <div class="header">
- <div class="header-row"><button class="back-btn" onclick="goBack()">?</button><div><h1>Pendaftar & Akses</h1><p>Khusus Owner · akun baru langsung aktif</p></div><button class="btn btn-primary btn-sm" style="margin-left:auto;white-space:nowrap" onclick="goTo('s-tambah-karyawan')">+ Tambah</button></div>
+ <div class="header-row"><button class="back-btn" onclick="goBack()">?</button><div><h1>Pendaftar & Akses</h1><p>Khusus Owner Â· akun baru langsung aktif</p></div><button class="btn btn-primary btn-sm" style="margin-left:auto;white-space:nowrap" onclick="goTo('s-tambah-karyawan')">+ Tambah</button></div>
  <div class="gold-line"></div>
  </div>
  <div class="content">
   <div class="owner-account-summary" aria-label="Ringkasan akun">
-   <div class="owner-stat"><strong id="owner-users-total">—</strong><span>Total akun</span></div>
-   <div class="owner-stat owner-stat-active"><strong id="owner-users-active">—</strong><span>Aktif</span></div>
-   <div class="owner-stat owner-stat-inactive"><strong id="owner-users-inactive">—</strong><span>Nonaktif</span></div>
+   <div class="owner-stat"><strong id="owner-users-total">â€”</strong><span>Total akun</span></div>
+   <div class="owner-stat owner-stat-active"><strong id="owner-users-active">â€”</strong><span>Aktif</span></div>
+   <div class="owner-stat owner-stat-inactive"><strong id="owner-users-inactive">â€”</strong><span>Nonaktif</span></div>
   </div>
   <div class="owner-account-tools">
    <label class="sr-only" for="owner-user-search">Cari nama, bagian, jabatan, atau email</label>
@@ -642,32 +642,39 @@
   <div id="shift-saya-pilih" class="shift-saya-pilih" hidden></div>
   <div class="field-help" id="shift-saya-note"></div>
  </section>
- <div class="card camera-card">
- <div class="camera-preview">
+ <section class="cam-stage" id="cam-stage" data-state="idle" aria-label="Kamera absensi">
+ <div class="cam-frame" id="cam-frame" onclick="captureAttendancePhoto()">
  <video id="attendance-video" autoplay playsinline muted></video>
+ <img id="attendance-photo-preview" alt="Foto absensi" style="display:none">
  <canvas id="attendance-canvas" style="display:none"></canvas>
- <img id="attendance-photo-preview" alt="" style="display:none">
- <div id="attendance-camera-placeholder">Kamera belum aktif</div>
+ <div class="cam-ring" aria-hidden="true"></div>
+ <div class="cam-guide" aria-hidden="true"></div>
+ <div class="cam-topbar"><span class="cam-chip" id="cam-status-chip">Menyiapkan kameraâ€¦</span></div>
+ <div class="cam-bottombar">
+ <div class="cam-loc" id="cam-loc-chip"><span class="cam-dot" aria-hidden="true"></span><span id="attendance-location-status">Lokasi belum dibaca</span></div>
+ <button type="button" class="cam-loc-btn" id="attendance-location-retry" onclick="event.stopPropagation();getAttendanceLocation()">Baca ulang</button>
  </div>
- <div class="camera-actions">
- <button class="btn btn-primary" id="camera-start-btn" onclick="startAttendanceCamera()">Aktifkan Kamera</button>
- <button class="btn btn-gold" id="camera-capture-btn" onclick="captureAttendancePhoto()" disabled>Ambil Foto</button>
+ <div class="cam-overlay-msg" id="attendance-camera-placeholder" style="display:none"></div>
  </div>
+
+ <div class="cam-controls">
+ <button type="button" class="cam-btn cam-btn-ghost" id="camera-start-btn" onclick="startAttendanceCamera()" style="display:none">Coba aktifkan kamera</button>
+ <button type="button" class="cam-btn cam-btn-ghost" id="camera-retake-btn" onclick="ulangiFotoAbsen()" style="display:none">Ulangi foto</button>
  </div>
- <div class="card">
- <div class="card-title"><div class="card-dot"></div>Detail Absensi</div>
- <div class="form-group">
- <label class="form-label">Tipe Absensi</label>
- <select id="attendance-type" class="form-input">
- <option value="MASUK">Masuk</option>
- <option value="PULANG">Pulang</option>
- </select>
+
+ <div class="cam-submit" id="cam-submit" hidden>
+  <div class="cam-submit-title">Absen sebagai apa?</div>
+  <div class="cam-submit-grid">
+   <button type="button" class="cam-pick cam-pick-in" id="absen-masuk-btn" onclick="kirimAbsenDariKamera('MASUK')">Absen Masuk</button>
+   <button type="button" class="cam-pick cam-pick-out" id="absen-pulang-btn" onclick="kirimAbsenDariKamera('PULANG')">Absen Pulang</button>
+  </div>
  </div>
- <div class="attendance-location-row"><div id="attendance-location-status" class="camera-status">Lokasi belum dibaca</div><button type="button" class="btn btn-secondary attendance-location-retry" id="attendance-location-retry" onclick="getAttendanceLocation()">Baca Ulang Lokasi</button></div>
- <button class="btn btn-primary" id="attendance-submit-btn" onclick="submitAttendanceCamera()" disabled>Kirim Absensi</button>
+
+ <input type="hidden" id="attendance-type" value="MASUK">
+ <button type="button" id="attendance-submit-btn" onclick="submitAttendanceCamera()" disabled style="display:none">Kirim Absensi</button>
  <div id="attendance-photo-status" class="camera-status" style="display:none"></div>
- <div class="camera-note">Absensi akan ditolak jika lokasi berada di luar radius kantor. Foto disimpan secara privat di Supabase Storage; database hanya mencatat lokasi filenya.</div>
- </div>
+ <p class="cam-note">Absensi ditolak jika lokasi di luar radius kantor. Foto disimpan secara privat di Supabase Storage; database hanya mencatat lokasi filenya.</p>
+ </section>
  <div class="card">
  <div class="card-title"><div class="card-dot"></div>Status Hari Ini</div>
  <div id="attendance-today"><div class="empty-state"><div class="empty-icon"></div>Memuat...</div></div>
@@ -956,11 +963,11 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="js/supabase-client.js"></script>
 <script src="js/photo-storage.js?v=20261015e"></script>
-<script src="js/real-backend.js?v=20261116c"></script>
+<script src="js/real-backend.js?v=20261117a"></script>
 <script src="js/dashboard-reports.js?v=20261015e"></script>
-<script src="js/mock-backend.js?v=20261116c"></script>
-<script src="js/app.js?v=20261116c"></script>
-<script src="js/payroll.js?v=20261116c"></script>
-<script src="js/preview.js?v=20261116c"></script>
+<script src="js/mock-backend.js?v=20261117a"></script>
+<script src="js/app.js?v=20261117a"></script>
+<script src="js/payroll.js?v=20261117a"></script>
+<script src="js/preview.js?v=20261117a"></script>
 </body>
 </html>
