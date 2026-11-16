@@ -1,4 +1,4 @@
--- ============================================================================
+﻿-- ============================================================================
 -- Migrasi data Hosela Hub LAMA (Google Apps Script + Google Sheets)
 -- ke Hosela Hub BARU (Supabase).
 --
@@ -171,23 +171,23 @@ begin
     raise exception 'Akses ditolak: hanya Owner yang boleh membersihkan data uji' using errcode = '42501';
   end if;
 
-  delete from public.attendance_telegram_notifications; get diagnostics v_n = row_count; v_hapus := v_hapus || jsonb_build_object('attendance_telegram_notifications', v_n);
-  delete from public.payroll_items;                     get diagnostics v_n = row_count; v_hapus := v_hapus || jsonb_build_object('payroll_items', v_n);
-  delete from public.payroll_details;                   get diagnostics v_n = row_count; v_hapus := v_hapus || jsonb_build_object('payroll_details', v_n);
-  delete from public.payroll_runs;                      get diagnostics v_n = row_count; v_hapus := v_hapus || jsonb_build_object('payroll_runs', v_n);
-  delete from public.attendance_events;                 get diagnostics v_n = row_count; v_hapus := v_hapus || jsonb_build_object('attendance_events', v_n);
-  delete from public.attendance_details;                get diagnostics v_n = row_count; v_hapus := v_hapus || jsonb_build_object('attendance_details', v_n);
-  delete from public.attendance_weekly;                 get diagnostics v_n = row_count; v_hapus := v_hapus || jsonb_build_object('attendance_weekly', v_n);
-  delete from public.attendance_anomalies;              get diagnostics v_n = row_count; v_hapus := v_hapus || jsonb_build_object('attendance_anomalies', v_n);
-  delete from public.attendance_legacy_raw;             get diagnostics v_n = row_count; v_hapus := v_hapus || jsonb_build_object('attendance_legacy_raw', v_n);
-  delete from public.late_reviews;                      get diagnostics v_n = row_count; v_hapus := v_hapus || jsonb_build_object('late_reviews', v_n);
-  delete from public.leave_requests;                    get diagnostics v_n = row_count; v_hapus := v_hapus || jsonb_build_object('leave_requests', v_n);
-  delete from public.warning_history;                   get diagnostics v_n = row_count; v_hapus := v_hapus || jsonb_build_object('warning_history', v_n);
-  delete from public.sanksi_berulang;                   get diagnostics v_n = row_count; v_hapus := v_hapus || jsonb_build_object('sanksi_berulang', v_n);
-  delete from public.notifications;                     get diagnostics v_n = row_count; v_hapus := v_hapus || jsonb_build_object('notifications', v_n);
-  delete from public.kpi_reports;                       get diagnostics v_n = row_count; v_hapus := v_hapus || jsonb_build_object('kpi_reports', v_n);
-  delete from public.team_ideas;                        get diagnostics v_n = row_count; v_hapus := v_hapus || jsonb_build_object('team_ideas', v_n);
-  delete from public.featured_rewards;                  get diagnostics v_n = row_count; v_hapus := v_hapus || jsonb_build_object('featured_rewards', v_n);
+  delete from public.attendance_telegram_notifications where true; get diagnostics v_n = row_count; v_hapus := v_hapus || jsonb_build_object('attendance_telegram_notifications', v_n);
+  delete from public.payroll_items where true;                     get diagnostics v_n = row_count; v_hapus := v_hapus || jsonb_build_object('payroll_items', v_n);
+  delete from public.payroll_details where true;                   get diagnostics v_n = row_count; v_hapus := v_hapus || jsonb_build_object('payroll_details', v_n);
+  delete from public.payroll_runs where true;                      get diagnostics v_n = row_count; v_hapus := v_hapus || jsonb_build_object('payroll_runs', v_n);
+  delete from public.attendance_events where true;                 get diagnostics v_n = row_count; v_hapus := v_hapus || jsonb_build_object('attendance_events', v_n);
+  delete from public.attendance_details where true;                get diagnostics v_n = row_count; v_hapus := v_hapus || jsonb_build_object('attendance_details', v_n);
+  delete from public.attendance_weekly where true;                 get diagnostics v_n = row_count; v_hapus := v_hapus || jsonb_build_object('attendance_weekly', v_n);
+  delete from public.attendance_anomalies where true;              get diagnostics v_n = row_count; v_hapus := v_hapus || jsonb_build_object('attendance_anomalies', v_n);
+  delete from public.attendance_legacy_raw where true;             get diagnostics v_n = row_count; v_hapus := v_hapus || jsonb_build_object('attendance_legacy_raw', v_n);
+  delete from public.late_reviews where true;                      get diagnostics v_n = row_count; v_hapus := v_hapus || jsonb_build_object('late_reviews', v_n);
+  delete from public.leave_requests where true;                    get diagnostics v_n = row_count; v_hapus := v_hapus || jsonb_build_object('leave_requests', v_n);
+  delete from public.warning_history where true;                   get diagnostics v_n = row_count; v_hapus := v_hapus || jsonb_build_object('warning_history', v_n);
+  delete from public.sanksi_berulang where true;                   get diagnostics v_n = row_count; v_hapus := v_hapus || jsonb_build_object('sanksi_berulang', v_n);
+  delete from public.notifications where true;                     get diagnostics v_n = row_count; v_hapus := v_hapus || jsonb_build_object('notifications', v_n);
+  delete from public.kpi_reports where true;                       get diagnostics v_n = row_count; v_hapus := v_hapus || jsonb_build_object('kpi_reports', v_n);
+  delete from public.team_ideas where true;                        get diagnostics v_n = row_count; v_hapus := v_hapus || jsonb_build_object('team_ideas', v_n);
+  delete from public.featured_rewards where true;                  get diagnostics v_n = row_count; v_hapus := v_hapus || jsonb_build_object('featured_rewards', v_n);
   delete from public.salary_settings where legacy_id is null; get diagnostics v_n = row_count; v_hapus := v_hapus || jsonb_build_object('salary_settings', v_n);
   delete from public.jobdesks where legacy_id is null;        get diagnostics v_n = row_count; v_hapus := v_hapus || jsonb_build_object('jobdesks', v_n);
   delete from public.kpi_templates where legacy_id is null;   get diagnostics v_n = row_count; v_hapus := v_hapus || jsonb_build_object('kpi_templates', v_n);
@@ -287,7 +287,7 @@ as $$
 $$;
 
 comment on function public.legacy_missing_payroll() is
-  'Bulan yang sudah ada data absensinya tetapi belum ada payroll run — daftar kerja untuk menyusulkan payroll. Owner saja.';
+  'Bulan yang sudah ada data absensinya tetapi belum ada payroll run â€” daftar kerja untuk menyusulkan payroll. Owner saja.';
 
 revoke execute on function public.legacy_missing_payroll() from public, anon;
 grant execute on function public.legacy_missing_payroll() to authenticated, service_role;

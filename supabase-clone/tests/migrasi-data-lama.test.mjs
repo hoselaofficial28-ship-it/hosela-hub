@@ -1,4 +1,4 @@
-import assert from 'node:assert/strict';
+﻿import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 const mig = readFileSync(new URL('../supabase/migrations/20261116000050_import_legacy_gas.sql', import.meta.url), 'utf8');
@@ -39,12 +39,23 @@ assert.match(mig, /grant execute on function public\.import_legacy_rows\(text, j
 // 4) Bersih-bersih data uji: hanya Owner, tidak menghapus akun/app_settings
 // ---------------------------------------------------------------------------
 assert.match(mig, /create or replace function public\.hapus_data_uji_hub\(\)/);
-assert.match(mig, /delete from public\.attendance_events;/);
-assert.match(mig, /delete from public\.attendance_details;/);
-assert.match(mig, /delete from public\.payroll_items;/);
+assert.match(mig, /delete from public\.attendance_events where true;/);
+assert.match(mig, /delete from public\.attendance_details where true;/);
+assert.match(mig, /delete from public\.payroll_items where true;/);
 assert.match(mig, /update public\.profiles set status = 'NONAKTIF'/);
 assert.doesNotMatch(mig, /delete from public\.app_settings/, 'app_settings tidak boleh dikosongkan');
 assert.doesNotMatch(mig, /delete from auth\.users/, 'akun login tidak boleh dihapus otomatis');
+
+// Supabase menolak DELETE tanpa WHERE ("DELETE requires a WHERE clause", 21000) â€”
+// setiap DELETE wajib punya klausa WHERE.
+assert.ok((mig.match(/where true;/g) || []).length >= 17, 'DELETE tanpa WHERE akan ditolak Supabase');
+assert.doesNotMatch(mig, /^\s*delete from public\.[a-z_]+;\s*$/m, 'ada DELETE tanpa WHERE');
+
+// Perbaikan fungsi yang sama (migrasi 051) juga harus memakai WHERE.
+const fix = readFileSync(new URL('../supabase/migrations/20261116000051_fix_hapus_data_uji.sql', import.meta.url), 'utf8');
+assert.match(fix, /create or replace function public\.hapus_data_uji_hub\(\)/);
+assert.ok((fix.match(/where true;/g) || []).length >= 17);
+assert.doesNotMatch(fix, /delete from public\.app_settings/);
 
 // ---------------------------------------------------------------------------
 // 5) Rekonsiliasi + daftar payroll yang perlu disusulkan
