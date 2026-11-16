@@ -4092,3 +4092,16 @@ body.phone-mode #app-wrap #s-daftar.screen.active{
 .shift-pilih-btn em{font-size:10.5px;color:#0f7b3f;font-style:normal;font-weight:650}
 .shift-pilih-btn.is-on{border-color:#2563eb;background:#eff4ff}
 .shift-saya-card .field-help{margin-top:10px}
+
+/* ===== Izin "pilih shift sendiri" per karyawan (16 Nov 2026) ===== */
+.shift-self-list{display:grid;gap:8px;padding-top:14px}
+.shift-self-row{display:flex;align-items:center;gap:10px;justify-content:space-between;
+  padding:10px 12px;border:1px solid #dce7f5;border-radius:13px;background:#fff;flex-wrap:wrap}
+.shift-self-info{display:grid;gap:1px;min-width:0}
+.shift-self-info b{font-size:13.5px;color:#1e2a3d}
+.shift-self-info small{font-size:11px;color:#718096}
+.shift-self-info .shift-self-now{color:#1557d8;font-weight:650}
+.shift-self-toggle{font:inherit;font-size:11.5px;font-weight:650;padding:7px 11px;border-radius:999px;
+  border:1px solid #e3e8f0;background:#f8fafc;color:#475569;cursor:pointer;white-space:nowrap}
+.shift-self-toggle.is-on{background:#e8f7ee;border-color:#b7e7c9;color:#0f7b3f}
+.shift-self-toggle:hover{border-color:#1557d8;color:#1557d8}

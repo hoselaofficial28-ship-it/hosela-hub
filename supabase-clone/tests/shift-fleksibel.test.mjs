@@ -122,4 +122,36 @@ context.__pilih('PAGI');
 assert.equal(context._aksi.aksi, 'pilihShiftSaya');
 assert.equal(Array.from(context._aksi.args).join(','), 'PAGI');
 
-console.log('shift fleksibel (Sabtu 12:00-20:00 + pilih sendiri): OK');
+
+// ---------------------------------------------------------------------------
+// 4) Izin pilih shift PER KARYAWAN (migrasi 056)
+// ---------------------------------------------------------------------------
+const sql2 = fs.readFileSync(new URL('supabase/migrations/20261116000056_shift_pilih_per_karyawan.sql', root), 'utf8');
+assert.match(sql2, /alter table public\.profiles\s*\n\s*add column if not exists boleh_pilih_shift boolean not null default false;/);
+// bawaan mati: get_shift_saya & pilih_shift_saya wajib flag
+assert.match(sql2, /and p\.boleh_pilih_shift\)/);
+assert.match(sql2, /if not coalesce\(v_prof\.boleh_pilih_shift, false\) then/);
+assert.match(sql2, /Kamu belum diizinkan memilih shift sendiri/);
+// Owner/Finance yang mengatur
+assert.match(sql2, /create or replace function public\.get_karyawan_pilih_shift\(\)/);
+assert.match(sql2, /create or replace function public\.set_boleh_pilih_shift\(p_user_id uuid, p_boleh boolean\)/);
+assert.match(sql2, /'SET_BOLEH_PILIH_SHIFT'/);
+assert.match(sql2, /if not public\.is_payroll_admin\(\) then/);
+
+// UI: kartu izin di Pengaturan Shift
+assert.match(html, /id="shift-self-card"/);
+assert.match(html, /id="shift-self-list"/);
+assert.match(app, /function loadShiftSelfList\(/);
+assert.match(app, /function togglePilihShift\(/);
+assert.match(app, /getKaryawanPilihShift/);
+assert.match(app, /setBolehPilihShift/);
+assert.match(backend, /getKaryawanPilihShift:[\s\S]{0,150}get_karyawan_pilih_shift/);
+assert.match(backend, /setBolehPilihShift:[\s\S]{0,200}set_boleh_pilih_shift/);
+assert.match(css, /\.shift-self-row\{/);
+assert.match(css, /\.shift-self-toggle\.is-on\{/);
+
+// teks hero tidak lagi menjanjikan "karyawan tidak bisa mengubah shift sendiri"
+assert.match(html, /Izinkan pilih shift sendiri/);
+assert.doesNotMatch(html, /Karyawan tidak bisa mengubah shift sendiri\./);
+
+console.log('shift fleksibel (Sabtu 12:00-20:00 + izin pilih per karyawan): OK');

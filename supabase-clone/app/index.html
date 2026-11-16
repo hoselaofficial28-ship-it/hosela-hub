@@ -9,14 +9,14 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=20261116b">
+<link rel="stylesheet" href="css/style.css?v=20261116c">
 
 
 
 
 
 
-<link rel="manifest" href="/manifest.webmanifest?v=20261116b">
+<link rel="manifest" href="/manifest.webmanifest?v=20261116c">
 <meta name="theme-color" content="#1557d8">
 <meta name="application-name" content="Hosela Hub">
 <meta name="mobile-web-app-capable" content="yes">
@@ -845,7 +845,7 @@
  </div>
  <div class="content shift-page-content">
   <section class="shift-hero">
-   <div><span class="shift-eyebrow">JADWAL KERJA TIM</span><h2>Pilih karyawan, pilih shift, lalu simpan</h2><p>Karyawan tidak bisa mengubah shift sendiri. Perhitungan telat, lembur, rekap, dan payroll mengikuti pengaturan ini.</p></div>
+   <div><span class="shift-eyebrow">JADWAL KERJA TIM</span><h2>Pilih karyawan, pilih shift, lalu simpan</h2><p>Perhitungan telat, lembur, rekap, dan payroll mengikuti pengaturan ini. Karyawan hanya bisa memilih shift sendiri kalau diizinkan di bagian <b>Izinkan pilih shift sendiri</b>.</p></div>
    <div class="shift-hero-badge">Owner &amp; Finance</div>
   </section>
 
@@ -882,6 +882,14 @@
      <label><span>Alasan</span><input id="shift-override-note" class="form-input" maxlength="120" placeholder="Contoh: tukar jadwal"></label>
     </div>
     <button id="shift-override-btn" class="btn btn-secondary" type="button" onclick="saveShiftOverride()">Simpan Pengecualian</button>
+   </div>
+  </details>
+
+  <details class="shift-card shift-advanced-card" id="shift-self-card">
+   <summary><span><b>Izinkan pilih shift sendiri</b><small>Tentukan karyawan mana yang boleh memilih Pagi/Siang sendiri</small></span><span class="shift-summary-chevron">&rsaquo;</span></summary>
+   <div class="shift-advanced-body">
+    <p class="field-help">Karyawan yang dinyalakan akan melihat kartu <b>Shift Saya Hari Ini</b> di layar Absen Kamera. Pilihannya berlaku terus sampai diganti; kalau sudah absen masuk hari itu, perubahan berlaku besok. Bawaan: <b>mati untuk semua</b>.</p>
+    <div id="shift-self-list" class="shift-self-list"><div class="empty-state">Memuat...</div></div>
    </div>
   </details>
 
@@ -948,11 +956,11 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="js/supabase-client.js"></script>
 <script src="js/photo-storage.js?v=20261015e"></script>
-<script src="js/real-backend.js?v=20261116b"></script>
+<script src="js/real-backend.js?v=20261116c"></script>
 <script src="js/dashboard-reports.js?v=20261015e"></script>
-<script src="js/mock-backend.js?v=20261116b"></script>
-<script src="js/app.js?v=20261116b"></script>
-<script src="js/payroll.js?v=20261116b"></script>
-<script src="js/preview.js?v=20261116b"></script>
+<script src="js/mock-backend.js?v=20261116c"></script>
+<script src="js/app.js?v=20261116c"></script>
+<script src="js/payroll.js?v=20261116c"></script>
+<script src="js/preview.js?v=20261116c"></script>
 </body>
 </html>

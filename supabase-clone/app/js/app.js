@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbw6q_5ZaIGrekeBwZ5TKh6X1GpWkFHsa5i6whdwacQkTEa-vvNezHlxFMEQFKZkmm5ffQ/exec';
-var APP_VERSION = '20261116b';
+var APP_VERSION = '20261116c';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -4946,6 +4946,41 @@ function shiftTodayKey() {
  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 }
 
+// ===== Owner/Finance: izin "pilih shift sendiri" per karyawan (16 Nov 2026) =====
+function loadShiftSelfList() {
+ var box = document.getElementById('shift-self-list');
+ if (!box) return;
+ gasCall('getKaryawanPilihShift', [], function(res) {
+  var rows = Array.isArray(res) ? res : (res && (res.data || res.rows)) || [];
+  if (!rows.length) { box.innerHTML = '<div class="empty-state">Belum ada karyawan aktif</div>'; return; }
+  box.innerHTML = rows.map(function(r) {
+   var aktif = !!r.boleh_pilih_shift || !!r.bolehPilihShift;
+   var nama = r.nama || '-';
+   var ket = [r.jabatan, r.bagian].filter(Boolean).join(' - ');
+   var shift = r.shift_hari_ini || r.shiftHariIni || '';
+   var jam = r.jam_hari_ini || r.jamHariIni || '';
+   return '<div class="shift-self-row">' +
+    '<div class="shift-self-info"><b>'+nama+'</b><small>'+(ket || '-')+'</small>' +
+    (shift ? '<small class="shift-self-now">'+shift+(jam ? ' · '+jam : '')+'</small>' : '') +
+    '</div>' +
+    '<button type="button" class="shift-self-toggle'+(aktif ? ' is-on' : '')+'" onclick="togglePilihShift(\''+(r.user_id || r.userId)+'\', '+(aktif ? 'false' : 'true')+')">' +
+    (aktif ? 'Boleh (klik untuk matikan)' : 'Tidak boleh (klik untuk izinkan)') + '</button></div>';
+  }).join('');
+ }, function() {
+  box.innerHTML = '<div class="empty-state">Gagal memuat daftar karyawan</div>';
+ });
+}
+
+function togglePilihShift(userId, boleh) {
+ if (!userId) return;
+ gasCall('setBolehPilihShift', [userId, !!boleh], function(res) {
+  if (!res || res.success === false) { showToast((res && res.msg) || 'Gagal mengubah izin'); return; }
+  showToast((res.nama || 'Karyawan') + (res.boleh_pilih_shift ? ': boleh pilih shift sendiri' : ': tidak boleh pilih shift sendiri'));
+  loadShiftSelfList();
+  cacheClearAction('getShiftSaya');
+ }, function() { showToast('Gagal mengubah izin'); });
+}
+
 function loadShiftSettings(force) {
  var list = document.getElementById('shift-employee-list');
  if (!list) return;
@@ -4960,6 +4995,7 @@ function loadShiftSettings(force) {
  if (effective && !effective.value) effective.value = shiftTodayKey();
  if (overrideDate && !overrideDate.value) overrideDate.value = shiftTodayKey();
 
+ loadShiftSelfList();
  gasCall('getShiftManagementData', [shiftTodayKey()], function(res) {
   if (!res || res.success === false) {
    var msg = (res && res.msg) || 'Data shift gagal dimuat.';

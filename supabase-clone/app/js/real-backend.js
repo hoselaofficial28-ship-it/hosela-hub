@@ -300,6 +300,20 @@
     },
 
     // Shift efektif hari ini + boleh ganti atau tidak (terkunci setelah absen masuk).
+    // Owner/Finance: daftar karyawan + status izin "pilih shift sendiri".
+    getKaryawanPilihShift: async function () {
+      var r = await window.sb.rpc('get_karyawan_pilih_shift');
+      if (r.error) return { success: false, msg: r.error.message };
+      return r.data;
+    },
+
+    // args: [userId, boleh] -> nyalakan/matikan izin pilih shift karyawan.
+    setBolehPilihShift: async function (args) {
+      var r = await window.sb.rpc('set_boleh_pilih_shift', { p_user_id: args[0], p_boleh: !!args[1] });
+      if (r.error) return { success: false, msg: r.error.message };
+      return r.data;
+    },
+
     getShiftSaya: async function () {
       var r = await window.sb.rpc('get_shift_saya');
       if (r.error) return { success: false, msg: r.error.message };
