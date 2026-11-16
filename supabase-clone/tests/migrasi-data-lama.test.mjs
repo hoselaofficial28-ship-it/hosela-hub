@@ -122,4 +122,23 @@ assert.match(rencana, /legacy_id/);
 assert.match(rencana, /OFFICE_LAT/);
 assert.match(rencana, /payroll/i);
 
+// ---------------------------------------------------------------------------
+// 8) Bersih-bersih data tak terpakai (migrasi 054) — hanya yang tidak dibaca UI
+// ---------------------------------------------------------------------------
+const bersih = readFileSync(new URL('../supabase/migrations/20261116000054_bersihkan_data_tak_terpakai.sql', import.meta.url), 'utf8');
+assert.match(bersih, /create or replace function public\.bersihkan_data_tak_terpakai\(\)/);
+assert.match(bersih, /delete from public\.attendance_legacy_raw where true;/);
+assert.match(bersih, /delete from public\.payroll_items where nominal = 0;/);
+assert.match(bersih, /where key = 'ABSENSI_PHOTO_FOLDER_ID';/);
+assert.match(bersih, /delete from public\.legacy_import_batches where true;/);
+assert.match(bersih, /and status = 'NONAKTIF' and bagian <> 'Owner'/);
+// Yang dipakai layar TIDAK boleh ikut dihapus
+for (const tabelWajib of ['attendance_events', 'attendance_details', 'attendance_weekly', 'kpi_reports',
+  'notifications', 'warning_history', 'payroll_runs', 'payroll_details', 'late_reviews', 'salary_settings']) {
+  assert.doesNotMatch(bersih, new RegExp(`delete from public\\.${tabelWajib}\\b`),
+    `${tabelWajib} dipakai layar aplikasi, tidak boleh dihapus`);
+}
+assert.match(bersih, /create or replace function public\.ringkasan_data_hub\(\)/);
+assert.doesNotMatch(bersih, /delete from auth\.users/);
+
 console.log('migrasi data lama (GAS/Sheets -> Supabase): ok');
