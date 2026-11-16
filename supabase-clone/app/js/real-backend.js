@@ -292,6 +292,20 @@
       return r.data;
     },
 
+    // args: [kodeShift] -> PAGI / SIANG. Karyawan memilih shift sendiri (berlaku terus).
+    pilihShiftSaya: async function (args) {
+      var r = await window.sb.rpc('pilih_shift_saya', { p_kode: String(args[0] || '') });
+      if (r.error) return { success: false, msg: r.error.message };
+      return r.data;
+    },
+
+    // Shift efektif hari ini + boleh ganti atau tidak (terkunci setelah absen masuk).
+    getShiftSaya: async function () {
+      var r = await window.sb.rpc('get_shift_saya');
+      if (r.error) return { success: false, msg: r.error.message };
+      return r.data;
+    },
+
     getPayrollPreview: async function (args) {
       var r = await window.sb.rpc('get_payroll_preview', { p_bulan_key: args[0] });
       if (r.error) return { success: false, msg: r.error.message };

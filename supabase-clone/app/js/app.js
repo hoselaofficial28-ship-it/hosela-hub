@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbw6q_5ZaIGrekeBwZ5TKh6X1GpWkFHsa5i6whdwacQkTEa-vvNezHlxFMEQFKZkmm5ffQ/exec';
-var APP_VERSION = '20261116a';
+var APP_VERSION = '20261116b';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -3709,7 +3709,76 @@ var MAX_OFFICE_LOCATION_ACCURACY_M = 100;
 var _pendingAttendancePhoto = null;
 var _attendancePhotoUploading = false;
 
+// ===== Kartu "Shift Saya" di layar Absen Kamera (16 Nov 2026) =====
+// Karyawan memilih Pagi/Siang SEKALI; pilihan berlaku terus sampai diganti.
+// Kalau hari ini sudah absen masuk, pilihan baru berlaku besok.
+var _shiftSayaState = { data: null, terbuka: false };
+
+function loadShiftSaya() {
+ var card = document.getElementById('shift-saya-card');
+ if (!card) return;
+ if (!currentUser || currentUser.bagian === 'Owner' || currentUser.bagian === 'Finance') { card.style.display = 'none'; return; }
+ cacheClearAction('getShiftSaya');
+ gasCall('getShiftSaya', [], function(res) {
+  if (!res || res.success === false || !res.shift) { card.style.display = 'none'; return; }
+  _shiftSayaState.data = res;
+  renderShiftSaya();
+ }, function() { card.style.display = 'none'; });
+}
+
+function renderShiftSaya() {
+ var card = document.getElementById('shift-saya-card');
+ var d = _shiftSayaState.data;
+ if (!card || !d) return;
+ card.style.display = 'block';
+ var nama = document.getElementById('shift-saya-nama');
+ var jam = document.getElementById('shift-saya-jam');
+ var tombol = document.getElementById('shift-saya-ganti');
+ var note = document.getElementById('shift-saya-note');
+ var box = document.getElementById('shift-saya-pilih');
+ if (nama) nama.textContent = d.shift.nama;
+ if (jam) jam.textContent = d.shift.jamMasuk + ' - ' + d.shift.jamPulang;
+ if (tombol) {
+  tombol.style.display = d.bolehGanti ? 'inline-flex' : 'none';
+  tombol.textContent = _shiftSayaState.terbuka ? 'Tutup' : 'Ganti';
+ }
+ if (note) {
+  if (!d.bolehGanti) note.textContent = '';
+  else if (d.terkunci) note.textContent = 'Sudah absen masuk hari ini — kalau diganti, shift baru berlaku besok.';
+  else note.textContent = 'Pilih Pagi atau Siang. Pilihan ini berlaku terus sampai diganti lagi.';
+ }
+ if (box) {
+  if (_shiftSayaState.terbuka && d.bolehGanti) {
+   box.hidden = false;
+   box.innerHTML = (d.pilihan || []).map(function(p) {
+    var aktif = String(p.nama) === String(d.shift.nama);
+    return '<button type="button" class="shift-pilih-btn'+(aktif ? ' is-on' : '')+'" onclick="pilihShiftSaya(\''+p.kode+'\')">' +
+     '<strong>'+p.nama+'</strong><span>'+p.jamMasuk+' - '+p.jamPulang+'</span>' +
+     (p.khususHariIni ? '<em>khusus hari ini</em>' : '') + '</button>';
+   }).join('');
+  } else { box.hidden = true; box.innerHTML = ''; }
+ }
+}
+
+function bukaPilihShift() {
+ _shiftSayaState.terbuka = !_shiftSayaState.terbuka;
+ renderShiftSaya();
+}
+
+function pilihShiftSaya(kode) {
+ if (!kode) return;
+ gasCall('pilihShiftSaya', [kode], function(res) {
+  if (!res || res.success === false) { showToast((res && res.msg) || 'Shift gagal diganti'); return; }
+  _shiftSayaState.terbuka = false;
+  showToast(res.berlakuHariIni
+   ? ('Shift diganti ke ' + res.shift + '.')
+   : ('Shift ' + res.shift + ' berlaku mulai besok.'));
+  loadShiftSaya();
+ }, function() { showToast('Shift gagal diganti'); });
+}
+
 function loadAbsensiCamera() {
+ loadShiftSaya();
  _attendancePhotoData = '';
  _attendanceLocation = null;
  var video = document.getElementById('attendance-video');
@@ -4074,6 +4143,7 @@ function submitAttendanceCamera() {
  var bulanKey = attendanceMonthKey(new Date());
  clearAttendanceMatrixCache(currentUser.id, bulanKey);
  showToast('Absensi diterima. Catatan kehadiran diperbarui.');
+ loadShiftSaya();
  notifyAttendanceOwner(res.id || '');
  // Foto jangan dibuang: simpan di memori untuk diunggah ke penyimpanan. Kalau
  // unggahan gagal, tombol "Kirim Ulang Foto" memakai data ini.
