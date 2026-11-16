@@ -115,9 +115,11 @@ assert.match(functionConfig, /\[functions\.cleanup-attendance-photos\]/);
 assert.match(functionConfig, /verify_jwt = false/);
 
 // Versi cache serentak agar HP tidak mempertahankan kode Firebase lama.
-assert.match(html, /css\/style\.css\?v=20261026b/);
-assert.match(html, /js\/app\.js\?v=20261026b/);
-assert.match(app, /APP_VERSION = '20261026b'/);
-assert.match(sw, /APP_VERSION = '20261026b'/);
+// Versi mengikuti APP_VERSION di app.js (jangan di-hardcode supaya tidak perlu diubah tiap rilis).
+const VERSI_APP = /APP_VERSION = '([^']+)'/.exec(app)[1];
+assert.match(html, new RegExp('css/style\\.css\\?v=' + VERSI_APP));
+assert.match(html, new RegExp('js/app\\.js\\?v=' + VERSI_APP));
+assert.match(app, new RegExp("APP_VERSION = '" + VERSI_APP + "'"));
+assert.match(sw, new RegExp("APP_VERSION = '" + VERSI_APP + "'"));
 
 console.log('penyimpanan foto absensi (Supabase Storage): ok');

@@ -700,6 +700,7 @@ async function main() {
 
     detailsSlip.push({
       legacy_id: String(r.id), _bulan: bulan, user_id: user.id, nama: keTeksWajib(r.nama),
+      bagian: keTeks(r.bagian), jabatan: keTeks(r.jabatan),
       gaji_pokok: keAngka(r.gajiPokok), hari_kerja: keAngka(r.hariKerja), hadir: keAngka(r.hadir),
       absen: keAngka(r.absen), telat: keAngka(r.telat), lembur_pulang: keAngka(r.lemburPulang),
       lembur_minggu: keAngka(r.lemburMinggu), lembur_libur: keAngka(r.lemburLibur),

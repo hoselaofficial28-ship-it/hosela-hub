@@ -8,10 +8,12 @@ const sw = readFileSync(new URL('../app/sw.js', import.meta.url), 'utf8');
 
 assert.match(backend, /email not confirmed/i);
 assert.match(backend, /konfirmasi email Supabase masih aktif/);
-assert.match(html, /css\/style\.css\?v=20261026b/);
-assert.match(html, /js\/app\.js\?v=20261026b/);
-assert.match(app, /APP_VERSION = '20261026b'/);
-assert.match(sw, /APP_VERSION = '20261026b'/);
+// Versi mengikuti APP_VERSION di app.js (jangan di-hardcode supaya tidak perlu diubah tiap rilis).
+const VERSI_APP = /APP_VERSION = '([^']+)'/.exec(app)[1];
+assert.match(html, new RegExp('css/style\\.css\\?v=' + VERSI_APP));
+assert.match(html, new RegExp('js/app\\.js\\?v=' + VERSI_APP));
+assert.match(app, new RegExp("APP_VERSION = '" + VERSI_APP + "'"));
+assert.match(sw, new RegExp("APP_VERSION = '" + VERSI_APP + "'"));
 assert.match(html, /family=Manrope:wght@400;500;600;700;800/);
 assert.doesNotMatch(html, /Plus\+Jakarta\+Sans/);
 

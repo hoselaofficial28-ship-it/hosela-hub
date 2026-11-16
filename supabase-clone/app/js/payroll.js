@@ -1083,27 +1083,33 @@ function renderGroupedSlipList() {
  var total = filtered.reduce(function(sum, s) { return sum + (parseInt(s.totalGaji || s.total || 0, 10) || 0); }, 0);
  var shownMonths = getSlipAvailableMonths(filtered);
  if (_slipListState.sort === 'ASC') shownMonths.reverse();
- var monthOptions = '<option value="">Semua bulan</option>' + months.map(function(month) {
-  return '<option value="'+salaryEsc(month)+'"'+(_slipListState.month === month ? ' selected' : '')+'>'+salaryEsc(salaryMonthLabel(month))+'</option>';
- }).join('');
- var html = '<section class="slip-browser" aria-label="Riwayat slip gaji">' +
- '<div class="slip-toolbar">' +
- '<div class="slip-toolbar-copy"><strong>Riwayat Slip</strong><span>'+months.length+' bulan tersedia</span></div>' +
- '<div class="slip-filter-grid">' +
- '<label class="slip-filter-field"><span>Pilih bulan</span><select class="form-input" aria-label="Pilih bulan slip" onchange="changeSlipMonthFilter(this.value)">'+monthOptions+'</select></label>' +
- '<label class="slip-filter-field"><span>Urutkan</span><select class="form-input" aria-label="Urutkan slip" onchange="changeSlipSort(this.value)"><option value="DESC"'+(_slipListState.sort === 'DESC' ? ' selected' : '')+'>Terbaru dahulu</option><option value="ASC"'+(_slipListState.sort === 'ASC' ? ' selected' : '')+'>Terlama dahulu</option></select></label>' +
- '</div></div>' +
- '<div class="slip-summary-grid"><div class="card slip-summary-card"><strong>'+filtered.length+'</strong><span>Slip ditampilkan</span></div><div class="card slip-summary-card"><strong class="is-green">Rp '+total.toLocaleString('id-ID')+'</strong><span>Total gaji bersih</span></div></div>';
+ var pills = '<button type="button" class="slip-pill'+(!_slipListState.month ? ' is-on' : '')+'" onclick="changeSlipMonthFilter(\'\')">Semua bulan</button>' +
+  months.map(function(month) {
+   return '<button type="button" class="slip-pill'+(_slipListState.month === month ? ' is-on' : '')+'" onclick="changeSlipMonthFilter(\''+salaryEsc(month)+'\')">'+salaryEsc(salaryMonthLabel(month))+'</button>';
+  }).join('');
+ var html = '<section class="slip-compact" aria-label="Riwayat slip gaji">' +
+  '<div class="slip-bar">' +
+  '<div class="slip-pills">'+pills+'</div>' +
+  '<div class="slip-bar-right">' +
+  '<span class="slip-chip">'+filtered.length+' slip</span>' +
+  '<span class="slip-chip">Total <b>Rp '+total.toLocaleString('id-ID')+'</b></span>' +
+  '<select class="slip-sort" aria-label="Urutkan slip" onchange="changeSlipSort(this.value)"><option value="DESC"'+(_slipListState.sort === 'DESC' ? ' selected' : '')+'>Terbaru</option><option value="ASC"'+(_slipListState.sort === 'ASC' ? ' selected' : '')+'>Terlama</option></select>' +
+  '</div></div>';
 
  if (!filtered.length) {
   html += '<div class="empty-state"><div class="empty-icon"></div>Tidak ada slip pada bulan yang dipilih</div>';
  } else {
-  shownMonths.forEach(function(month) {
+  shownMonths.forEach(function(month, bulanIndex) {
    var monthItems = filtered.filter(function(item) { return String(item.bulan || item.periode || '') === month; });
    var monthTotal = monthItems.reduce(function(sum, item) { return sum + (parseInt(item.totalGaji || item.total || 0, 10) || 0); }, 0);
-   html += '<section class="slip-month-group" aria-labelledby="slip-month-'+salaryEsc(month)+'"><div class="slip-month-head"><div><span>PERIODE GAJI</span><h3 id="slip-month-'+salaryEsc(month)+'">'+salaryEsc(salaryMonthLabel(month))+'</h3></div><div><strong>'+monthItems.length+' slip</strong><span>Rp '+monthTotal.toLocaleString('id-ID')+'</span></div></div><div class="slip-month-list">';
+   html += '<details class="slip-month"'+(bulanIndex === 0 ? ' open' : '')+'>' +
+    '<summary><span class="slip-caret" aria-hidden="true"></span>' +
+    '<span class="slip-month-name" id="slip-month-'+salaryEsc(month)+'">'+salaryEsc(salaryMonthLabel(month))+'</span>' +
+    '<span class="slip-month-count">'+monthItems.length+' slip</span>' +
+    '<span class="slip-month-total">Rp '+monthTotal.toLocaleString('id-ID')+'</span></summary>' +
+    '<table class="slip-table"><thead><tr><th class="th-nm">Karyawan</th><th>Gaji pokok</th><th>Pemberian</th><th>Denda</th><th>Gaji bersih</th><th class="th-act"></th></tr></thead><tbody>';
    monthItems.forEach(function(item, index) { html += renderSlipListRow(item, index); });
-   html += '</div></section>';
+   html += '</tbody></table></details>';
   });
  }
  html += '</section>';
@@ -1114,19 +1120,28 @@ function renderSlipListRow(s, index) {
  var safeId = String((s.id || s.payrollRunId || '') + '-' + (s.userId || index)).replace(/[^a-zA-Z0-9_-]/g, '');
  var targetId = 'slip-row-detail-' + safeId;
  var total = parseInt(s.totalGaji || s.total || 0, 10) || 0;
+ var pemberian = (parseInt(s.totalReward || 0, 10) || 0) + (parseInt(s.bonusKerajinan || 0, 10) || 0);
+ var denda = parseInt(s.totalDenda || 0, 10) || 0;
+ // Pokok dihitung dari gaji bersih supaya tiga angka di satu baris selalu cocok:
+ // pokok + pemberian - denda = gaji bersih (termasuk penyesuaian finance).
+ var pokok = Math.max(0, total + denda - pemberian);
  var isAdmin = _slipListState.isAdmin;
- var title = isAdmin ? (s.nama || '-') : 'Slip Gaji';
- var meta = isAdmin ? ((s.jabatan || '-') + ' · ' + (s.bagian || '-')) : ('Diterbitkan ' + (s.dipublishPada || '-'));
+ var judul = isAdmin ? (s.nama || '-') : 'Slip Gaji Saya';
+ var meta = isAdmin ? ((s.jabatan || '-') + ' - ' + (s.bagian || '-')) : ('Diterbitkan ' + (s.dipublishPada || '-'));
  var detailAction = isAdmin
   ? 'toggleAdminSlipDetail(&quot;'+salaryEsc(s.id || '')+'&quot;,&quot;'+targetId+'&quot;)'
   : 'toggleSlipDetail(&quot;'+salaryEsc(s.payrollRunId || '')+'&quot;,&quot;'+targetId+'&quot;)';
  var userId = isAdmin ? (s.userId || '') : (currentUser && currentUser.id || '');
- return '<article class="slip-list-row">' +
-  '<div class="slip-row-main"><div class="slip-row-identity"><div class="slip-document-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2h9l4 4v16H6z"/><path d="M14 2v5h5M9 12h6M9 16h6"/></svg></div><div><div class="slip-period">'+salaryEsc(title)+'</div><div class="slip-meta">'+salaryEsc(meta)+'</div></div></div>' +
-  '<div class="slip-amount"><span>Gaji bersih</span><strong>Rp '+total.toLocaleString('id-ID')+'</strong></div></div>' +
-  (isAdmin ? renderPayrollMiniBreakdown(s) : '') +
-  '<div class="slip-actions"><button class="btn btn-sm btn-primary" aria-controls="'+targetId+'" onclick="'+detailAction+'">Lihat Rincian</button><button class="btn btn-sm btn-secondary" onclick="downloadEmployeeSlipPdf(&quot;'+salaryEsc(s.payrollRunId || '')+'&quot;,&quot;'+salaryEsc(userId)+'&quot;,this)">Unduh PDF</button></div>' +
-  '<div id="'+targetId+'" class="slip-detail-panel" style="display:none"></div></article>';
+ return '<tr class="slip-tr">' +
+  '<td class="c-nm"><span class="c-name">'+salaryEsc(judul)+'</span><span class="c-sub">'+salaryEsc(meta)+'</span></td>' +
+  '<td class="c-num c-pokok">Rp '+pokok.toLocaleString('id-ID')+'</td>' +
+  '<td class="c-num c-plus'+(pemberian > 0 ? '' : ' is-zero')+'">'+(pemberian > 0 ? '+' : '')+'Rp '+pemberian.toLocaleString('id-ID')+'</td>' +
+  '<td class="c-num c-minus'+(denda > 0 ? '' : ' is-zero')+'">'+(denda > 0 ? '-' : '')+'Rp '+denda.toLocaleString('id-ID')+'</td>' +
+  '<td class="c-num c-net">Rp '+total.toLocaleString('id-ID')+'</td>' +
+  '<td class="c-act"><button type="button" class="slip-act slip-act-primary" aria-controls="'+targetId+'" onclick="'+detailAction+'">Rincian</button>' +
+  '<button type="button" class="slip-act" onclick="downloadEmployeeSlipPdf(&quot;'+salaryEsc(s.payrollRunId || '')+'&quot;,&quot;'+salaryEsc(userId)+'&quot;,this)">PDF</button></td>' +
+  '</tr>' +
+  '<tr class="slip-tr-detail"><td colspan="6"><div id="'+targetId+'" class="slip-detail-panel" style="display:none"></div></td></tr>';
 }
 function toggleSlipDetail(payrollRunId, targetId) {
  var target = document.getElementById(targetId);

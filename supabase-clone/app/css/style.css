@@ -4002,3 +4002,77 @@ body.phone-mode #app-wrap #s-daftar.screen.active{
   body:not(.phone-mode) .navbar .pc-nav-item.active .pc-nav-icon{background:rgba(255,255,255,.24);color:#fff}
   body:not(.phone-mode) .navbar .pc-nav-item.active .pc-nav-text{color:#fff;font-weight:750}
 }
+
+/* ==========================================================================
+   Riwayat Slip Gaji (rapat) — 16 Nov 2026
+   Tujuan: 1 baris = 1 slip, label kolom sekali saja, bulan bisa dilipat.
+   ========================================================================== */
+.slip-compact{display:block}
+.slip-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.slip-pills{display:flex;gap:7px;flex-wrap:wrap}
+.slip-pill{border:1px solid #e3e8f0;background:#fff;border-radius:999px;padding:6px 12px;
+  font:inherit;font-size:12.5px;color:#64748b;cursor:pointer;line-height:1.3}
+.slip-pill.is-on{background:#2563eb;border-color:#2563eb;color:#fff;font-weight:650}
+.slip-bar-right{margin-left:auto;display:flex;gap:7px;align-items:center;flex-wrap:wrap}
+.slip-chip{display:inline-flex;align-items:center;gap:5px;background:#fff;border:1px solid #e3e8f0;
+  border-radius:999px;padding:5px 11px;font-size:12.5px;color:#64748b;white-space:nowrap}
+.slip-chip b{color:#0f172a;font-weight:700}
+.slip-sort{border:1px solid #e3e8f0;background:#fff;border-radius:999px;padding:5px 9px;
+  font:inherit;font-size:12.5px;color:#475569;cursor:pointer}
+
+.slip-month{background:#fff;border:1px solid #e3e8f0;border-radius:12px;overflow:hidden;margin-bottom:11px}
+.slip-month>summary{list-style:none;display:flex;align-items:center;gap:9px;padding:10px 14px;
+  cursor:pointer;background:#fbfcfe;border-bottom:1px solid #e3e8f0}
+.slip-month>summary::-webkit-details-marker{display:none}
+.slip-month:not([open])>summary{border-bottom:none}
+.slip-caret{width:0;height:0;border-left:4.5px solid transparent;border-right:4.5px solid transparent;
+  border-top:5.5px solid #94a3b8;transition:transform .15s;flex:0 0 auto}
+.slip-month[open] .slip-caret{transform:rotate(180deg)}
+.slip-month-name{font-weight:700;font-size:14px;color:#0f172a}
+.slip-month-count{font-size:12.5px;color:#64748b}
+.slip-month-total{margin-left:auto;font-weight:700;font-size:13.5px;color:#0f172a;
+  font-variant-numeric:tabular-nums;white-space:nowrap}
+
+.slip-table{width:100%;border-collapse:collapse;table-layout:auto}
+.slip-table thead th{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:#64748b;
+  font-weight:650;text-align:right;padding:8px 14px;border-bottom:1px solid #e3e8f0;background:#fff}
+.slip-table thead th.th-nm{text-align:left;width:30%}
+.slip-table thead th.th-act{width:1%;white-space:nowrap}
+.slip-table tbody td{padding:9px 14px;border-bottom:1px solid #f1f4f9;text-align:right;
+  font-size:13.5px;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.slip-table tbody tr.slip-tr:hover{background:#fafcff}
+.slip-table tbody tr.slip-tr:last-of-type td{border-bottom:none}
+.slip-table .c-nm{text-align:left}
+.slip-table .c-name{display:block;font-weight:650;color:#0f172a;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.slip-table .c-sub{display:block;font-size:11.5px;color:#64748b;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.slip-table .c-pokok{color:#475569}
+.slip-table .c-plus{color:#0f7b3f;font-weight:600}
+.slip-table .c-minus{color:#b42318;font-weight:600}
+.slip-table .c-plus.is-zero,.slip-table .c-minus.is-zero{color:#64748b;font-weight:400}
+.slip-table .c-net{font-weight:700;color:#0f172a}
+.slip-table .c-act{white-space:nowrap;text-align:right;overflow:visible}
+.slip-act{border:1px solid #e3e8f0;background:#fff;border-radius:8px;padding:5px 9px;margin-left:5px;
+  font:inherit;font-size:12px;color:#475569;cursor:pointer;white-space:nowrap}
+.slip-act:hover{border-color:#2563eb;color:#2563eb}
+.slip-act-primary{background:#eff4ff;border-color:#dbe6ff;color:#2563eb;font-weight:650}
+.slip-table tbody tr.slip-tr-detail>td{padding:0;border-bottom:1px solid #f1f4f9}
+.slip-table tbody tr.slip-tr-detail .slip-detail-panel{padding:12px 14px;background:#fbfcfe}
+
+@media (max-width:700px){
+  .slip-bar{gap:8px}
+  .slip-bar-right{margin-left:0;width:100%}
+  .slip-table,.slip-table tbody{display:block;width:100%;table-layout:auto}
+  .slip-table thead{display:none}
+  .slip-table tbody tr.slip-tr{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;
+    gap:3px 10px;padding:9px 12px;border-bottom:1px solid #f1f4f9}
+  .slip-table tbody tr.slip-tr:hover{background:transparent}
+  .slip-table tbody td{border:none;padding:0;text-align:left;white-space:normal}
+  .slip-table .c-pokok,.slip-table .c-plus,.slip-table .c-minus{display:none}
+  .slip-table .c-nm{grid-column:1;grid-row:1;min-width:0}
+  .slip-table .c-net{grid-column:2;grid-row:1;text-align:right;font-size:14px}
+  .slip-table .c-act{grid-column:1/-1;grid-row:2;text-align:left;padding-top:5px}
+  .slip-act{margin-left:0;margin-right:5px}
+  .slip-table tbody tr.slip-tr-detail{display:block;border-bottom:1px solid #f1f4f9}
+  .slip-table tbody tr.slip-tr-detail>td{display:block}
+  .slip-month-total{font-size:13px}
+}
