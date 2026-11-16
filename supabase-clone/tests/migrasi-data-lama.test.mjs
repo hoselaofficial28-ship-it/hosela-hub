@@ -46,7 +46,7 @@ assert.match(mig, /update public\.profiles set status = 'NONAKTIF'/);
 assert.doesNotMatch(mig, /delete from public\.app_settings/, 'app_settings tidak boleh dikosongkan');
 assert.doesNotMatch(mig, /delete from auth\.users/, 'akun login tidak boleh dihapus otomatis');
 
-// Supabase menolak DELETE tanpa WHERE ("DELETE requires a WHERE clause", 21000) â€”
+// Supabase menolak DELETE tanpa WHERE ("DELETE requires a WHERE clause", 21000) Ã¢â‚¬â€
 // setiap DELETE wajib punya klausa WHERE.
 assert.ok((mig.match(/where true;/g) || []).length >= 17, 'DELETE tanpa WHERE akan ditolak Supabase');
 assert.doesNotMatch(mig, /^\s*delete from public\.[a-z_]+;\s*$/m, 'ada DELETE tanpa WHERE');
@@ -98,13 +98,16 @@ assert.match(alat, /jam: keJam\(r\.Jam\) \|\| '00:00:00'/);
 
 // Konversi koordinat kantor yang tersimpan tanpa desimal
 assert.match(alat, /kunci === 'OFFICE_LAT' \|\| kunci === 'OFFICE_LNG'/);
-assert.match(alat, /nilai = String\(n \/ 1e8\)/);
+assert.match(alat, /nilai = String\(n \/ 1e7\)/, 'koordinat disimpan x10.000.000');
 
 // Payroll: digabung per bulan + slip tanpa run disimpulkan dari tanggal rincian
 assert.match(alat, /legacy_id: `RUN-\$\{sisa\.bulan\}`/);
 assert.match(alat, /const PRIORITAS = \{ DRAFT: 1, CONFIRMED: 2, PUBLISHED: 3 \};/);
 assert.match(alat, /const bulanTerbanyak = kunciSlip =>/);
 assert.match(alat, /const bulanRunHilang = kunciRun =>/);
+// Satu slip per karyawan per bulan (data lama punya banyak draf berulang)
+assert.match(alat, /const PRIORITAS_SLIP = \{ PUBLISHED: 3, CONFIRMED: 2, DRAFT: 1 \};/);
+assert.match(alat, /const slipDilewati = new Set\(dibuang\.map/);
 
 // Semua pengiriman lewat satu pintu (RPC import_legacy_rows)
 assert.match(alat, /await rpc\('import_legacy_rows', \{ p_tabel: tabel, p_rows: potong, p_kunci: kunci \}\)/);

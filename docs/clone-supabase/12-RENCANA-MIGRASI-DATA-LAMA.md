@@ -215,3 +215,40 @@ node supabase-clone/tools/import-legacy-gas.mjs --dry-run
 node supabase-clone/tools/import-legacy-gas.mjs --apply
 ```
 
+## 10. Hasil migrasi — SELESAI 16 November 2026
+
+| Data | Dari sheet | Masuk Supabase | Catatan |
+|---|---|---|---|
+| Karyawan | 10 | 10 profil | akun login dibuat (sandi `hosela`); 3 mantan karyawan status NONAKTIF |
+| Tap kamera | 1546 | 1546 | foto tetap tautan Google Drive lama |
+| Detail absensi | 1081 | 1081 | semua tipe terbawa |
+| Rekap mingguan | 173 | 173 | status BAIK/KUNING/ORANGE/MERAH utuh |
+| Finger print mentah | 189 | 189 | arsip |
+| Anomali tap | 27 | 27 | |
+| SP1/SP2/SP3 | 106 | 106 | |
+| Review telat | 61 | 61 | status lama `MENUNGGU` → `TELAT_NORMAL`, status asli disimpan di `catatan` |
+| Izin | 1 | 1 | |
+| Notifikasi | 320 | 320 | |
+| Payroll run | 24 run | 5 run bulanan | 2026-03 (simpulan), 04, 05, 07, 08 |
+| Slip gaji | 135 | 24 slip | **111 draf berulang dilewati** (1 slip per karyawan per bulan: PUBLISHED > CONFIRMED > draf terbaru) |
+| Rincian slip | 721 | 124 | 597 ikut dilewati karena mengikuti draf yang tidak dipakai |
+| KPI laporan | 720 | 720 | |
+| Template KPI / jobdesk / peraturan / libur / pengumuman | 44 / 6 / 42 / 6 / 4 | sama | |
+| Pengaturan | 5 | 5 | koordinat kantor `-6.2374781 / 106.5273101`, radius 500 m |
+| Audit log | 102 | 102 | |
+
+**Temuan yang sudah diperbaiki saat impor**
+
+1. **5 slip** menunjuk payroll run yang sudah hilang; bulannya disimpulkan dari tanggal rinciannya (total **Rp 15.556.364**) → masuk ke run **2026-03** (status DRAFT).
+2. **Koordinat kantor** di sheet tersimpan tanpa desimal (`-62374781`); pembaginya **10.000.000** (bukan 100.000.000).
+3. **Tipe item `POTONGAN_ABSEN`** (71 baris) sementara disimpan sebagai `ABSEN` karena batasan skema belum mengizinkannya. Setelah Ko menjalankan migrasi **053**, jalankan ulang impor dengan `HUB_ITEM_POTONGAN=1` agar label slip kembali "Potongan absen".
+4. **Payroll yang perlu disusulkan Ko**: **2026-06, 2026-09, 2026-10, 2026-11** (sudah ada absensinya, belum ada payroll).
+
+**Verifikasi setelah impor (langsung ke database)**
+
+- Login karyawan aktif berfungsi, papan peringkat menampilkan 5 karyawan aktif dengan bintang/skor asli.
+- `get_absensi_rekap`, `get_rekap_bulanan_semua`, `get_papan_peringkat`, `get_absensi_photo_stats` mengembalikan data.
+- Slip April 2026 (Adhe) terbaca: hadir 24, absen 2, telat 1, total Rp 3.220.770 — sama dengan sheet.
+- Angka rumah tangga: 33/33 test lulus; rekonsiliasi `legacy_import_summary` tanpa selisih.
+
+

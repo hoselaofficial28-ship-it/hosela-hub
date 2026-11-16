@@ -28,6 +28,9 @@ const BATCH = 200;
 const TZ = 7 * 60 * 60 * 1000; // Asia/Jakarta (tanpa DST)
 const EPOCH_GOOGLE = Date.UTC(1899, 11, 30);
 const PASSWORD_AWAL = 'hosela';
+const STATUS_REVIEW_DIIZINKAN = new Set(['TELAT_NORMAL', 'IZIN_TELAT_KHUSUS', 'BEBAS_POTONGAN']);
+// Tipe item slip yang diizinkan skema (migrasi 044/053).
+const TIPE_ITEM_DIIZINKAN = new Set(['BONUS_KERAJINAN','DENDA_SP','DENDA_TELAT','DENDA_MANUAL','REWARD_MANUAL','LEMBUR_PULANG','LEMBUR_MINGGU','LEMBUR_LIBUR','ABSEN','ADJUSTMENT_PLUS','ADJUSTMENT_MINUS', ...(process.env.HUB_ITEM_POTONGAN === '1' ? ['POTONGAN_ABSEN'] : [])]);
 const EMAIL_OWNER = 'hoselaofficial28@gmail.com';
 
 const NAMA_OWNER = process.env.HUB_OWNER_NAMA || process.env.TES_NAMA;
@@ -356,8 +359,8 @@ function barisGaji(users, peta) {
         bulan,
         gaji_bulanan: keAngka(r.Gaji_Bulanan ?? r.gajiBulanan),
         bonus_kerajinan: keAngka(r.bonusKerajinan),
-        catatan: keTeks(r.Catatan ?? r.catatan),
-        migrated_source: label,
+        catatan: [keTeks(r.Catatan ?? r.catatan), 'Sumber: ' + label].filter(Boolean).join(' Â· '),
+        migrated_source: 'SHEET',
         created_at: keWaktu(r.Dibuat_Pada ?? r.dibuatPada) || null,
       };
       const kk = `${user.id}|${bulan}`;
@@ -443,7 +446,7 @@ async function main() {
     let nilai = String(r.Nilai ?? '').trim();
     if (kunci === 'OFFICE_LAT' || kunci === 'OFFICE_LNG') {
       const n = Number(nilai);
-      if (Number.isFinite(n) && Math.abs(n) > 1000) nilai = String(n / 1e8);
+      if (Number.isFinite(n) && Math.abs(n) > 1000) nilai = String(n / 1e7);
     }
     pengaturan.push({ key: kunci, value: nilai });
   }
@@ -475,8 +478,8 @@ async function main() {
       legacy_id: String(r.ID), user_id: user.id, tanggal, jam: keJam(r.Jam) || '00:00:00',
       tipe: keTeksWajib(r.Tipe, 'MASUK'), latitude: r.Latitude ?? null, longitude: r.Longitude ?? null,
       akurasi_meter: keAngkaAtauNull(r.Akurasi_Meter), jarak_kantor_meter: keAngkaAtauNull(r.Jarak_Kantor_Meter),
-      status: keTeksWajib(r.Status, 'DITERIMA'), source: 'LEGACY_GAS',
-      drive_web_view_url: keTeks(r.Foto_URL), upload_status: 'OK',
+      status: keTeksWajib(r.Status, 'DITERIMA'), source: 'IMPORT',
+      drive_web_view_url: keTeks(r.Foto_URL), upload_status: keTeks(r.Foto_URL) ? 'UPLOADED' : null,
       catatan: keTeks(r.Catatan), created_at: keWaktu(r.Created_At) || null,
     });
   }
@@ -541,11 +544,18 @@ async function main() {
   await kirimKe('late_reviews', baris('IZIN_TELAT').map(r => {
     const user = peta.byLegacy.get(String(r.ID_User || '').trim());
     if (!user) { laporan.galat.push(`review telat ${r.ID}: user ${r.ID_User} tidak dikenal`); return null; }
+    // Skema baru hanya mengenal TELAT_NORMAL / IZIN_TELAT_KHUSUS / BEBAS_POTONGAN.
+    // Status lama "MENUNGGU" (belum diputuskan) diperlakukan sebagai telat normal,
+    // status aslinya tetap dicatat di catatan supaya bisa ditelusuri.
+    const statusLama = keTeksWajib(r.Status_Review, 'MENUNGGU');
+    const statusReview = STATUS_REVIEW_DIIZINKAN.has(statusLama) ? statusLama : 'TELAT_NORMAL';
     return {
       legacy_id: String(r.ID), user_id: user.id, tanggal: keTanggal(r.Tanggal),
-      status_review: keTeksWajib(r.Status_Review, 'MENUNGGU'),
+      status_review: statusReview,
       durasi_izin_jam: r.Durasi_Izin_Jam === null || r.Durasi_Izin_Jam === undefined ? null : Number(r.Durasi_Izin_Jam),
-      alasan: keTeks(r.Alasan), catatan: keTeks(r.Catatan),
+      alasan: keTeks(r.Alasan),
+      catatan: [keTeks(r.Catatan), statusLama === statusReview ? null : `Status lama: ${statusLama}`]
+        .filter(Boolean).join(' Â· ') || null,
       denda_normal: keAngkaAtauNull(r.Denda_Normal), tarif_per_jam: keAngkaAtauNull(r.Tarif_Per_Jam),
       potongan_final: keAngkaAtauNull(r.Potongan_Final),
       reviewed_by_name: keTeks(r.Diputuskan_Oleh), reviewed_at: keWaktu(r.Diputuskan_Pada) || null,
@@ -634,19 +644,48 @@ async function main() {
 
   const detailsSlip = [];
   const slipRunHilang = [];
+  const kandidat = [];
   for (const r of detailLama) {
     const user = peta.byLegacy.get(String(r.userId || '').trim());
     if (!user) { laporan.galat.push(`slip ${r.id}: user ${r.userId} tidak dikenal`); continue; }
 
     let bulan = bulanPerRun.get(String(r.payrollRunId)) || null;
+    let dariSimpulan = false;
     if (!bulan) {
       bulan = bulanTerbanyak(String(r.id)) || bulanRunHilang(String(r.payrollRunId));
       if (!bulan) { laporan.galat.push(`slip ${r.id}: bulan tidak bisa ditentukan (run ${r.payrollRunId} hilang)`); continue; }
-      slipRunHilang.push({ slip: String(r.id), run: String(r.payrollRunId), bulan, total: keAngka(r.totalGaji) });
+      dariSimpulan = true;
     }
+    kandidat.push({ r, user, bulan, dariSimpulan });
+  }
 
-    const statusSlip = String(r.statusSlip || 'DRAFT').toUpperCase();
-    const prioritasSlip = PRIORITAS[statusSlip] || 0;
+  // Data lama menyimpan beberapa draf untuk bulan & karyawan yang sama
+  // (aplikasi lama membuat run baru tiap kali "Buat Draf"). Skema Supabase hanya
+  // mengizinkan 1 slip per karyawan per bulan, jadi dipilih satu:
+  // PUBLISHED > CONFIRMED > DRAFT, lalu run yang paling baru.
+  const PRIORITAS_SLIP = { PUBLISHED: 3, CONFIRMED: 2, DRAFT: 1 };
+  const waktuRun = new Map();
+  for (const r of runLama) waktuRun.set(String(r.id), keWaktu(r.dibuatPada) || '');
+  const pilih = new Map();
+  const dibuang = [];
+  for (const k of kandidat) {
+    const status = String(k.r.statusSlip || 'DRAFT').toUpperCase();
+    const bobot = (PRIORITAS_SLIP[status] || 0) * 1e15 + Date.parse(waktuRun.get(String(k.r.payrollRunId)) || '1970-01-01') / 1000;
+    const kunci = `${k.bulan}|${k.user.id}`;
+    const lama = pilih.get(kunci);
+    if (!lama || bobot > lama.bobot) {
+      if (lama) dibuang.push(lama);
+      pilih.set(kunci, { ...k, bobot, status });
+    } else {
+      dibuang.push(k);
+    }
+  }
+
+  for (const k of pilih.values()) {
+    const { r, user, bulan, dariSimpulan: ds, status: statusSlip } = k;
+    if (ds) slipRunHilang.push({ slip: String(r.id), run: String(r.payrollRunId), bulan, total: keAngka(r.totalGaji) });
+
+    const prioritasSlip = PRIORITAS_SLIP[statusSlip] || 0;
     const runAda = runBulan.get(bulan);
     if (!runAda) {
       runBulan.set(bulan, {
@@ -669,6 +708,16 @@ async function main() {
       adjustment_minus: keAngka(r.adjustmentMinus), catatan_adjustment: keTeks(r.catatanAdjustment),
       total_gaji: keAngka(r.totalGaji), status_slip: statusSlip,
     });
+  }
+
+  const slipDilewati = new Set(dibuang.map(k => String(k.r.id)));
+  if (dibuang.length) {
+    const totalBuang = dibuang.reduce((a, k) => a + keAngka(k.r.totalGaji), 0);
+    laporan.catatan.push(
+      `${dibuang.length} slip draf berulang dilewati (1 slip per karyawan per bulan; ` +
+      `yang dipakai: PUBLISHED > CONFIRMED > draf terbaru). Total nilai draf lama: Rp ${totalBuang.toLocaleString('id-ID')}.`,
+    );
+    process.stdout.write(`  ${dibuang.length} slip draf berulang dilewati (dipakai 1 per karyawan per bulan)\n`);
   }
 
   if (slipRunHilang.length) {
@@ -706,14 +755,22 @@ async function main() {
     for (const d of detailsSlip) petaDetail.set(d.legacy_id, `dry-${d.legacy_id}`);
   }
 
+  let itemDilewati = 0;
   await kirimKe('payroll_items', itemLama.map(r => {
-    const detailId = petaDetail.get(String(r.payrollDetailId));
+    const kunciSlip = String(r.payrollDetailId);
+    if (slipDilewati.has(kunciSlip)) { itemDilewati++; return null; } // rincian milik draf yang dilewati
+    const detailId = petaDetail.get(kunciSlip);
     if (!detailId) { laporan.galat.push(`item ${r.id}: slip ${r.payrollDetailId} tidak ditemukan`); return null; }
     return {
-      legacy_id: String(r.id), payroll_detail_id: detailId, tipe: keTeksWajib(r.tipe),
+      legacy_id: String(r.id), payroll_detail_id: detailId,
+      tipe: TIPE_ITEM_DIIZINKAN.has(keTeksWajib(r.tipe)) ? keTeksWajib(r.tipe) : 'ABSEN',
       tanggal: keTanggal(r.tanggal), keterangan: keTeks(r.keterangan), nominal: keAngka(r.nominal),
     };
   }).filter(Boolean));
+  if (itemDilewati) {
+    laporan.catatan.push(`${itemDilewati} rincian slip ikut dilewati karena slip drafnya tidak dipakai.`);
+    process.stdout.write(`  ${itemDilewati} rincian slip dilewati (mengikuti draf yang tidak dipakai)\n`);
+  }
 
   // --- KPI & audit ---
   process.stdout.write('\nKPI & audit...\n');
