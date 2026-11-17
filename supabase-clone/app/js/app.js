@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbw6q_5ZaIGrekeBwZ5TKh6X1GpWkFHsa5i6whdwacQkTEa-vvNezHlxFMEQFKZkmm5ffQ/exec';
-var APP_VERSION = '20261117k';
+var APP_VERSION = '20261117l';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -1351,7 +1351,6 @@ menus.push({id:'s-slip-gaji', icon:'receipt', bg:'#e0f2fe', label:'Slip Gaji', s
  var prevBtn = document.querySelector('.preview-btn');
  if (prevBtn) prevBtn.style.display = (!isTouchDevice && (u.bagian === 'Owner' || u.bagian === 'Finance')) ? 'flex' : 'none';
  document.getElementById('home-menu').innerHTML = renderHomeMenuSections(menus);
- refreshWajibBacaPeraturan();
  window._homeMenus = menus;
  applyDesktopNavigation();
  loadDesktopReports(true);
