@@ -1,0 +1,18 @@
+# Folder yang tidak perlu diunggah ke Vercel (root project = supabase-clone/app).
+# Menjaga deploy CLI tetap cepat dan di bawah batas jumlah file.
+Temp/
+node_modules/
+.git/
+gas/
+gas-backup/
+gas-paste/
+docs/
+supabase/
+supabase-clone/supabase/
+supabase-clone/supabase-backup*/
+supabase-clone/app-backup-*/
+supabase-clone/tests/
+supabase-clone/tools/
+AGENTS.md
+AGENTS.md.txt
+CLAUDE.md
