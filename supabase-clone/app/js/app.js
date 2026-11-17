@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbw6q_5ZaIGrekeBwZ5TKh6X1GpWkFHsa5i6whdwacQkTEa-vvNezHlxFMEQFKZkmm5ffQ/exec';
-var APP_VERSION = '20261117x';
+var APP_VERSION = '20261117z';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -5964,9 +5964,28 @@ function togglePilihShift(userId, boleh) {
  gasCall('setBolehPilihShift', [userId, !!boleh], function(res) {
   if (!res || res.success === false) { showToast((res && res.msg) || 'Gagal mengubah izin'); return; }
   showToast((res.nama || 'Karyawan') + (res.boleh_pilih_shift ? ': boleh pilih shift sendiri' : ': tidak boleh pilih shift sendiri'));
-  loadShiftSelfList();
+  siapkanAccordionShift();
+ loadShiftSelfList();
   cacheClearAction('getShiftSaya');
  }, function() { showToast('Gagal mengubah izin'); });
+}
+
+// Accordion Pengaturan Shift: hanya satu terbuka, dan panel yang dibuka
+// otomatis digulir ke layar supaya isinya tidak terlihat terpotong.
+function siapkanAccordionShift() {
+ var semua = document.querySelectorAll('#s-shift-settings .shift-advanced-card');
+ if (!semua.length) return;
+ semua.forEach(function(d) {
+  if (d.getAttribute('data-acc') === '1') return;
+  d.setAttribute('data-acc', '1');
+  d.addEventListener('toggle', function() {
+   if (!d.open) return;
+   semua.forEach(function(lain) { if (lain !== d && lain.open) lain.open = false; });
+   setTimeout(function() {
+    try { d.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (e) { d.scrollIntoView(); }
+   }, 80);
+  });
+ });
 }
 
 function loadShiftSettings(force) {

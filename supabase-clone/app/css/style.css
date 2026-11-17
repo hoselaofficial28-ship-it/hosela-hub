@@ -4446,3 +4446,28 @@ body.phone-mode #app-wrap #s-daftar.screen.active{
 #s-absensi-camera.cam-fs #camera-manual-btn{position:absolute;left:50%;transform:translateX(-50%);
   bottom:calc(104px + env(safe-area-inset-bottom,0px));z-index:12;
   background:rgba(2,6,23,.6);color:#fff;border:1px solid rgba(255,255,255,.24);backdrop-filter:blur(6px)}
+
+/* Accordion shift: rapikan buka-tutup + jarak bawah (17 Nov 2026) */
+.shift-page-content{padding-bottom:calc(56px + env(safe-area-inset-bottom,0px))!important;align-content:start!important}
+/* Baris grid tidak boleh mengecil: tanpa ini, saat isi halaman lebih tinggi dari
+   layar, ketiga accordion tertekan/bertumpuk sehingga tidak bisa dibuka dengan baik. */
+.shift-advanced-card{min-height:72px}
+.shift-advanced-card{scroll-margin-top:14px}
+.shift-advanced-card:last-of-type{margin-bottom:10px}
+.shift-advanced-body{padding-bottom:20px!important}
+.shift-template-list{padding:16px 18px 20px!important;gap:12px!important}
+.shift-template-row{grid-template-columns:minmax(0,1fr)!important;gap:10px!important;align-items:end}
+.shift-template-row>div{grid-column:1/-1}
+.shift-template-row label{min-width:0}
+.shift-template-row .form-input,.shift-template-row input{width:100%;min-width:0}
+.shift-template-row>.btn{grid-column:1/-1;min-height:42px}
+@media (min-width:560px){
+ .shift-template-row{grid-template-columns:minmax(0,1fr) 132px 132px auto!important}
+ .shift-template-row>div{grid-column:auto}
+ .shift-template-row>.btn{grid-column:auto}
+}
+@media (max-width:600px){
+ .shift-advanced-card>summary{min-height:62px;padding:11px 14px}
+ .shift-advanced-card>summary b{font-size:13px}
+ .shift-advanced-card>summary small{font-size:10.5px;line-height:1.35}
+}
