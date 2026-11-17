@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbw6q_5ZaIGrekeBwZ5TKh6X1GpWkFHsa5i6whdwacQkTEa-vvNezHlxFMEQFKZkmm5ffQ/exec';
-var APP_VERSION = '20261117r';
+var APP_VERSION = '20261117s';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -732,8 +732,6 @@ function tampilkanBannerInstall() {
  var tolak = 0;
  try { tolak = Number(localStorage.getItem('hh_install_ditolak') || 0); } catch (e) {}
  if (tolak && Date.now() - tolak < 7 * 24 * 60 * 60 * 1000) { el.hidden = true; return; }
- var ikon = document.getElementById('pwa-install-icon');
- if (ikon && !ikon.textContent.trim()) ikon.innerHTML = uiIcon('install');
  el.hidden = false;
 }
 
