@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbw6q_5ZaIGrekeBwZ5TKh6X1GpWkFHsa5i6whdwacQkTEa-vvNezHlxFMEQFKZkmm5ffQ/exec';
-var APP_VERSION = '20261117s';
+var APP_VERSION = '20261117u';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -850,6 +850,7 @@ function pcRestoreSidebarScroll(screen, scrollTop, activeId) {
 }
 
 function goTo(id) {
+ if (id !== 's-absensi-camera') keluarLayarPenuhKamera();
   var prev = document.querySelector('.screen.active');
   var prevId = prev ? prev.id : null;
   var previousSidebarTop = pcReadSidebarScrollTop(prev);
@@ -4155,7 +4156,20 @@ function pilihShiftSaya(kode) {
  }, function() { showToast('Shift gagal diganti'); });
 }
 
+// Layar kamera dipakai penuh (tanpa header) supaya wajah + oval jadi pusat perhatian.
+function masukLayarPenuhKamera() {
+ var sc = document.getElementById('s-absensi-camera');
+ if (sc) sc.classList.add('cam-fs');
+}
+
+function keluarLayarPenuhKamera() {
+ var sc = document.getElementById('s-absensi-camera');
+ if (sc) sc.classList.remove('cam-fs');
+}
+
 function loadAbsensiCamera() {
+ // Kamera dipakai layar penuh supaya wajah + oval jadi pusat perhatian.
+ masukLayarPenuhKamera();
  // Kamera ada di paling atas: pastikan layar tidak terbuka pada posisi scroll lama.
  var isiKamera = document.querySelector('#s-absensi-camera .content');
  if (isiKamera) isiKamera.scrollTop = 0;
@@ -4420,7 +4434,7 @@ function sembunyikanKartuAbsen() {
 // Kanvas overlay menutup seluruh bingkai kamera dengan warna solid, menyisakan
 // lubang oval transparan sebagai panduan wajah, plus cincin progres + badge teks.
 // Oval: lebar 68% bingkai, rasio lebar:tinggi 0.78 (lebih lega, wajah & dagu masuk)
-var _camOval = { cx: 0.5, cy: 0.5, lebarRasio: 0.68, rasio: 0.78 };
+var _camOval = { cx: 0.5, cy: 0.5, lebarRasio: 0.74, rasio: 0.95 };
 // Analisis cahaya: gelap / normal / silau -> filter video & palet warna flash
 var _camCahaya = { rata: 128, level: 'normal' };
 var _camGeo = { w: 0, h: 0, cx: 0, cy: 0, rx: 0, ry: 0, dpr: 1 };
@@ -4434,6 +4448,7 @@ var _camRaf = null;
 var _camDeteksiLib = null;
 var _camDeteksiGagal = false;
 var _camDeteksiMulai = 0;
+var _camSumberDeteksi = '';
 var _camHasilDeteksi = null;
 
 function ukuranOverlayCam() {
@@ -4683,7 +4698,8 @@ function deteksiWajahCam(video, ctx, kecil, callback) {
    Promise.resolve(_camDeteksiLib.send({ image: video })).then(function() {
     // MediaPipe kadang tidak menemukan wajah walau wajah jelas ada di depan kamera
     // (cahaya redup / model belum siap). Analisis gambar dipakai sebagai cadangan.
-    tutup(_camHasilDeteksi || heuristikWajahCam(ctx, kecil));
+    if (_camHasilDeteksi) { _camSumberDeteksi = 'mediapipe'; tutup(_camHasilDeteksi); }
+    else tutup(heuristikWajahCam(ctx, kecil));
    }).catch(function() {
     _camDeteksiLib = null;
     _camDeteksiGagal = true;
@@ -4693,6 +4709,24 @@ function deteksiWajahCam(video, ctx, kecil, callback) {
   } catch (e) { _camSedangDeteksi = false; _camDeteksiLib = null; _camDeteksiGagal = true; }
  }
  callback(heuristikWajahCam(ctx, kecil));
+}
+
+// Analisis cadangan: hitung proporsi warna kulit di dalam oval.
+// Kalau tidak ada kulit sama sekali (mis. layar hijau/kosong), wajah dianggap TIDAK ada
+// sehingga kedap-kedip warna tidak akan dipicu sembarangan.
+function proporsiKulitCam(data, w, h, o) {
+ var x0 = o.cx * w, y0 = o.cy * h, rx = o.rx * w, ry = o.ry * h;
+ var kulit = 0, total = 0;
+ for (var i = 0; i < data.length; i += 4) {
+  var px = (i / 4) % w, py = ((i / 4) / w) | 0;
+  var dx = (px - x0) / rx, dy = (py - y0) / ry;
+  if (dx * dx + dy * dy > 1) continue;
+  total++;
+  var r = data[i], g = data[i + 1], b = data[i + 2];
+  var maks = Math.max(r, g, b), min = Math.min(r, g, b);
+  if (r > 60 && g > 30 && b > 15 && r > g && r >= b && (r - Math.min(g, b)) > 12 && maks - min > 12) kulit++;
+ }
+ return total ? kulit / total : 0;
 }
 
 function heuristikWajahCam(ctx, kecil) {
@@ -4714,10 +4748,14 @@ function heuristikWajahCam(ctx, kecil) {
  var rata = j1 / n;
  var simpang = Math.sqrt(Math.max(0, j2 / n - rata * rata));
  var rataLuar = on ? o1 / on : 0;
- var kulit = rata > 45 && rata < 225 && simpang > 12;
+ var terang = rata > 45 && rata < 235 && simpang > 10;
  var beda = rata - rataLuar;
- if (!kulit) return null;
- return { x: o.cx, y: o.cy, w: o.rx * 1.15, h: o.ry * (beda > 8 ? 1.25 : 0.95) };
+ var rasioKulit = proporsiKulitCam(data, w, h, o);
+ // Wajah harus benar-benar berisi area kulit (>=22% oval) supaya kedap-kedip tidak
+ // dipicu oleh layar kosong, dinding, atau objek lain.
+ if (!terang || rasioKulit < 0.22 || beda < -6) return null;
+ _camSumberDeteksi = 'kulit';
+ return { x: o.cx, y: o.cy, w: o.rx * 1.15, h: o.ry * (beda > 8 ? 1.25 : 0.95), rasioKulit: rasioKulit };
 }
 
 function mulaiFlashLiveness() {
@@ -4836,8 +4874,15 @@ function mulaiPindaiWajah() {
     return;
    }
 
-   // wajah pas di dalam oval -> mulai flash liveness
+   // Wajah pas di dalam oval -> kedap-kedip baru dimulai setelah terdeteksi mantap
+   // (2 putaran berturut-turut), bukan langsung begitu ada objek di depan kamera.
    if (!faseLiveness) {
+    _camJejakBagus = (_camJejakBagus || 0) + 1;
+    if (_camJejakBagus < 2) {
+     setCamState('fitting', 'Wajah terdeteksi — tahan posisi…');
+     lanjut();
+     return;
+    }
     faseLiveness = true;
     setCamState('liveness', 'Tahan sebentar…');
     mulaiFlashLiveness();
@@ -5039,6 +5084,7 @@ function submitAttendanceCamera() {
  var bulanKey = attendanceMonthKey(new Date());
  clearAttendanceMatrixCache(currentUser.id, bulanKey);
  showToast('Absensi diterima. Catatan kehadiran diperbarui.');
+ keluarLayarPenuhKamera();
  loadShiftSaya();
  notifyAttendanceOwner(res.id || '');
  // Foto jangan dibuang: simpan di memori untuk diunggah ke penyimpanan. Kalau

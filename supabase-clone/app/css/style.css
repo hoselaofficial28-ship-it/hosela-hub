@@ -4410,3 +4410,34 @@ body.phone-mode #app-wrap #s-daftar.screen.active{
 .pwa-install-btn:active{transform:translateY(1px)}
 .pwa-install-close{width:26px;height:26px;border-radius:50%;border:1px solid #dbe6f6;background:#fff;color:#7b8798;
   font-size:15px;line-height:1;cursor:pointer;display:grid;place-items:center}
+
+/* ==========================================================================
+   Absensi Kamera — mode layar penuh (revisi 17 Nov 2026)
+   ========================================================================== */
+#s-absensi-camera.cam-fs{position:fixed;inset:0;z-index:60;background:#05080f}
+#s-absensi-camera.cam-fs .statusbar,
+#s-absensi-camera.cam-fs .header,
+#s-absensi-camera.cam-fs .navbar{display:none!important}
+#s-absensi-camera.cam-fs .content{padding:0!important;background:#05080f!important;min-height:100dvh;
+  display:block!important;overflow:hidden}
+#s-absensi-camera.cam-fs .office-setting-card,
+#s-absensi-camera.cam-fs .shift-saya-card,
+#s-absensi-camera.cam-fs #attendance-today,
+#s-absensi-camera.cam-fs #attendance-photo-status,
+#s-absensi-camera.cam-fs .cam-note,
+#s-absensi-camera.cam-fs .cam-controls{display:none!important}
+#s-absensi-camera.cam-fs .cam-stage{position:relative;max-width:none;width:100%;height:100dvh;margin:0;gap:0;display:block}
+#s-absensi-camera.cam-fs .cam-frame{height:100dvh;width:100%;aspect-ratio:auto;border-radius:0;box-shadow:none}
+#s-absensi-camera.cam-fs .cam-submit{position:absolute;left:14px;right:14px;
+  bottom:calc(18px + env(safe-area-inset-bottom,0px));z-index:11;margin:0;
+  padding:12px;border-radius:16px;background:rgba(6,12,24,.72);backdrop-filter:blur(10px);
+  border:1px solid rgba(255,255,255,.12);box-shadow:0 14px 34px rgba(2,6,23,.4)}
+#s-absensi-camera.cam-fs .cam-submit-title{color:rgba(255,255,255,.82)}
+#s-absensi-camera.cam-fs .cam-bottombar{display:none}
+#s-absensi-camera.cam-fs .cam-card{bottom:auto;top:50%;transform:translateY(-50%);z-index:10}
+#s-absensi-camera.cam-fs .cam-card[hidden]{display:none}
+.cam-exit{position:absolute;top:calc(12px + env(safe-area-inset-top,0px));right:12px;z-index:12;
+  width:38px;height:38px;border-radius:50%;border:1px solid rgba(255,255,255,.28);
+  background:rgba(2,6,23,.55);color:#fff;display:grid;place-items:center;cursor:pointer;backdrop-filter:blur(6px)}
+.cam-exit svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round}
+#s-absensi-camera.cam-fs .cam-topbar{padding-top:calc(10px + env(safe-area-inset-top,0px))}

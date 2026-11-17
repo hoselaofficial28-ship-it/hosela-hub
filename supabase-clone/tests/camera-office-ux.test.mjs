@@ -95,7 +95,11 @@ assert.doesNotMatch(app, /backdrop = 'rgba\(/, 'backdrop tidak boleh transparan'
 assert.doesNotMatch(app, /rgba\(8,15,32,0\.72\)/, 'warna backdrop lama (transparan) harus hilang');
 
 // --- Perbaikan 2: oval lebih lebar (68% bingkai, rasio lebar:tinggi 0.78) ---
-assert.match(app, /lebarRasio: 0\.68, rasio: 0\.78/);
+assert.match(app, /lebarRasio: 0\.74, rasio: 0\.95/);
+assert.match(app, /function proporsiKulitCam\(/);
+assert.match(app, /rasioKulit < 0\.22/);
+assert.match(app, /function masukLayarPenuhKamera\(/);
+assert.match(css, /#s-absensi-camera\.cam-fs/);
 assert.match(app, /_camGeo\.rx = \(r\.width \* _camOval\.lebarRasio\) \/ 2;/);
 assert.match(app, /_camGeo\.ry = _camGeo\.rx \/ _camOval\.rasio;/);
 assert.match(app, /function rasioOvalCam\(/);
