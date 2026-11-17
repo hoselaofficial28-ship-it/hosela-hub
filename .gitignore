@@ -21,3 +21,5 @@ supabase-clone/supabase-backup*/
 scripts/
 debug.html
 *.zip
+
+.vercel
