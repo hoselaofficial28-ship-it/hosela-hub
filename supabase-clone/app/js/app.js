@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbw6q_5ZaIGrekeBwZ5TKh6X1GpWkFHsa5i6whdwacQkTEa-vvNezHlxFMEQFKZkmm5ffQ/exec';
-var APP_VERSION = '20261117g';
+var APP_VERSION = '20261117h';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -3557,6 +3557,17 @@ function loadPeraturan() {
    if (status && status.tanggal) {
     _peraturanState.ack = status.tanggal;
     tampilkanAckSelesai(status.tanggal);
+   }
+   // Owner/Finance: lihat berapa karyawan yang sudah membaca (pendorong kepatuhan)
+   if (status && status.admin && status.targetKaryawan > 0) {
+    var meta = document.getElementById('peraturan-meta');
+    if (meta && !document.getElementById('peraturan-meta-kepatuhan')) {
+     var chip = document.createElement('span');
+     chip.className = 'peraturan-meta-chip is-owner';
+     chip.id = 'peraturan-meta-kepatuhan';
+     chip.textContent = status.sudahBaca + '/' + status.targetKaryawan + ' karyawan sudah membaca';
+     meta.appendChild(chip);
+    }
    }
   });
  }, function() { renderPeraturanDriveCard(null, isOwner); el.innerHTML = '<div class="empty-state">Gagal memuat peraturan</div>'; });

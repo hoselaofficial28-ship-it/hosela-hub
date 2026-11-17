@@ -4244,6 +4244,7 @@ body.phone-mode #app-wrap #s-daftar.screen.active{
 .peraturan-meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
 .peraturan-meta-chip{font-size:11px;font-weight:650;color:#4a5a72;background:#fff;border:1px solid #e2eaf6;
   border-radius:999px;padding:5px 10px}
+.peraturan-meta-chip.is-owner{color:#0f5132;background:#ecfdf3;border-color:#b7e7c9}
 .peraturan-progress{margin-top:16px}
 .peraturan-progress-head{display:flex;justify-content:space-between;align-items:baseline;font-size:12px;color:#5b6b82;margin-bottom:6px}
 .peraturan-progress-head b{font-size:13px;color:#1557d8;font-variant-numeric:tabular-nums}
