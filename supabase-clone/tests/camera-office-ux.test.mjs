@@ -1,4 +1,4 @@
-﻿import assert from 'node:assert/strict';
+import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 const html = readFileSync(new URL('../app/index.html', import.meta.url), 'utf8');
@@ -40,14 +40,11 @@ assert.match(css, /\.office-summary\{[\s\S]*?display:flex/);
 assert.match(css, /\.office-summary\[hidden\]\{display:none\}/);
 assert.match(css, /\.cam-loc\{display:inline-flex/);
 
-// --- Kamera absensi desain baru (17 Nov 2026):
-//     kamera menyala sendiri, cincin warna berputar saat memindai wajah,
-//     lalu karyawan tinggal pilih Absen Masuk / Absen Pulang.
+// --- Kamera absensi (17 Nov 2026):
+//     Face Oval Cutout Overlay + flash liveness berwarna, lalu pilih Masuk/Pulang.
 assert.match(html, /id="cam-stage"/);
-assert.match(html, /class="cam-ring"/);
+assert.match(html, /id="cam-overlay"/);
 assert.match(html, /id="cam-status-chip"/);
-assert.match(html, /class="cam-corners"/);
-assert.match(html, /class="cam-scanline"/);
 assert.match(html, /id="cam-card"/);
 assert.match(html, /id="cam-card-nama"/);
 assert.match(html, /id="cam-card-id"/);
@@ -58,35 +55,55 @@ assert.match(html, /id="absen-masuk-btn"[^>]*>Absen Masuk</);
 assert.match(html, /id="absen-pulang-btn"[^>]*>Absen Pulang</);
 assert.match(html, /id="camera-retake-btn"[^>]*onclick="ulangiFotoAbsen\(\)"/);
 assert.match(html, /id="attendance-type"/);
-// tombol "Aktifkan Kamera" bukan lagi langkah wajib
+// tombol "Aktifkan Kamera" bukan lagi langkah wajib, cincin berputar sudah tidak ada
 assert.doesNotMatch(html, />Aktifkan Kamera</);
 assert.doesNotMatch(html, /id="camera-capture-btn"/);
+assert.doesNotMatch(html, /class="cam-ring"/);
+assert.doesNotMatch(html, /class="cam-scanline"/);
 
-// cincin: gradasi berputar, dan berubah warna mengikuti keadaan
+// --- UI overlay: lubang oval transparan, badge di atas oval, kartu identitas ---
 assert.match(css, /\.cam-stage\{/);
-assert.match(css, /\.cam-frame \.cam-ring\{[^}]*border:2px solid rgba\(236,72,153/);
-assert.match(css, /@keyframes cam-scan\{/);
-assert.match(css, /\.cam-scanline\{[^}]*animation:cam-scan/);
-assert.match(css, /\.cam-corners i\{position:absolute;width:34px;height:34px;border:3px solid #ec4899/);
+assert.match(css, /\.cam-overlay\{position:absolute;inset:0/);
+assert.match(css, /\.cam-chip\{position:absolute;top:14px;left:50%/);
 assert.doesNotMatch(css, /animation:cam-spin/);
-assert.match(css, /\.cam-stage\[data-state="ready"\] \.cam-frame \.cam-ring\{border-color:#22c55e/);
-assert.match(css, /\.cam-stage\[data-state="ready"\] \.cam-scanline\{display:none\}/);
-assert.match(css, /\.cam-stage\[data-state="error"\] \.cam-frame \.cam-ring\{border-color:#ef4444/);
-assert.match(css, /\.cam-stage\[data-state="error"\] \.cam-corners i\{border-color:#ef4444\}/);
 assert.match(css, /\.cam-pick-in\{background:linear-gradient/);
 assert.match(css, /\.cam-pick-out\{background:linear-gradient/);
 assert.match(css, /\.cam-submit-grid\{display:grid;grid-template-columns:1fr 1fr/);
 
-// alur kamera otomatis
+// --- Logika: gambar cutout (even-odd), cincin progres, flash 4 warna, sukses ---
+assert.match(app, /function ukuranOverlayCam\(/);
+assert.match(app, /function gambarOverlayCam\(/);
+assert.match(app, /ctx\.ellipse\(_camGeo\.cx, _camGeo\.cy, _camGeo\.rx, _camGeo\.ry/);
+assert.match(app, /ctx\.fill\('evenodd'\)/);
+assert.match(app, /_camFlashColors = \['#ec4899', '#3b82f6', '#22c55e', '#f59e0b'\]/);
+assert.match(app, /function mulaiFlashLiveness\(/);
+assert.match(app, /var durasi = 2200;/);
+assert.match(app, /function selesaikanVerifikasiCam\(/);
+assert.match(app, /function bunyiSuksesCam\(/);
+assert.match(app, /setCamState\('verified', 'Verifikasi berhasil'\)/);
+assert.match(app, /'Posisikan wajah di dalam lingkaran'/);
+assert.match(app, /'Tahan sebentar/);
+assert.match(app, /'Isi lingkaran dengan wajah, jangan terlalu jauh'/);
+assert.match(app, /window\.addEventListener\('resize', function \(\) \{ if \(typeof ukuranOverlayCam/);
+
+// --- Deteksi wajah: MediaPipe (ringan) + cadangan heuristik ---
+assert.match(app, /function muatDeteksiWajah\(/);
+assert.match(app, /@mediapipe\/face_detection@/);
+assert.match(app, /model: 'short', minDetectionConfidence: 0\.55/);
+assert.match(app, /function wajahDalamOval\(/);
+assert.match(app, /function heuristikWajahCam\(/);
+assert.match(app, /_camDeteksiGagal = true/);
+
+// --- Alur lama tetap utuh (capture + submit ke backend yang sama) ---
 assert.match(app, /function mulaiPindaiWajah\(/);
 assert.match(app, /function tampilkanKartuAbsen\(/);
 assert.match(app, /function kodeKaryawan\(/);
 assert.match(app, /tampilkanKartuAbsen\('Menunggu pilihan'\)/);
 assert.match(app, /sembunyikanKartuAbsen\(\);/);
 assert.match(backendSrc, /legacyId: p\.legacy_id/);
-assert.match(app, /_camJejakBagus >= 4/);
 assert.match(app, /function ulangiFotoAbsen\(/);
 assert.match(app, /function kirimAbsenDariKamera\(/);
+assert.match(app, /gasCall\('submitAbsensiCamera'/);
 assert.match(app, /function loadAbsensiCamera\(\) \{[\s\S]{0,900}startAttendanceCamera\(\);/);
 assert.match(app, /getUserMedia\(\{ video: \{ facingMode: 'user'/);
 

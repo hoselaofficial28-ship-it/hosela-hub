@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbw6q_5ZaIGrekeBwZ5TKh6X1GpWkFHsa5i6whdwacQkTEa-vvNezHlxFMEQFKZkmm5ffQ/exec';
-var APP_VERSION = '20261117b';
+var APP_VERSION = '20261117d';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -4034,15 +4034,259 @@ function sembunyikanKartuAbsen() {
  if (kartu) kartu.hidden = true;
 }
 
+// ===== Face Oval Cutout Overlay + Color Flash Liveness (17 Nov 2026) =====
+// Kanvas overlay menutup seluruh bingkai kamera dengan warna solid, menyisakan
+// lubang oval transparan sebagai panduan wajah, plus cincin progres + badge teks.
+var _camOval = { cx: 0.5, cy: 0.5, rx: 0.29, ry: 0.34 }; // rasio terhadap bingkai
+var _camGeo = { w: 0, h: 0, cx: 0, cy: 0, rx: 0, ry: 0, dpr: 1 };
+var _camSesi = 0;
+var _camSedangDeteksi = false;
+var _camFlashColors = ['#ec4899', '#3b82f6', '#22c55e', '#f59e0b'];
+var _camFlashIndex = 0;
+var _camFlashTimer = null;
+var _camProgress = 0;
+var _camRaf = null;
+var _camDeteksiLib = null;
+var _camDeteksiGagal = false;
+var _camHasilDeteksi = null;
+var _camStatusWarna = { backdrop: 'rgba(8,15,32,0.72)', ring: 'rgba(236,72,153,0.85)' };
+
+function ukuranOverlayCam() {
+ var frame = document.getElementById('cam-frame');
+ var cv = document.getElementById('cam-overlay');
+ if (!frame || !cv) return;
+ var r = frame.getBoundingClientRect();
+ var dpr = Math.min(2, window.devicePixelRatio || 1);
+ _camGeo.w = r.width; _camGeo.h = r.height; _camGeo.dpr = dpr;
+ cv.width = Math.round(r.width * dpr);
+ cv.height = Math.round(r.height * dpr);
+ cv.style.width = r.width + 'px';
+ cv.style.height = r.height + 'px';
+ _camGeo.cx = r.width * _camOval.cx;
+ _camGeo.cy = r.height * _camOval.cy;
+ _camGeo.rx = r.width * _camOval.rx;
+ _camGeo.ry = r.height * _camOval.ry;
+ gambarOverlayCam();
+}
+
+// Gambar backdrop + lubang oval + cincin + tanda centang.
+function gambarOverlayCam() {
+ var cv = document.getElementById('cam-overlay');
+ if (!cv || !_camGeo.w) return;
+ var ctx = cv.getContext('2d');
+ var dpr = _camGeo.dpr;
+ ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+ ctx.clearRect(0, 0, _camGeo.w, _camGeo.h);
+
+ var stage = document.getElementById('cam-stage');
+ var state = stage ? stage.getAttribute('data-state') : 'idle';
+ var backdrop = _camStatusWarna.backdrop;
+ var ring = _camStatusWarna.ring;
+ if (state === 'verified') { backdrop = 'rgba(6,78,59,0.55)'; ring = '#22c55e'; }
+ else if (state === 'liveness') { ring = _camFlashColors[_camFlashIndex % _camFlashColors.length]; backdrop = 'rgba(8,15,32,0.6)'; }
+ else if (state === 'fitting') { ring = '#f59e0b'; }
+
+ // backdrop + lubang oval (aturan even-odd = bagian dalam oval tidak dicat)
+ ctx.save();
+ ctx.beginPath();
+ ctx.rect(0, 0, _camGeo.w, _camGeo.h);
+ ctx.ellipse(_camGeo.cx, _camGeo.cy, _camGeo.rx, _camGeo.ry, 0, 0, Math.PI * 2);
+ ctx.fillStyle = backdrop;
+ ctx.fill('evenodd');
+ ctx.restore();
+
+ // cincin luar oval
+ ctx.beginPath();
+ ctx.ellipse(_camGeo.cx, _camGeo.cy, _camGeo.rx, _camGeo.ry, 0, 0, Math.PI * 2);
+ ctx.lineWidth = 4;
+ ctx.strokeStyle = ring;
+ ctx.stroke();
+
+ // cincin progres (busur) saat liveness
+ if (state === 'liveness' || state === 'verified') {
+  ctx.beginPath();
+  ctx.ellipse(_camGeo.cx, _camGeo.cy, _camGeo.rx + 7, _camGeo.ry + 7, 0, -Math.PI / 2,
+   -Math.PI / 2 + Math.PI * 2 * Math.max(0.02, Math.min(1, _camProgress)));
+  ctx.lineWidth = 5;
+  ctx.lineCap = 'round';
+  ctx.strokeStyle = state === 'verified' ? '#22c55e' : ring;
+  ctx.stroke();
+ }
+
+ // tanda centang ketika terverifikasi
+ if (state === 'verified') {
+  ctx.beginPath();
+  ctx.lineWidth = 5;
+  ctx.lineCap = 'round';
+  ctx.strokeStyle = '#22c55e';
+  ctx.moveTo(_camGeo.cx - 16, _camGeo.cy + 2);
+  ctx.lineTo(_camGeo.cx - 4, _camGeo.cy + 15);
+  ctx.lineTo(_camGeo.cx + 20, _camGeo.cy - 14);
+  ctx.stroke();
+ }
+}
+
+function badgeCam(teks) {
+ var el = document.getElementById('cam-status-chip');
+ if (el) el.textContent = teks;
+}
+
+// Suara singkat saat verifikasi berhasil (tanpa file audio).
+function bunyiSuksesCam() {
+ try {
+  var AC = window.AudioContext || window.webkitAudioContext;
+  if (!AC) return;
+  var ac = new AC();
+  var t = ac.currentTime;
+  [880, 1320].forEach(function(frek, i) {
+   var osc = ac.createOscillator();
+   var gain = ac.createGain();
+   osc.type = 'sine';
+   osc.frequency.value = frek;
+   gain.gain.setValueAtTime(0.0001, t + i * 0.11);
+   gain.gain.exponentialRampToValueAtTime(0.16, t + i * 0.11 + 0.02);
+   gain.gain.exponentialRampToValueAtTime(0.0001, t + i * 0.11 + 0.16);
+   osc.connect(gain); gain.connect(ac.destination);
+   osc.start(t + i * 0.11); osc.stop(t + i * 0.11 + 0.18);
+  });
+  setTimeout(function() { try { ac.close(); } catch (e) {} }, 600);
+ } catch (e) {}
+}
+
+// Muat MediaPipe Face Detection (paling ringan untuk web: 1 skrip + wasm, model "short").
+// Kalau gagal (offline/CDN diblokir), sistem otomatis memakai analisis area oval.
+function muatDeteksiWajah() {
+ if (_camDeteksiLib || _camDeteksiGagal) return Promise.resolve(_camDeteksiLib);
+ var VERSI = '0.4.1646425229';
+ var DASAR = 'https://cdn.jsdelivr.net/npm/@mediapipe/face_detection@' + VERSI + '/';
+ return new Promise(function(resolve) {
+  if (typeof window.FaceDetection === 'function') {
+   siapkanDeteksi();
+   return resolve(_camDeteksiLib);
+  }
+  var skrip = document.createElement('script');
+  skrip.src = DASAR + 'face_detection.js';
+  skrip.crossOrigin = 'anonymous';
+  skrip.onload = function() { siapkanDeteksi(); resolve(_camDeteksiLib); };
+  skrip.onerror = function() { _camDeteksiGagal = true; resolve(null); };
+  document.head.appendChild(skrip);
+
+  function siapkanDeteksi() {
+   try {
+    var FD = window.FaceDetection;
+    if (!FD) throw new Error('FaceDetection tidak tersedia');
+    var det = new FD({ locateFile: function(f) { return DASAR + f; } });
+    det.setOptions({ model: 'short', minDetectionConfidence: 0.55 });
+    det.onResults(function(r) {
+     var bb = r && r.detections && r.detections[0] && r.detections[0].boundingBox;
+     _camHasilDeteksi = bb ? { x: bb.xCenter, y: bb.yCenter, w: bb.width, h: bb.height } : null;
+    });
+    _camDeteksiLib = det;
+   } catch (e) { _camDeteksiGagal = true; _camDeteksiLib = null; }
+  }
+ });
+
+}
+
+// Apakah wajah berada di dalam oval dan ukurannya wajar?
+function wajahDalamOval(wajah) {
+ if (!wajah) return false;
+ var dx = (wajah.x - _camOval.cx) / (_camOval.rx * 0.72);
+ var dy = (wajah.y - _camOval.cy) / (_camOval.ry * 0.72);
+ var dekatTengah = Math.sqrt(dx * dx + dy * dy) <= 1;
+ var rasio = wajah.h / (_camOval.ry * 2);
+ var ukuranWajar = rasio > 0.45 && rasio < 1.5;
+ return dekatTengah && ukuranWajar;
+}
+
+// Deteksi wajah: MediaPipe kalau tersedia, kalau tidak pakai analisis terang/kontras
+// di dalam area oval (bukan pengenalan identitas, hanya "ada wajah di depan kamera").
+function deteksiWajahCam(video, ctx, kecil, callback) {
+ if (_camDeteksiLib) {
+  try {
+   Promise.resolve(_camDeteksiLib.send({ image: video })).then(function() {
+    callback(_camHasilDeteksi);
+   }).catch(function() { callback(heuristikWajahCam(ctx, kecil)); });
+   return;
+  } catch (e) { /* lanjut ke heuristik */ }
+ }
+ callback(heuristikWajahCam(ctx, kecil));
+}
+
+function heuristikWajahCam(ctx, kecil) {
+ var w = kecil.width, h = kecil.height;
+ try { ctx.drawImage(document.getElementById('attendance-video'), 0, 0, w, h); } catch (e) { return null; }
+ var data;
+ try { data = ctx.getImageData(0, 0, w, h).data; } catch (e) { return null; }
+ var j1 = 0, j2 = 0, n = 0, o1 = 0, on = 0;
+ var x0 = _camOval.cx * w, y0 = _camOval.cy * h, rx = _camOval.rx * w, ry = _camOval.ry * h;
+ for (var i = 0; i < data.length; i += 4) {
+  var px = (i / 4) % w, py = ((i / 4) / w) | 0;
+  var l = data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114;
+  var dx = (px - x0) / (rx * 0.8), dy = (py - y0) / (ry * 0.8);
+  if (dx * dx + dy * dy <= 1) { j1 += l; j2 += l * l; n++; }
+  else { o1 += l; on++; }
+ }
+ if (!n) return null;
+ var rata = j1 / n;
+ var simpang = Math.sqrt(Math.max(0, j2 / n - rata * rata));
+ var rataLuar = on ? o1 / on : 0;
+ var kulit = rata > 45 && rata < 225 && simpang > 12;
+ var beda = rata - rataLuar;
+ if (!kulit) return null;
+ // perkiraan kotak wajah dari bagian tengah oval
+ return {
+  x: _camOval.cx + (beda > 8 ? 0 : 0),
+  y: _camOval.cy,
+  w: _camOval.rx * 1.15,
+  h: _camOval.ry * (beda > 8 ? 1.25 : 0.95),
+ };
+}
+
+function mulaiFlashLiveness() {
+ _camFlashIndex = 0;
+ _camProgress = 0;
+ var mulai = Date.now();
+ var durasi = 2200;
+ if (_camFlashTimer) clearInterval(_camFlashTimer);
+ _camFlashTimer = setInterval(function() {
+  var lewat = Date.now() - mulai;
+  _camProgress = Math.min(1, lewat / durasi);
+  _camFlashIndex++;
+  gambarOverlayCam();
+  if (lewat >= durasi) {
+   clearInterval(_camFlashTimer);
+   _camFlashTimer = null;
+   selesaikanVerifikasiCam();
+  }
+ }, 220);
+}
+
+function hentikanFlashLiveness() {
+ if (_camFlashTimer) { clearInterval(_camFlashTimer); _camFlashTimer = null; }
+ _camProgress = 0;
+}
+
+function selesaikanVerifikasiCam() {
+ setCamState('verified', 'Verifikasi berhasil');
+ bunyiSuksesCam();
+ gambarOverlayCam();
+ setTimeout(function() {
+  if (_camSudahAmbil) return;
+  captureAttendancePhoto(true);
+ }, 420);
+}
+
 function setCamState(state, teks) {
  var stage = document.getElementById('cam-stage');
  if (stage) stage.setAttribute('data-state', state);
- var chip = document.getElementById('cam-status-chip');
- if (chip && teks) chip.textContent = teks;
+ if (teks) badgeCam(teks);
+ gambarOverlayCam();
 }
 
 function hentikanPindai() {
  if (_camScanTimer) { clearTimeout(_camScanTimer); _camScanTimer = null; }
+ hentikanFlashLiveness();
  _camJejakBagus = 0;
 }
 
@@ -4071,58 +4315,58 @@ function resetCameraUi() {
 function mulaiPindaiWajah() {
  hentikanPindai();
  _camSudahAmbil = false;
- setCamState('scanning', 'Dekatkan wajah ke kamera');
+ _camProgress = 0;
+ ukuranOverlayCam();
+ setCamState('scanning', 'Posisikan wajah di dalam lingkaran');
+
  var video = document.getElementById('attendance-video');
  if (!video) return;
+
  var kecil = document.createElement('canvas');
  kecil.width = 96; kecil.height = 128;
  var ctx = kecil.getContext('2d', { willReadFrequently: true });
+ var faseLiveness = false;
+
+ muatDeteksiWajah();
 
  function lanjut() {
   if (_camSudahAmbil) return;
-  _camScanTimer = setTimeout(analisa, 260);
+  _camScanTimer = setTimeout(analisa, 220);
  }
 
  function analisa() {
   if (_camSudahAmbil) return;
   if (!video.videoWidth || video.paused || video.readyState < 2) { lanjut(); return; }
-  var bagus = false;
-  try {
-   ctx.drawImage(video, 0, 0, kecil.width, kecil.height);
-   var data = ctx.getImageData(0, 0, kecil.width, kecil.height).data;
-   var n = 0, j1 = 0, j2 = 0, t1 = 0, tn = 0;
-   for (var i = 0; i < data.length; i += 4) {
-    var baris = ((i / 4) / kecil.width) | 0;
-    var l = data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114;
-    j1 += l; j2 += l * l; n++;
-    if (baris > kecil.height * 0.18 && baris < kecil.height * 0.82) { t1 += l; tn++; }
+
+  deteksiWajahCam(video, ctx, kecil, function(wajah) {
+   if (_camSudahAmbil) return;
+   var pas = wajahDalamOval(wajah);
+
+   if (!wajah) {
+    if (faseLiveness) { faseLiveness = false; hentikanFlashLiveness(); }
+    _camJejakBagus = 0;
+    setCamState('scanning', 'Posisikan wajah di dalam lingkaran');
+    lanjut();
+    return;
    }
-   var rata = n ? j1 / n : 0;
-   var simpangan = Math.sqrt(Math.max(0, (n ? j2 / n : 0) - rata * rata));
-   var rataTengah = tn ? t1 / tn : 0;
-   bagus = rata > 35 && rata < 215 && simpangan > 14 && rataTengah > 30;
-  } catch (e) { bagus = false; }
 
-  if (_camDetektor && typeof _camDetektor.detect === 'function') {
-   _camDetektor.detect(video).then(function(hasil) {
-    proses(hasil && hasil.length > 0 ? bagus : false);
-   }).catch(function() { proses(bagus); });
-  } else {
-   proses(bagus);
-  }
- }
+   if (!pas) {
+    if (faseLiveness) { faseLiveness = false; hentikanFlashLiveness(); }
+    _camJejakBagus = 0;
+    setCamState('fitting', 'Isi lingkaran dengan wajah, jangan terlalu jauh');
+    lanjut();
+    return;
+   }
 
- function proses(bagus) {
-  if (_camSudahAmbil) return;
-  if (bagus) {
-   _camJejakBagus++;
-   if (_camJejakBagus === 2) setCamState('locking', 'Wajah terdeteksi — tahan sebentar…');
-   if (_camJejakBagus >= 4) { setCamState('ready', 'Wajah tertangkap'); captureAttendancePhoto(true); return; }
-  } else {
-   _camJejakBagus = 0;
-   setCamState('scanning', 'Dekatkan wajah ke kamera');
-  }
-  lanjut();
+   // wajah pas di dalam oval -> mulai flash liveness
+   if (!faseLiveness) {
+    faseLiveness = true;
+    setCamState('liveness', 'Tahan sebentar…');
+    mulaiFlashLiveness();
+    return;
+   }
+   lanjut();
+  });
  }
 
  analisa();
@@ -4160,7 +4404,8 @@ function startAttendanceCamera() {
   _attendanceStream = stream;
   if (video) { video.srcObject = stream; video.style.display = 'block'; video.play().catch(function(){}); }
   if (placeholder) placeholder.style.display = 'none';
-  setCamState('scanning', 'Dekatkan wajah ke kamera');
+  ukuranOverlayCam();
+  setCamState('scanning', 'Posisikan wajah di dalam lingkaran');
   mulaiPindaiWajah();
  })
  .catch(function(e) {
@@ -4203,7 +4448,7 @@ function captureAttendancePhoto(otomatis) {
  video.style.display = 'none';
  stopAttendanceCamera();
  var ukuranKb = Math.round(attendanceDataUrlByteLength(_attendancePhotoData) / 1024);
- setCamState('ready', 'Foto siap');
+ setCamState('verified', 'Verifikasi berhasil');
  tampilkanKartuAbsen('Menunggu pilihan');
  var kotakPilih = document.getElementById('cam-submit');
  if (kotakPilih) kotakPilih.hidden = false;
@@ -5467,3 +5712,11 @@ window.onload = function() {
  }, 450);
 
 };
+
+
+// overlay kamera ikut menyesuaikan ukuran layar (HP diputar / keyboard muncul)
+(function () {
+ if (typeof window === 'undefined') return;
+ window.addEventListener('resize', function () { if (typeof ukuranOverlayCam === 'function') ukuranOverlayCam(); });
+ window.addEventListener('orientationchange', function () { setTimeout(function () { if (typeof ukuranOverlayCam === 'function') ukuranOverlayCam(); }, 250); });
+})();
