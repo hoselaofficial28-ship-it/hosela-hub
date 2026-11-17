@@ -4181,12 +4181,22 @@ body.phone-mode #app-wrap #s-daftar.screen.active{
 .cam-submit[hidden]{display:none}
 .cam-submit-title{font-size:12px;font-weight:700;color:#475569;text-align:center;letter-spacing:.02em}
 .cam-submit-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.cam-pick{font:inherit;font-size:15px;font-weight:750;padding:16px 12px;border-radius:16px;cursor:pointer;
-  border:none;color:#fff;box-shadow:0 10px 22px rgba(15,23,42,.16)}
-.cam-pick-in{background:linear-gradient(135deg,#1557d8,#2563eb)}
-.cam-pick-out{background:linear-gradient(135deg,#c9971f,#e0ad2b)}
-.cam-pick:disabled{opacity:.5;cursor:not-allowed;box-shadow:none}
-.cam-pick:active{transform:translateY(1px)}
+/* Tombol pilih absensi: gradasi tipis mengikuti gaya tombol web (biru = aksi utama) */
+.cam-pick{font:inherit;font-size:15px;font-weight:800;letter-spacing:-.01em;padding:16px 12px;
+  border-radius:14px;cursor:pointer;border:1px solid transparent;min-height:54px;
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  transition:transform .14s ease,box-shadow .18s ease,background .18s ease,filter .18s ease}
+.cam-pick-in{background:linear-gradient(135deg,#2f74f0 0%,#1557d8 58%,#1249bd 100%);
+  color:#fff;border-color:#1249bd;
+  box-shadow:0 10px 22px rgba(21,87,216,.26),inset 0 1px 0 rgba(255,255,255,.28)}
+.cam-pick-out{background:linear-gradient(135deg,#ffffff 0%,#eef4ff 60%,#e4ecfb 100%);
+  color:#1557d8;border-color:#cfe0ff;
+  box-shadow:0 8px 18px rgba(21,87,216,.10),inset 0 1px 0 rgba(255,255,255,.9)}
+.cam-pick:not(:disabled):hover{filter:brightness(1.03)}
+.cam-pick-in:not(:disabled):active{background:linear-gradient(135deg,#1d5fe0 0%,#1249bd 100%);transform:translateY(1px)}
+.cam-pick-out:not(:disabled):active{background:linear-gradient(135deg,#eef4ff 0%,#dbe7fb 100%);transform:translateY(1px)}
+.cam-pick:focus-visible{outline:3px solid rgba(21,87,216,.35);outline-offset:2px}
+.cam-pick:disabled{opacity:.55;cursor:not-allowed;box-shadow:none;filter:saturate(.6)}
 .cam-note{font-size:11px;line-height:1.55;color:#64748b;margin:2px 0 0;text-align:center}
 @media (max-width:560px){
  .cam-stage{max-width:100%}
