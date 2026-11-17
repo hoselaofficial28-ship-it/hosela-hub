@@ -9,14 +9,14 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=20261117l">
+<link rel="stylesheet" href="css/style.css?v=20261117m">
 
 
 
 
 
 
-<link rel="manifest" href="/manifest.webmanifest?v=20261117l">
+<link rel="manifest" href="/manifest.webmanifest?v=20261117m">
 <meta name="theme-color" content="#1557d8">
 <meta name="application-name" content="Hosela Hub">
 <meta name="mobile-web-app-capable" content="yes">
@@ -126,31 +126,58 @@
 </div>
 
 <!-- SIDE MENU OVERLAY -->
-<div id="side-menu-overlay" onclick="closeSideMenu()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:1000"></div>
-<div id="side-menu" style="display:none;position:fixed;top:0;right:0;width:75%;max-width:280px;height:100%;background:#fff;z-index:1001;box-shadow:-4px 0 20px rgba(0,0,0,0.2);flex-direction:column;overflow-y:auto;transform:translateX(100%);transition:transform .28s cubic-bezier(.4,0,.2,1)">
- <div style="background:var(--blue);padding:32px 20px 20px;color:#fff">
- <div style="font-size:24px;font-weight:800" id="sm-nama">?</div>
- <div style="font-size:12px;opacity:.8" id="sm-jabatan">?</div>
+<div id="side-menu-overlay" onclick="closeSideMenu()" style="display:none"></div>
+<aside id="side-menu" role="dialog" aria-modal="true" aria-label="Menu akun" style="display:none;transform:translateX(100%)">
+ <header class="sm-head">
+  <button type="button" class="sm-close" onclick="closeSideMenu()" aria-label="Tutup menu">
+   <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+  </button>
+  <div class="sm-avatar" id="sm-avatar" aria-hidden="true">?</div>
+  <div class="sm-ident">
+   <div class="sm-name" id="sm-nama">?</div>
+   <div class="sm-role" id="sm-jabatan">?</div>
+   <div class="sm-id-chip" id="sm-id-chip" hidden></div>
+  </div>
+ </header>
+ <div class="sm-body">
+  <div class="sm-label">Bantuan &amp; akun</div>
+  <button type="button" class="sm-item" onclick="openPanduan()">
+   <span class="sm-icon sm-icon-book" aria-hidden="true"></span>
+   <span class="sm-text"><b>Panduan Aplikasi</b><small>Cara penggunaan Hosela Hub</small></span>
+   <span class="sm-chev" aria-hidden="true"></span>
+  </button>
+  <button type="button" class="sm-item" onclick="bukaEmailSettings()">
+   <span class="sm-icon sm-icon-mail" aria-hidden="true"></span>
+   <span class="sm-text"><b>Email Saya</b><small id="sm-email">Belum diisi</small></span>
+   <span class="sm-chev" aria-hidden="true"></span>
+  </button>
+  <div id="sm-email-form" style="display:none">
+   <label class="sm-form-label" for="sm-email-input">Alamat email</label>
+   <input type="email" id="sm-email-input" class="form-input" placeholder="nama@email.com" autocomplete="email">
+   <button type="button" class="btn btn-primary sm-form-btn" onclick="simpanEmail()">Simpan email</button>
+   <p class="sm-form-help">Email baru aktif setelah tautan konfirmasi dari Supabase diklik.</p>
+  </div>
+  <button type="button" class="sm-item" id="install-app-row" onclick="installApp()">
+   <span class="sm-icon sm-icon-install" aria-hidden="true"></span>
+   <span class="sm-text"><b>Install Aplikasi</b><small>Tambahkan ke layar utama</small></span>
+   <span class="sm-chev" aria-hidden="true"></span>
+  </button>
+  <button type="button" class="sm-item" onclick="closeSideMenu(); goTo('s-ganti-pin')">
+   <span class="sm-icon sm-icon-lock" aria-hidden="true"></span>
+   <span class="sm-text"><b>Ganti Sandi</b><small>Ubah sandi login kamu</small></span>
+   <span class="sm-chev" aria-hidden="true"></span>
+  </button>
+  <div class="sm-label sm-label-gap">Sesi</div>
+  <button type="button" class="sm-item sm-item-danger" onclick="doLogout()">
+   <span class="sm-icon sm-icon-logout" aria-hidden="true"></span>
+   <span class="sm-text"><b>Keluar dari akun</b><small>Akhiri sesi di perangkat ini</small></span>
+   <span class="sm-chev" aria-hidden="true"></span>
+  </button>
  </div>
- <div style="padding:16px;flex:1">
- <div onclick="openPanduan()" style="display:flex;align-items:center;gap:12px;padding:12px;border-radius:8px;cursor:pointer;margin-bottom:4px" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">
- <span class="side-icon side-book"></span><div><div style="font-size:13px;font-weight:600">Panduan Aplikasi</div><div style="font-size:11px;color:var(--text-muted)">Cara penggunaan Hosela Hub</div></div>
- </div>
- <div onclick="bukaEmailSettings()" style="display:flex;align-items:center;gap:12px;padding:12px;border-radius:8px;cursor:pointer;margin-bottom:4px" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">
- <span class="side-icon side-mail"></span><div><div style="font-size:13px;font-weight:600">Email Saya</div><div style="font-size:11px;color:var(--text-muted)" id="sm-email">Belum diisi</div></div>
- </div>
- <div id="install-app-row" onclick="installApp()" style="display:flex;align-items:center;gap:12px;padding:12px;border-radius:8px;cursor:pointer;margin-bottom:4px" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">
- <span class="side-icon side-install"></span><div><div style="font-size:13px;font-weight:600">Install Aplikasi</div><div style="font-size:11px;color:var(--text-muted)">Tambahkan ke layar utama</div></div>
- </div>
- <div id="sm-email-form" style="display:none;background:#f7f9fc;border-radius:8px;padding:12px;margin-bottom:8px">
- <input type="email" id="sm-email-input" class="form-input" placeholder="email@gmail.com" style="margin-bottom:8px">
- <button class="btn btn-primary" style="width:100%;padding:8px;font-size:12px" onclick="simpanEmail()">Simpan Email</button>
- </div>
- </div>
- <div style="padding:16px;border-top:1px solid var(--gray-border)">
- <button onclick="doLogout()" style="width:100%;padding:12px;background:#fee2e2;color:#dc2626;border:none;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer"> Logout</button>
- </div>
-</div>
+ <footer class="sm-foot">
+  <span class="sm-version" id="sm-version">Hosela Hub</span>
+ </footer>
+</aside>
 
 <!-- HOME -->
 <div class="screen" id="s-home">
@@ -1013,11 +1040,11 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="js/supabase-client.js"></script>
 <script src="js/photo-storage.js?v=20261015e"></script>
-<script src="js/real-backend.js?v=20261117l"></script>
+<script src="js/real-backend.js?v=20261117m"></script>
 <script src="js/dashboard-reports.js?v=20261015e"></script>
-<script src="js/mock-backend.js?v=20261117l"></script>
-<script src="js/app.js?v=20261117l"></script>
-<script src="js/payroll.js?v=20261117l"></script>
-<script src="js/preview.js?v=20261117l"></script>
+<script src="js/mock-backend.js?v=20261117m"></script>
+<script src="js/app.js?v=20261117m"></script>
+<script src="js/payroll.js?v=20261117m"></script>
+<script src="js/preview.js?v=20261117m"></script>
 </body>
 </html>

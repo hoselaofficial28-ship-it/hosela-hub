@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbw6q_5ZaIGrekeBwZ5TKh6X1GpWkFHsa5i6whdwacQkTEa-vvNezHlxFMEQFKZkmm5ffQ/exec';
-var APP_VERSION = '20261117l';
+var APP_VERSION = '20261117m';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -3711,6 +3711,31 @@ function kirimNotifPeraturan() {
  });
 }
 
+function isiIdentitasSideMenu() {
+ var u = currentUser;
+ if (!u) return;
+ var nama = u.nama || '';
+ var elNama = document.getElementById('sm-nama');
+ var elJab = document.getElementById('sm-jabatan');
+ var avatar = document.getElementById('sm-avatar');
+ var versi = document.getElementById('sm-version');
+ if (elNama) elNama.textContent = nama || '—';
+ var bagian = u.bagian || '';
+ var jabatan = u.jabatan || '';
+ var roleTeks = (jabatan && bagian && jabatan !== bagian) ? (jabatan + ' · ' + bagian) : (jabatan || bagian || 'Karyawan');
+ if (elJab) elJab.textContent = roleTeks;
+ var chip = document.getElementById('sm-id-chip');
+ if (chip) {
+  var kode = u.legacyId || u.legacy_id || '';
+  if (kode) { chip.hidden = false; chip.textContent = kode; } else { chip.hidden = true; }
+ }
+ if (avatar) {
+  var inisial = nama.trim().split(/\s+/).map(function(k){ return k.charAt(0); }).join('').slice(0, 2).toUpperCase();
+  avatar.textContent = inisial || '?';
+ }
+ if (versi) versi.textContent = 'Hosela Hub · v' + (typeof APP_VERSION === 'string' ? APP_VERSION : '');
+}
+
 function openSideMenu() {
  var menu = document.getElementById('side-menu');
  var overlay = document.getElementById('side-menu-overlay');
@@ -3721,11 +3746,11 @@ function openSideMenu() {
  menu.style.zIndex = '9001';
  menu.style.display = 'flex';
  overlay.style.display = 'block';
+ overlay.classList.add('is-open');
  setTimeout(function(){ menu.style.transform = 'translateX(0)'; }, 10);
  // Isi data user
  if (currentUser) {
- document.getElementById('sm-nama').textContent = currentUser.nama || '—';
- document.getElementById('sm-jabatan').textContent = currentUser.jabatan + ' · ' + currentUser.bagian;
+ isiIdentitasSideMenu();
  // Load email dari USERS
  gasCall('getPengaturan', [], function(cfg){ /* panduan link */ window._cfg = cfg||{}; });
  }
@@ -3741,6 +3766,7 @@ function closeSideMenu(fromHistory) {
  }
  _sideMenuOpen = false;
  menu.style.transform = 'translateX(100%)';
+ overlay.classList.remove('is-open');
  overlay.style.display = 'none';
  setTimeout(function(){ menu.style.display = 'none'; }, 280);
 }
