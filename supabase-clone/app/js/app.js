@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbw6q_5ZaIGrekeBwZ5TKh6X1GpWkFHsa5i6whdwacQkTEa-vvNezHlxFMEQFKZkmm5ffQ/exec';
-var APP_VERSION = '20261117u';
+var APP_VERSION = '20261117w';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -4456,19 +4456,34 @@ function ukuranOverlayCam() {
  var cv = document.getElementById('cam-overlay');
  if (!frame || !cv) return;
  var r = frame.getBoundingClientRect();
+ if (!r.width || !r.height) return;
  var dpr = Math.min(2, window.devicePixelRatio || 1);
  _camGeo.w = r.width; _camGeo.h = r.height; _camGeo.dpr = dpr;
  cv.width = Math.round(r.width * dpr);
  cv.height = Math.round(r.height * dpr);
  cv.style.width = r.width + 'px';
  cv.style.height = r.height + 'px';
- _camGeo.cx = r.width * _camOval.cx;
- _camGeo.cy = r.height * _camOval.cy;
- // lebar oval = 68% bingkai; tinggi mengikuti rasio 0.78 (lebar:tinggi)
- _camGeo.rx = (r.width * _camOval.lebarRasio) / 2;
+
+ // Area gambar kamera sebenarnya di dalam bingkai (video memakai object-fit: contain).
+ // Oval harus berada di atas gambar kamera, bukan di atas bagian hitam.
+ var vw = r.width, vh = r.height, vx = 0, vy = 0;
+ var video = document.getElementById('attendance-video');
+ if (video && video.videoWidth && video.videoHeight) {
+  var skala = Math.min(r.width / video.videoWidth, r.height / video.videoHeight);
+  vw = video.videoWidth * skala;
+  vh = video.videoHeight * skala;
+  vx = (r.width - vw) / 2;
+  vy = (r.height - vh) / 2;
+ }
+ _camGeo.vx = vx; _camGeo.vy = vy; _camGeo.vw = vw; _camGeo.vh = vh;
+
+ // oval: lebar 74% area video, rasio 0.95 (agak gendut), maksimum 46% tinggi area video
+ _camGeo.rx = (vw * _camOval.lebarRasio) / 2;
  _camGeo.ry = _camGeo.rx / _camOval.rasio;
- var maksRy = r.height * 0.47;
- if (_camGeo.ry > maksRy) _camGeo.ry = maksRy;
+ var maksRy = vh * 0.46;
+ if (_camGeo.ry > maksRy) { _camGeo.ry = maksRy; _camGeo.rx = _camGeo.ry * _camOval.rasio; }
+ _camGeo.cx = vx + vw / 2;
+ _camGeo.cy = vy + vh / 2;
  gambarOverlayCam();
 }
 
@@ -4647,11 +4662,19 @@ function muatDeteksiWajah() {
 
 // Apakah wajah berada di dalam oval dan ukurannya wajar?
 function rasioOvalCam() {
- if (_camGeo.w && _camGeo.h) {
-  return { cx: _camGeo.cx / _camGeo.w, cy: _camGeo.cy / _camGeo.h,
-           rx: _camGeo.rx / _camGeo.w, ry: _camGeo.ry / _camGeo.h };
+ // Deteksi wajah (MediaPipe & analisis gambar) memakai koordinat gambar video,
+ // jadi oval dikonversi ke koordinat video, bukan koordinat bingkai.
+ var vw = _camGeo.vw || _camGeo.w;
+ var vh = _camGeo.vh || _camGeo.h;
+ if (vw && vh && _camGeo.rx) {
+  return {
+   cx: (_camGeo.cx - (_camGeo.vx || 0)) / vw,
+   cy: (_camGeo.cy - (_camGeo.vy || 0)) / vh,
+   rx: _camGeo.rx / vw,
+   ry: _camGeo.ry / vh,
+  };
  }
- return { cx: 0.5, cy: 0.5, rx: 0.34, ry: 0.436 };
+ return { cx: 0.5, cy: 0.5, rx: 0.37, ry: 0.39 };
 }
 
 function wajahDalamOval(wajah) {
@@ -4753,7 +4776,7 @@ function heuristikWajahCam(ctx, kecil) {
  var rasioKulit = proporsiKulitCam(data, w, h, o);
  // Wajah harus benar-benar berisi area kulit (>=22% oval) supaya kedap-kedip tidak
  // dipicu oleh layar kosong, dinding, atau objek lain.
- if (!terang || rasioKulit < 0.22 || beda < -6) return null;
+ if (!terang || rasioKulit < 0.10) return null;
  _camSumberDeteksi = 'kulit';
  return { x: o.cx, y: o.cy, w: o.rx * 1.15, h: o.ry * (beda > 8 ? 1.25 : 0.95), rasioKulit: rasioKulit };
 }
@@ -4827,6 +4850,27 @@ function resetCameraUi() {
 
 // Pindai berulang: terang + kontras area tengah sebagai penanda wajah terlihat.
 // Kalau browser punya FaceDetector, dipakai sebagai penentu tambahan.
+// Jaring pengaman: kalau 8 detik wajah tidak terdeteksi juga, tampilkan tombol
+// "Ambil foto manual" supaya karyawan tidak terjebak. Hilang lagi begitu wajah terdeteksi.
+var _camTimerManual = null;
+
+function sembunyikanTombolManualKamera() {
+ var btn = document.getElementById('camera-manual-btn');
+ if (btn) btn.style.display = 'none';
+ if (_camTimerManual) { clearTimeout(_camTimerManual); _camTimerManual = null; }
+}
+
+function jadwalkanTombolManualKamera() {
+ sembunyikanTombolManualKamera();
+ _camTimerManual = setTimeout(function() {
+  if (_camSudahAmbil) return;
+  var btn = document.getElementById('camera-manual-btn');
+  var stage = document.getElementById('cam-stage');
+  var state = stage ? stage.getAttribute('data-state') : '';
+  if (btn && state !== 'verified' && state !== 'liveness') btn.style.display = 'inline-flex';
+ }, 8000);
+}
+
 function mulaiPindaiWajah() {
  hentikanPindai();
  _camSudahAmbil = false;
@@ -4929,6 +4973,7 @@ function startAttendanceCamera() {
   if (placeholder) placeholder.style.display = 'none';
   ukuranOverlayCam();
   setCamState('scanning', 'Posisikan wajah di dalam lingkaran');
+  jadwalkanTombolManualKamera();
   mulaiPindaiWajah();
  })
  .catch(function(e) {
@@ -5018,6 +5063,7 @@ function encodeAttendancePhoto(sourceCanvas) {
 }
 
 function stopAttendanceCamera() {
+ sembunyikanTombolManualKamera();
  if (_attendanceStream) {
  _attendanceStream.getTracks().forEach(function(t){ t.stop(); });
  _attendanceStream = null;

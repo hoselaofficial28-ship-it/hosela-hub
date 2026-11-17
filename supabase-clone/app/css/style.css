@@ -4441,3 +4441,8 @@ body.phone-mode #app-wrap #s-daftar.screen.active{
   background:rgba(2,6,23,.55);color:#fff;display:grid;place-items:center;cursor:pointer;backdrop-filter:blur(6px)}
 .cam-exit svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round}
 #s-absensi-camera.cam-fs .cam-topbar{padding-top:calc(10px + env(safe-area-inset-top,0px))}
+
+/* Tombol darurat "Ambil foto manual" di layar penuh */
+#s-absensi-camera.cam-fs #camera-manual-btn{position:absolute;left:50%;transform:translateX(-50%);
+  bottom:calc(104px + env(safe-area-inset-bottom,0px));z-index:12;
+  background:rgba(2,6,23,.6);color:#fff;border:1px solid rgba(255,255,255,.24);backdrop-filter:blur(6px)}

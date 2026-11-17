@@ -97,10 +97,14 @@ assert.doesNotMatch(app, /rgba\(8,15,32,0\.72\)/, 'warna backdrop lama (transpar
 // --- Perbaikan 2: oval lebih lebar (68% bingkai, rasio lebar:tinggi 0.78) ---
 assert.match(app, /lebarRasio: 0\.74, rasio: 0\.95/);
 assert.match(app, /function proporsiKulitCam\(/);
-assert.match(app, /rasioKulit < 0\.22/);
+assert.match(app, /rasioKulit < 0\.10/);
+assert.match(app, /_camGeo\.vw = vw/);
+assert.match(app, /_camGeo\.cx - \(_camGeo\.vx \|\| 0\)/);
+assert.match(app, /function jadwalkanTombolManualKamera\(/);
+assert.doesNotMatch(html, /id="cam-frame" onclick=/, 'tap tidak boleh langsung memotret');
 assert.match(app, /function masukLayarPenuhKamera\(/);
 assert.match(css, /#s-absensi-camera\.cam-fs/);
-assert.match(app, /_camGeo\.rx = \(r\.width \* _camOval\.lebarRasio\) \/ 2;/);
+assert.match(app, /_camGeo\.rx = \(vw \* _camOval\.lebarRasio\) \/ 2;/);
 assert.match(app, /_camGeo\.ry = _camGeo\.rx \/ _camOval\.rasio;/);
 assert.match(app, /function rasioOvalCam\(/);
 assert.match(app, /var o = rasioOvalCam\(\);/);

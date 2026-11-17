@@ -9,14 +9,14 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=20261117u">
+<link rel="stylesheet" href="css/style.css?v=20261117w">
 
 
 
 
 
 
-<link rel="manifest" href="/manifest.webmanifest?v=20261117u">
+<link rel="manifest" href="/manifest.webmanifest?v=20261117w">
 <meta name="theme-color" content="#1557d8">
 <meta name="application-name" content="Hosela Hub">
 <meta name="mobile-web-app-capable" content="yes">
@@ -703,7 +703,7 @@
  <button type="button" class="cam-exit" onclick="goBack()" aria-label="Tutup kamera">
   <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg>
  </button>
- <div class="cam-frame" id="cam-frame" onclick="captureAttendancePhoto()">
+ <div class="cam-frame" id="cam-frame">
  <video id="attendance-video" autoplay playsinline muted></video>
  <img id="attendance-photo-preview" alt="Foto absensi" style="display:none">
  <canvas id="attendance-canvas" style="display:none"></canvas>
@@ -723,6 +723,7 @@
  </div>
  </div>
 
+ <button type="button" class="cam-btn cam-btn-ghost" id="camera-manual-btn" onclick="captureAttendancePhoto()" style="display:none">Ambil foto manual</button>
  <div class="cam-controls">
  <button type="button" class="cam-btn cam-btn-ghost" id="camera-start-btn" onclick="startAttendanceCamera()" style="display:none">Coba aktifkan kamera</button>
  <button type="button" class="cam-btn cam-btn-ghost" id="camera-retake-btn" onclick="ulangiFotoAbsen()" style="display:none">Ulangi foto</button>
@@ -1056,11 +1057,11 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="js/supabase-client.js"></script>
 <script src="js/photo-storage.js?v=20261015e"></script>
-<script src="js/real-backend.js?v=20261117u"></script>
+<script src="js/real-backend.js?v=20261117w"></script>
 <script src="js/dashboard-reports.js?v=20261015e"></script>
-<script src="js/mock-backend.js?v=20261117u"></script>
-<script src="js/app.js?v=20261117u"></script>
-<script src="js/payroll.js?v=20261117u"></script>
-<script src="js/preview.js?v=20261117u"></script>
+<script src="js/mock-backend.js?v=20261117w"></script>
+<script src="js/app.js?v=20261117w"></script>
+<script src="js/payroll.js?v=20261117w"></script>
+<script src="js/preview.js?v=20261117w"></script>
 </body>
 </html>
