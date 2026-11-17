@@ -23,3 +23,7 @@ debug.html
 *.zip
 
 .vercel
+
+# Folder kerja sementara (skrip uji, tangkapan layar, token sesi uji) — jangan masuk repo.
+Temp/
+supabase-clone/supabase/.temp/
