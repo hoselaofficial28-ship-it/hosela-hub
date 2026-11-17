@@ -5,6 +5,7 @@ const html = readFileSync(new URL('../app/index.html', import.meta.url), 'utf8')
 const app = readFileSync(new URL('../app/js/app.js', import.meta.url), 'utf8');
 const css = readFileSync(new URL('../app/css/style.css', import.meta.url), 'utf8');
 const sw = readFileSync(new URL('../app/sw.js', import.meta.url), 'utf8');
+const backendSrc = readFileSync(new URL('../app/js/real-backend.js', import.meta.url), 'utf8');
 
 // --- Panel Lokasi Kantor bisa ditutup dan dibuka kembali ---
 assert.match(html, /id="office-editor-body"/);
@@ -45,6 +46,13 @@ assert.match(css, /\.cam-loc\{display:inline-flex/);
 assert.match(html, /id="cam-stage"/);
 assert.match(html, /class="cam-ring"/);
 assert.match(html, /id="cam-status-chip"/);
+assert.match(html, /class="cam-corners"/);
+assert.match(html, /class="cam-scanline"/);
+assert.match(html, /id="cam-card"/);
+assert.match(html, /id="cam-card-nama"/);
+assert.match(html, /id="cam-card-id"/);
+assert.match(html, /id="cam-card-status"/);
+assert.match(html, /id="cam-card-waktu"/);
 assert.match(html, /id="cam-submit"/);
 assert.match(html, /id="absen-masuk-btn"[^>]*>Absen Masuk</);
 assert.match(html, /id="absen-pulang-btn"[^>]*>Absen Pulang</);
@@ -56,19 +64,26 @@ assert.doesNotMatch(html, /id="camera-capture-btn"/);
 
 // cincin: gradasi berputar, dan berubah warna mengikuti keadaan
 assert.match(css, /\.cam-stage\{/);
-assert.match(css, /\.cam-frame \.cam-ring\{[^}]*conic-gradient/);
-assert.match(css, /@keyframes cam-spin\{to\{transform:rotate\(1turn\)\}\}/);
-assert.match(css, /@keyframes cam-glow\{/);
-assert.match(css, /\.cam-stage\[data-state="scanning"\] \.cam-frame,\n\.cam-stage\[data-state="locking"\] \.cam-frame\{animation:cam-glow/);
-assert.match(css, /\.cam-stage\[data-state="ready"\] \.cam-frame \.cam-ring\{background:#22c55e;animation:none/);
-assert.match(css, /\.cam-stage\[data-state="ready"\] \.cam-frame\{animation:none;box-shadow:inset 0 0 0 4px rgba\(34,197,94/);
-assert.match(css, /\.cam-stage\[data-state="error"\] \.cam-frame \.cam-ring\{background:#ef4444/);
+assert.match(css, /\.cam-frame \.cam-ring\{[^}]*border:2px solid rgba\(236,72,153/);
+assert.match(css, /@keyframes cam-scan\{/);
+assert.match(css, /\.cam-scanline\{[^}]*animation:cam-scan/);
+assert.match(css, /\.cam-corners i\{position:absolute;width:34px;height:34px;border:3px solid #ec4899/);
+assert.doesNotMatch(css, /animation:cam-spin/);
+assert.match(css, /\.cam-stage\[data-state="ready"\] \.cam-frame \.cam-ring\{border-color:#22c55e/);
+assert.match(css, /\.cam-stage\[data-state="ready"\] \.cam-scanline\{display:none\}/);
+assert.match(css, /\.cam-stage\[data-state="error"\] \.cam-frame \.cam-ring\{border-color:#ef4444/);
+assert.match(css, /\.cam-stage\[data-state="error"\] \.cam-corners i\{border-color:#ef4444\}/);
 assert.match(css, /\.cam-pick-in\{background:linear-gradient/);
 assert.match(css, /\.cam-pick-out\{background:linear-gradient/);
 assert.match(css, /\.cam-submit-grid\{display:grid;grid-template-columns:1fr 1fr/);
 
 // alur kamera otomatis
 assert.match(app, /function mulaiPindaiWajah\(/);
+assert.match(app, /function tampilkanKartuAbsen\(/);
+assert.match(app, /function kodeKaryawan\(/);
+assert.match(app, /tampilkanKartuAbsen\('Menunggu pilihan'\)/);
+assert.match(app, /sembunyikanKartuAbsen\(\);/);
+assert.match(backendSrc, /legacyId: p\.legacy_id/);
 assert.match(app, /_camJejakBagus >= 4/);
 assert.match(app, /function ulangiFotoAbsen\(/);
 assert.match(app, /function kirimAbsenDariKamera\(/);

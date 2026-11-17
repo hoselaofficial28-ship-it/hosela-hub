@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbw6q_5ZaIGrekeBwZ5TKh6X1GpWkFHsa5i6whdwacQkTEa-vvNezHlxFMEQFKZkmm5ffQ/exec';
-var APP_VERSION = '20261117a';
+var APP_VERSION = '20261117b';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -3999,6 +3999,41 @@ var _camSudahAmbil = false;
 var _camDetektor = (typeof window !== 'undefined' && window.FaceDetector)
  ? new window.FaceDetector({ fastMode: true, maxDetectedFaces: 1 }) : null;
 
+// Kartu data absensi (nama, ID, status, waktu) — muncul setelah wajah tertangkap.
+function jamAbsenSekarang() {
+ var d = new Date();
+ return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+}
+
+function kodeKaryawan() {
+ if (!currentUser) return '-';
+ if (currentUser.legacyId) return String(currentUser.legacyId);
+ if (currentUser.legacy_id) return String(currentUser.legacy_id);
+ return String(currentUser.id || '').slice(0, 8).toUpperCase() || '-';
+}
+
+function tampilkanKartuAbsen(status) {
+ var kartu = document.getElementById('cam-card');
+ if (!kartu) return;
+ kartu.hidden = false;
+ var nama = document.getElementById('cam-card-nama');
+ var id = document.getElementById('cam-card-id');
+ var st = document.getElementById('cam-card-status');
+ var waktu = document.getElementById('cam-card-waktu');
+ if (nama) nama.textContent = (currentUser && currentUser.nama) || '-';
+ if (id) id.textContent = kodeKaryawan();
+ if (st) {
+  st.textContent = status || 'Menunggu pilihan';
+  st.className = status ? 'ok' : '';
+ }
+ if (waktu) waktu.textContent = jamAbsenSekarang() + ' WIB';
+}
+
+function sembunyikanKartuAbsen() {
+ var kartu = document.getElementById('cam-card');
+ if (kartu) kartu.hidden = true;
+}
+
 function setCamState(state, teks) {
  var stage = document.getElementById('cam-stage');
  if (stage) stage.setAttribute('data-state', state);
@@ -4013,6 +4048,7 @@ function hentikanPindai() {
 
 function resetCameraUi() {
  _camSudahAmbil = false;
+ sembunyikanKartuAbsen();
  _attendancePhotoData = '';
  var sub = document.getElementById('cam-submit');
  if (sub) sub.hidden = true;
@@ -4100,6 +4136,7 @@ function ulangiFotoAbsen() {
 function kirimAbsenDariKamera(tipe) {
  var t = document.getElementById('attendance-type');
  if (t) t.value = tipe === 'PULANG' ? 'PULANG' : 'MASUK';
+ tampilkanKartuAbsen(tipe === 'PULANG' ? 'Pulang' : 'Masuk');
  if (!_attendancePhotoData) { showToast('Foto belum siap'); return; }
  if (!_attendanceLocation) { showToast('Membaca lokasi, tunggu sebentar…'); getAttendanceLocation(); return; }
  submitAttendanceCamera();
@@ -4167,6 +4204,7 @@ function captureAttendancePhoto(otomatis) {
  stopAttendanceCamera();
  var ukuranKb = Math.round(attendanceDataUrlByteLength(_attendancePhotoData) / 1024);
  setCamState('ready', 'Foto siap');
+ tampilkanKartuAbsen('Menunggu pilihan');
  var kotakPilih = document.getElementById('cam-submit');
  if (kotakPilih) kotakPilih.hidden = false;
  var ulangiBtn = document.getElementById('camera-retake-btn');

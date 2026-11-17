@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="id">
 <head>
 <meta charset="UTF-8">
@@ -9,14 +9,14 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=20261117a">
+<link rel="stylesheet" href="css/style.css?v=20261117b">
 
 
 
 
 
 
-<link rel="manifest" href="/manifest.webmanifest?v=20261117a">
+<link rel="manifest" href="/manifest.webmanifest?v=20261117b">
 <meta name="theme-color" content="#1557d8">
 <meta name="application-name" content="Hosela Hub">
 <meta name="mobile-web-app-capable" content="yes">
@@ -648,6 +648,8 @@
  <img id="attendance-photo-preview" alt="Foto absensi" style="display:none">
  <canvas id="attendance-canvas" style="display:none"></canvas>
  <div class="cam-ring" aria-hidden="true"></div>
+ <div class="cam-corners" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+ <div class="cam-scanline" aria-hidden="true"></div>
  <div class="cam-guide" aria-hidden="true"></div>
  <div class="cam-topbar"><span class="cam-chip" id="cam-status-chip">Menyiapkan kameraâ€¦</span></div>
  <div class="cam-bottombar">
@@ -655,6 +657,13 @@
  <button type="button" class="cam-loc-btn" id="attendance-location-retry" onclick="event.stopPropagation();getAttendanceLocation()">Baca ulang</button>
  </div>
  <div class="cam-overlay-msg" id="attendance-camera-placeholder" style="display:none"></div>
+ <div class="cam-card" id="cam-card" hidden>
+  <div class="cam-card-head"><span class="cam-card-dot"></span><b>Data Absensi</b><span class="cam-card-time" id="cam-card-waktu">-</span></div>
+  <div class="cam-card-row"><span>Nama</span><b id="cam-card-nama">-</b></div>
+  <div class="cam-card-row"><span>ID</span><b id="cam-card-id">-</b></div>
+  <div class="cam-card-row"><span>Status</span><b id="cam-card-status">Menunggu pilihan</b></div>
+  <div class="cam-card-row"><span>Via</span><b>Aplikasi</b></div>
+ </div>
  </div>
 
  <div class="cam-controls">
@@ -963,11 +972,11 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="js/supabase-client.js"></script>
 <script src="js/photo-storage.js?v=20261015e"></script>
-<script src="js/real-backend.js?v=20261117a"></script>
+<script src="js/real-backend.js?v=20261117b"></script>
 <script src="js/dashboard-reports.js?v=20261015e"></script>
-<script src="js/mock-backend.js?v=20261117a"></script>
-<script src="js/app.js?v=20261117a"></script>
-<script src="js/payroll.js?v=20261117a"></script>
-<script src="js/preview.js?v=20261117a"></script>
+<script src="js/mock-backend.js?v=20261117b"></script>
+<script src="js/app.js?v=20261117b"></script>
+<script src="js/payroll.js?v=20261117b"></script>
+<script src="js/preview.js?v=20261117b"></script>
 </body>
 </html>

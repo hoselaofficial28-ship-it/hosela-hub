@@ -60,7 +60,7 @@
         else if (p.status === 'NONAKTIF') msg = 'Akun kamu nonaktif. Hubungi Owner.';
         return { success: false, msg: msg };
       }
-      return { success: true, isDefaultPassword: false, user: { id: p.id, nama: p.nama, bagian: p.bagian, jabatan: p.jabatan } };
+      return { success: true, isDefaultPassword: false, user: { id: p.id, nama: p.nama, bagian: p.bagian, jabatan: p.jabatan, legacyId: p.legacy_id || '' } };
     },
 
     getDaftarOptions: async function () {
