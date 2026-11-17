@@ -1,31 +1,90 @@
 {
   "name": "Hosela Hub",
   "short_name": "Hosela Hub",
-  "description": "Portal internal Hosela untuk absensi, payroll, dan operasional tim.",
+  "description": "Portal internal Hosela untuk absensi kamera, izin, KPI, payroll, dan peraturan kantor.",
   "id": "/",
-  "start_url": "/",
+  "start_url": "/?source=pwa",
   "scope": "/",
   "lang": "id-ID",
   "dir": "ltr",
   "display": "standalone",
-  "display_override": ["standalone", "minimal-ui"],
+  "display_override": [
+    "standalone",
+    "minimal-ui"
+  ],
   "background_color": "#f3f6fb",
   "theme_color": "#1557d8",
   "orientation": "portrait",
-  "categories": ["business", "productivity"],
+  "categories": [
+    "business",
+    "productivity"
+  ],
   "prefer_related_applications": false,
   "icons": [
     {
       "src": "assets/logo.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
       "src": "assets/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "assets/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "assets/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Absensi Kamera",
+      "short_name": "Absensi",
+      "description": "Langsung buka kamera absensi",
+      "url": "/?goto=camera",
+      "icons": [
+        {
+          "src": "assets/logo.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Slip Gaji",
+      "short_name": "Slip",
+      "description": "Lihat slip gaji terakhir",
+      "url": "/?goto=slip",
+      "icons": [
+        {
+          "src": "assets/logo.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Peraturan Kantor",
+      "short_name": "Peraturan",
+      "description": "Baca peraturan kantor",
+      "url": "/?goto=peraturan",
+      "icons": [
+        {
+          "src": "assets/logo.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
     }
   ]
 }

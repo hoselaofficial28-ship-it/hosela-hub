@@ -9,14 +9,14 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=20261117q">
+<link rel="stylesheet" href="css/style.css?v=20261117r">
 
 
 
 
 
 
-<link rel="manifest" href="/manifest.webmanifest?v=20261117q">
+<link rel="manifest" href="/manifest.webmanifest?v=20261117r">
 <meta name="theme-color" content="#1557d8">
 <meta name="application-name" content="Hosela Hub">
 <meta name="mobile-web-app-capable" content="yes">
@@ -201,6 +201,17 @@
  </div>
  </div>
  <div class="content">
+  <section class="pwa-install-banner" id="pwa-install-banner" hidden>
+   <div class="pwa-install-icon" id="pwa-install-icon" aria-hidden="true"></div>
+   <div class="pwa-install-body">
+    <b>Pasang Hosela Hub di layar utama</b>
+    <p>Buka lebih cepat seperti aplikasi, tanpa mengetik alamat.</p>
+   </div>
+   <div class="pwa-install-actions">
+    <button type="button" class="pwa-install-btn" onclick="installApp()">Pasang</button>
+    <button type="button" class="pwa-install-close" onclick="tutupBannerInstall()" aria-label="Tutup pengingat">&times;</button>
+   </div>
+  </section>
   <section class="wajib-baca" id="wajib-baca-peraturan" hidden aria-live="polite">
    <div class="wajib-baca-icon" id="wajib-baca-icon" aria-hidden="true"></div>
    <div class="wajib-baca-body">
@@ -1042,11 +1053,11 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="js/supabase-client.js"></script>
 <script src="js/photo-storage.js?v=20261015e"></script>
-<script src="js/real-backend.js?v=20261117q"></script>
+<script src="js/real-backend.js?v=20261117r"></script>
 <script src="js/dashboard-reports.js?v=20261015e"></script>
-<script src="js/mock-backend.js?v=20261117q"></script>
-<script src="js/app.js?v=20261117q"></script>
-<script src="js/payroll.js?v=20261117q"></script>
-<script src="js/preview.js?v=20261117q"></script>
+<script src="js/mock-backend.js?v=20261117r"></script>
+<script src="js/app.js?v=20261117r"></script>
+<script src="js/payroll.js?v=20261117r"></script>
+<script src="js/preview.js?v=20261117r"></script>
 </body>
 </html>

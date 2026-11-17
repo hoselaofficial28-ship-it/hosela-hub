@@ -4392,3 +4392,21 @@ body.phone-mode #app-wrap #s-daftar.screen.active{
 .sm-foot{flex:0 0 auto;padding:10px 16px calc(14px + env(safe-area-inset-bottom,0px));
   border-top:1px solid #eef2f8;background:#fff;text-align:center}
 .sm-version{font-size:10px;font-weight:650;letter-spacing:.04em;color:#9aa7b8}
+
+/* Banner pasang aplikasi (PWA) */
+.pwa-install-banner{display:flex;align-items:center;gap:12px;padding:13px 14px;margin-bottom:12px;
+  background:linear-gradient(135deg,#ffffff 0%,#f3f8ff 60%,#e9f1ff 100%);
+  border:1px solid #cfe0ff;border-radius:14px;box-shadow:0 10px 24px rgba(21,87,216,.10)}
+.pwa-install-banner[hidden]{display:none}
+.pwa-install-icon{width:38px;height:38px;flex:0 0 38px;border-radius:11px;background:#1557d8;color:#fff;
+  display:grid;place-items:center;background-image:url('/assets/apple-touch-icon.png');background-size:cover}
+.pwa-install-body{flex:1;min-width:0}
+.pwa-install-body b{display:block;font-size:13px;color:#132036;letter-spacing:-.01em}
+.pwa-install-body p{margin:3px 0 0;font-size:11.5px;line-height:1.5;color:#5b6b82}
+.pwa-install-actions{display:flex;align-items:center;gap:6px;flex:0 0 auto}
+.pwa-install-btn{border:none;border-radius:10px;background:linear-gradient(135deg,#2f74f0,#1557d8);
+  color:#fff;font:inherit;font-size:12px;font-weight:750;padding:9px 14px;cursor:pointer;
+  box-shadow:0 8px 16px rgba(21,87,216,.25)}
+.pwa-install-btn:active{transform:translateY(1px)}
+.pwa-install-close{width:26px;height:26px;border-radius:50%;border:1px solid #dbe6f6;background:#fff;color:#7b8798;
+  font-size:15px;line-height:1;cursor:pointer;display:grid;place-items:center}

@@ -1,4 +1,4 @@
-const APP_VERSION = '20261117q';
+const APP_VERSION = '20261117r';
 const CACHE_NAME = 'hosela-hub-' + APP_VERSION;
 const ASSETS = [
   './',
@@ -15,6 +15,8 @@ const ASSETS = [
   './assets/logo.png',
   './assets/logo-icon.svg',
   './assets/icon-512.png',
+  './assets/icon-maskable-512.png',
+  './assets/apple-touch-icon.png',
   './manifest.webmanifest'
 ];
 

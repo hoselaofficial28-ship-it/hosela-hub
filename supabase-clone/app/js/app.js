@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbw6q_5ZaIGrekeBwZ5TKh6X1GpWkFHsa5i6whdwacQkTEa-vvNezHlxFMEQFKZkmm5ffQ/exec';
-var APP_VERSION = '20261117q';
+var APP_VERSION = '20261117r';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -237,6 +237,9 @@ var CACHE_PREFIX = 'hh_cache_';
 var _prefetchStarted = false;
 var CAMERA_UNMIRROR = true;
 var SESSION_TTL = 10 * 24 * 60 * 60 * 1000;
+var _gotoAwal = (function () {
+ try { return (new URLSearchParams(location.search).get('goto') || '').toLowerCase(); } catch (e) { return ''; }
+})();
 var _sideMenuOpen = false;
 var _deferredInstallPrompt = null;
 var _homeCategoryOpen = false;
@@ -719,6 +722,25 @@ function warmUpGAS() {
  return;
  }
  fetch(GAS_URL + '?action=ping&args=[]', { redirect: 'follow' }).catch(function(){ gasJsonp('ping', [], function(){}, function(){}); });
+}
+
+// Banner pasang aplikasi: muncul hanya saat browser menawarkan install.
+function tampilkanBannerInstall() {
+ var el = document.getElementById('pwa-install-banner');
+ if (!el) return;
+ if (isPWAInstalled()) { el.hidden = true; return; }
+ var tolak = 0;
+ try { tolak = Number(localStorage.getItem('hh_install_ditolak') || 0); } catch (e) {}
+ if (tolak && Date.now() - tolak < 7 * 24 * 60 * 60 * 1000) { el.hidden = true; return; }
+ var ikon = document.getElementById('pwa-install-icon');
+ if (ikon && !ikon.textContent.trim()) ikon.innerHTML = uiIcon('install');
+ el.hidden = false;
+}
+
+function tutupBannerInstall() {
+ try { localStorage.setItem('hh_install_ditolak', String(Date.now())); } catch (e) {}
+ var el = document.getElementById('pwa-install-banner');
+ if (el) el.hidden = true;
 }
 
 function setupPWAInstall() {
@@ -1254,6 +1276,24 @@ function refreshWajibBacaPeraturan(paksa) {
   _wajibBaca.sudah = true;
   sembunyikanWajibBaca();
  });
+}
+
+// Shortcut PWA: /?goto=camera|slip|peraturan langsung membuka layar terkait.
+function bukaGotoAwal() {
+ if (!_gotoAwal) return;
+ var peta = {
+  camera: 's-absensi-camera',
+  absensi: 's-absensi-camera',
+  slip: 's-slip-gaji',
+  gaji: 's-slip-gaji',
+  peraturan: 's-peraturan',
+  aturan: 's-peraturan',
+ };
+ var tujuan = peta[_gotoAwal];
+ _gotoAwal = '';
+ try { history.replaceState(null, '', location.pathname); } catch (e) {}
+ if (!tujuan) return;
+ setTimeout(function() { goTo(tujuan); }, 120);
 }
 
 function loadHome(forceRefresh) {
