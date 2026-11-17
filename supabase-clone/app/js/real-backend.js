@@ -300,6 +300,20 @@
     },
 
     // Shift efektif hari ini + boleh ganti atau tidak (terkunci setelah absen masuk).
+    // Konfirmasi karyawan sudah membaca seluruh peraturan (dicatat di server).
+    catatBacaPeraturan: async function (args) {
+      var r = await window.sb.rpc('catat_baca_peraturan', { p_total_pasal: parseInt(args[0], 10) || 0 });
+      if (r.error) return { success: false, msg: r.error.message };
+      return r.data;
+    },
+
+    // Status konfirmasi baca milik sendiri + ringkasan kepatuhan tim (Owner/Finance).
+    getStatusBacaPeraturan: async function () {
+      var r = await window.sb.rpc('get_status_baca_peraturan');
+      if (r.error) return { success: false, msg: r.error.message };
+      return r.data;
+    },
+
     // Owner/Finance: daftar karyawan + status izin "pilih shift sendiri".
     getKaryawanPilihShift: async function () {
       var r = await window.sb.rpc('get_karyawan_pilih_shift');

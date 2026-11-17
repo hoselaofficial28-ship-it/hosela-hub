@@ -4215,3 +4215,119 @@ body.phone-mode #app-wrap #s-daftar.screen.active{
 .cam-stage[data-state="verified"] .cam-chip::before{background:#22c55e;box-shadow:0 0 0 3px rgba(34,197,94,.3)}
 .cam-stage[data-state="verified"] .cam-frame{box-shadow:0 18px 44px rgba(34,197,94,.32)}
 .cam-stage[data-state="error"] .cam-chip::before{background:#ef4444;box-shadow:0 0 0 3px rgba(239,68,68,.25)}
+
+/* ==========================================================================
+   Menu Peraturan — tampilan dokumen perusahaan + progres baca (17 Nov 2026)
+   ========================================================================== */
+.peraturan-page-content{display:grid;gap:14px;padding-bottom:28px}
+
+/* bar progres lengket di atas */
+.peraturan-sticky{position:fixed;left:12px;right:12px;top:calc(8px + env(safe-area-inset-top, 0px));z-index:30;
+  display:grid;grid-template-columns:1fr auto;align-items:center;
+  gap:6px 12px;padding:10px 14px;background:rgba(255,255,255,.97);backdrop-filter:blur(10px);
+  border:1px solid #e5eaf2;border-radius:12px;box-shadow:0 10px 26px rgba(15,23,42,.12)}
+.peraturan-sticky[hidden]{display:none}
+.peraturan-sticky-text{display:flex;align-items:baseline;gap:8px;min-width:0}
+.peraturan-sticky-text b{font-size:14px;color:#0f172a;font-variant-numeric:tabular-nums}
+.peraturan-sticky-text span{font-size:11.5px;color:#64748b;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.peraturan-sticky-bar{grid-column:1/-1;height:5px;background:#eef2f8;border-radius:999px;overflow:hidden}
+.peraturan-sticky-bar span{display:block;height:100%;background:linear-gradient(90deg,#2f74f0,#1557d8);border-radius:999px;transition:width .3s ease}
+.peraturan-sticky-btn{grid-row:1;grid-column:2;border:1px solid #cfe0ff;background:#eef4ff;color:#1557d8;
+  border-radius:999px;padding:7px 12px;font:inherit;font-size:11.5px;font-weight:750;cursor:pointer;white-space:nowrap}
+
+/* hero dokumen */
+.peraturan-hero{background:linear-gradient(160deg,#ffffff 0%,#f7faff 55%,#eff5ff 100%);
+  border:1px solid #e2eaf6;border-radius:16px;padding:20px 18px 18px;box-shadow:0 10px 28px rgba(21,87,216,.06)}
+.peraturan-hero-eyebrow{font-size:10.5px;font-weight:800;letter-spacing:.12em;color:#1557d8;margin-bottom:6px}
+.peraturan-hero-title{margin:0;font-size:22px;line-height:1.25;color:#0f172a;letter-spacing:-.02em}
+.peraturan-hero-sub{margin:8px 0 0;font-size:13px;line-height:1.65;color:#5b6b82;max-width:62ch}
+.peraturan-meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.peraturan-meta-chip{font-size:11px;font-weight:650;color:#4a5a72;background:#fff;border:1px solid #e2eaf6;
+  border-radius:999px;padding:5px 10px}
+.peraturan-progress{margin-top:16px}
+.peraturan-progress-head{display:flex;justify-content:space-between;align-items:baseline;font-size:12px;color:#5b6b82;margin-bottom:6px}
+.peraturan-progress-head b{font-size:13px;color:#1557d8;font-variant-numeric:tabular-nums}
+.peraturan-progress-bar{height:8px;background:#e7eefb;border-radius:999px;overflow:hidden}
+.peraturan-progress-bar span{display:block;height:100%;border-radius:999px;
+  background:linear-gradient(90deg,#2f74f0 0%,#1557d8 70%,#1249bd 100%);transition:width .35s ease}
+.peraturan-hero-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
+.peraturan-hero-actions .btn{width:auto;min-width:150px;flex:1 1 auto}
+.peraturan-hero-done{display:flex;gap:10px;align-items:center;margin-top:14px;padding:12px 14px;
+  border:1px solid #b7e7c9;background:#ecfdf3;border-radius:12px}
+.peraturan-hero-done[hidden]{display:none}
+.peraturan-hero-done-icon{width:26px;height:26px;border-radius:50%;background:#22c55e;color:#fff;
+  display:grid;place-items:center;font-weight:800;flex:0 0 26px}
+.peraturan-hero-done b{display:block;font-size:12.5px;color:#0f5132}
+.peraturan-hero-done span{font-size:11.5px;color:#3f6b53}
+
+/* daftar pasal per kategori */
+.peraturan-rules-card{background:#fff;border:1px solid #e5eaf2;border-radius:16px;padding:16px 14px 10px}
+.peraturan-rules-head{display:flex;gap:12px;justify-content:space-between;align-items:flex-start;margin-bottom:12px;flex-wrap:wrap}
+.peraturan-rules-head h2{margin:2px 0 0;font-size:16px;color:#0f172a}
+.peraturan-rules-head p{margin:4px 0 0;font-size:12px;color:#64748b;line-height:1.6}
+.peraturan-kategori{border:1px solid #e8eef7;border-radius:14px;margin-bottom:10px;overflow:hidden;background:#fff}
+.peraturan-kategori.is-done{border-color:#b7e7c9;background:#fbfefc}
+.peraturan-kat-head{display:flex;align-items:center;gap:10px;width:100%;padding:13px 14px;background:#f8fafd;
+  border:none;border-bottom:1px solid #eef2f8;cursor:pointer;font:inherit;text-align:left}
+.peraturan-kategori.is-done .peraturan-kat-head{background:#f2fbf6}
+.peraturan-kat-no{width:28px;height:28px;flex:0 0 28px;border-radius:9px;background:#eaf1ff;color:#1557d8;
+  font-size:12px;font-weight:800;display:grid;place-items:center}
+.peraturan-kat-title{flex:1;min-width:0;font-size:14px;font-weight:750;color:#16243a}
+.peraturan-kat-title small{display:block;font-size:11px;font-weight:600;color:#7b8798;margin-top:1px}
+.peraturan-kat-state{font-size:11.5px;font-weight:750;color:#7b8798;font-variant-numeric:tabular-nums;
+  background:#fff;border:1px solid #e5eaf2;border-radius:999px;padding:4px 9px}
+.peraturan-kat-state.is-done{color:#0f7b3f;border-color:#b7e7c9;background:#ecfdf3}
+.peraturan-kat-caret{width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;
+  border-top:6px solid #94a3b8;transition:transform .18s}
+.peraturan-kat-head[aria-expanded="false"] .peraturan-kat-caret{transform:rotate(-90deg)}
+.peraturan-pasal-list{margin:0;padding:6px 0;list-style:none}
+.peraturan-pasal{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;border-bottom:1px solid #f2f5fa}
+.peraturan-pasal:last-child{border-bottom:none}
+.peraturan-pasal.is-read{background:#fbfdff}
+.peraturan-pasal-no{flex:0 0 26px;font-size:12px;font-weight:800;color:#a9b6c8;font-variant-numeric:tabular-nums;
+  line-height:1.7}
+.peraturan-pasal.is-read .peraturan-pasal-no{color:#1557d8}
+.peraturan-pasal-body{flex:1;min-width:0}
+.peraturan-pasal-body p{margin:0;font-size:14px;line-height:1.72;color:#26344a;letter-spacing:.002em}
+.peraturan-pasal-check{flex:0 0 20px;width:20px;height:20px;border-radius:50%;border:1.5px solid #dbe3ee;
+  color:transparent;font-size:11px;font-weight:800;display:grid;place-items:center;margin-top:2px;transition:all .2s}
+.peraturan-pasal.is-read .peraturan-pasal-check{background:#22c55e;border-color:#22c55e;color:#fff}
+.peraturan-pasal-edit{flex:0 0 auto;border:1px solid #e5eaf2;background:#fff;border-radius:8px;padding:5px 9px;
+  font:inherit;font-size:11px;font-weight:700;color:#5b6b82;cursor:pointer}
+
+/* kartu konfirmasi di akhir */
+.peraturan-ack{margin-top:4px;background:#fff;border:1px solid #e5eaf2;border-radius:16px;padding:18px}
+.peraturan-ack[hidden]{display:none}
+.peraturan-ack-head{display:flex;gap:12px;align-items:flex-start}
+.peraturan-ack-icon{width:34px;height:34px;flex:0 0 34px;border-radius:50%;background:#eaf1ff;color:#1557d8;
+  display:grid;place-items:center;font-weight:800}
+.peraturan-ack-head h3{margin:0;font-size:15px;color:#0f172a}
+.peraturan-ack-head p{margin:4px 0 0;font-size:12.5px;line-height:1.6;color:#64748b}
+.peraturan-ack-check{display:flex;gap:10px;align-items:flex-start;margin:14px 0;padding:12px;border:1px solid #e8eef7;
+  border-radius:12px;background:#fbfcfe;font-size:13px;line-height:1.6;color:#26344a;cursor:pointer}
+.peraturan-ack-check input{margin-top:2px;width:18px;height:18px;accent-color:#1557d8}
+.peraturan-ack .btn{width:100%}
+.peraturan-ack-done{display:flex;gap:8px;align-items:center;margin-top:12px;padding:11px 13px;border-radius:12px;
+  background:#ecfdf3;border:1px solid #b7e7c9;font-size:12.5px;color:#0f5132}
+.peraturan-ack-done[hidden]{display:none}
+.peraturan-ack-done b{font-weight:800}
+.peraturan-ack-done span{color:#3f6b53}
+
+/* kartu dokumen Drive (tetap) */
+.peraturan-drive-card{display:grid;grid-template-columns:auto 1fr;gap:12px 14px;align-items:center;
+  background:#fff;border:1px solid #e5eaf2;border-radius:16px;padding:16px}
+.peraturan-drive-card[hidden]{display:none}
+.peraturan-drive-icon{width:40px;height:40px;border-radius:12px;background:#eaf1ff;color:#1557d8;
+  display:grid;place-items:center}
+.peraturan-drive-copy h3{margin:2px 0 0;font-size:14px;color:#0f172a}
+.peraturan-drive-copy p{margin:4px 0 0;font-size:12px;color:#64748b;line-height:1.55}
+.peraturan-drive-card .peraturan-open-btn{grid-column:1/-1;width:auto;justify-self:start}
+
+@media (max-width:560px){
+ .peraturan-hero{padding:18px 15px 16px}
+ .peraturan-hero-title{font-size:20px}
+ .peraturan-hero-actions .btn{flex:1 1 100%;min-width:0}
+ .peraturan-pasal{padding:12px}
+ .peraturan-pasal-body p{font-size:13.5px;line-height:1.75}
+ .peraturan-sticky{gap:5px 10px;padding:9px 12px}
+}

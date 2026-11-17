@@ -9,14 +9,14 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=20261117f">
+<link rel="stylesheet" href="css/style.css?v=20261117g">
 
 
 
 
 
 
-<link rel="manifest" href="/manifest.webmanifest?v=20261117f">
+<link rel="manifest" href="/manifest.webmanifest?v=20261117g">
 <meta name="theme-color" content="#1557d8">
 <meta name="application-name" content="Hosela Hub">
 <meta name="mobile-web-app-capable" content="yes">
@@ -380,7 +380,29 @@
  <div class="gold-line"></div>
  </div>
  <div class="content peraturan-page-content">
-  <section class="peraturan-drive-card" id="peraturan-drive-card" aria-live="polite">
+  <div class="peraturan-sticky" id="peraturan-sticky" hidden>
+   <div class="peraturan-sticky-text"><b id="peraturan-sticky-persen">0%</b><span id="peraturan-sticky-label">Terbaca 0 dari 0 pasal</span></div>
+   <div class="peraturan-sticky-bar"><span id="peraturan-sticky-fill" style="width:0%"></span></div>
+   <button type="button" class="peraturan-sticky-btn" onclick="lanjutBacaPeraturan()">Lanjut baca</button>
+  </div>
+
+  <section class="peraturan-hero" id="peraturan-hero">
+   <div class="peraturan-hero-eyebrow">DOKUMEN PERUSAHAAN</div>
+   <h2 class="peraturan-hero-title">Peraturan Kantor Hosela</h2>
+   <p class="peraturan-hero-sub" id="peraturan-hero-sub">Memuat ringkasan peraturan…</p>
+   <div class="peraturan-meta" id="peraturan-meta"></div>
+   <div class="peraturan-progress">
+    <div class="peraturan-progress-head"><span id="peraturan-progress-label">Terbaca 0 dari 0 pasal</span><b id="peraturan-progress-persen">0%</b></div>
+    <div class="peraturan-progress-bar"><span id="peraturan-progress-fill" style="width:0%"></span></div>
+   </div>
+   <div class="peraturan-hero-actions">
+    <button type="button" class="btn btn-primary" id="peraturan-mulai-btn" onclick="lanjutBacaPeraturan()">Mulai baca</button>
+    <a class="btn btn-secondary" id="peraturan-drive-open" href="#" target="_blank" rel="noopener" style="display:none">Dokumen resmi (Drive)</a>
+   </div>
+   <div class="peraturan-hero-done" id="peraturan-hero-done" hidden></div>
+  </section>
+
+  <section class="peraturan-drive-card" id="peraturan-drive-card" aria-live="polite" hidden>
    <div class="skeleton skel-text"></div><div class="skeleton skel-text-sm"></div>
   </section>
   <div class="peraturan-owner-grid" id="peraturan-owner-tools" style="display:none">
@@ -402,6 +424,17 @@
   <section class="peraturan-rules-card" aria-labelledby="peraturan-list-title">
    <div class="peraturan-rules-head"><div><div class="eyebrow">RINGKASAN</div><h2 id="peraturan-list-title">Poin tata tertib</h2><p>Aturan penting yang perlu dipahami seluruh anggota tim.</p></div><div id="peraturan-notif-btn" style="display:none"><button class="btn btn-gold" onclick="kirimNotifPeraturan()">Kirim Notifikasi ke Tim</button></div></div>
    <div id="peraturan-content"><div class="empty-state"><div class="empty-icon"></div>Memuat...</div></div>
+  </section>
+
+  <section class="peraturan-ack" id="peraturan-ack" hidden>
+   <div class="peraturan-ack-head">
+    <div class="peraturan-ack-icon" id="peraturan-ack-icon" aria-hidden="true"></div>
+    <div><h3 id="peraturan-ack-title">Konfirmasi sudah membaca</h3>
+    <p id="peraturan-ack-sub">Tombol konfirmasi aktif setelah seluruh pasal terbaca.</p></div>
+   </div>
+   <label class="peraturan-ack-check"><input type="checkbox" id="peraturan-ack-check" onchange="cekBisaKonfirmasiPeraturan()"><span>Saya sudah membaca dan memahami seluruh peraturan di atas.</span></label>
+   <button type="button" class="btn btn-primary" id="peraturan-ack-btn" disabled onclick="catatBacaPeraturan()">Saya sudah membaca</button>
+   <div class="peraturan-ack-done" id="peraturan-ack-done" hidden></div>
   </section>
  </div>
 </div>
@@ -969,11 +1002,11 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="js/supabase-client.js"></script>
 <script src="js/photo-storage.js?v=20261015e"></script>
-<script src="js/real-backend.js?v=20261117f"></script>
+<script src="js/real-backend.js?v=20261117g"></script>
 <script src="js/dashboard-reports.js?v=20261015e"></script>
-<script src="js/mock-backend.js?v=20261117f"></script>
-<script src="js/app.js?v=20261117f"></script>
-<script src="js/payroll.js?v=20261117f"></script>
-<script src="js/preview.js?v=20261117f"></script>
+<script src="js/mock-backend.js?v=20261117g"></script>
+<script src="js/app.js?v=20261117g"></script>
+<script src="js/payroll.js?v=20261117g"></script>
+<script src="js/preview.js?v=20261117g"></script>
 </body>
 </html>

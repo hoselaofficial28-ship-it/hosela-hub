@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbw6q_5ZaIGrekeBwZ5TKh6X1GpWkFHsa5i6whdwacQkTEa-vvNezHlxFMEQFKZkmm5ffQ/exec';
-var APP_VERSION = '20261117f';
+var APP_VERSION = '20261117g';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -3281,6 +3281,27 @@ function _updateMenuBadge(menuLabel, count) {
 
 var PERATURAN_DRIVE_CATEGORY = 'DOKUMEN PERATURAN';
 
+var _peraturanState = { rules: [], order: [], total: 0, terbaca: {}, io: null, ack: null };
+
+function peraturanKunciBaca() {
+ var uid = (currentUser && currentUser.id) || 'tamu';
+ return 'hh_peraturan_terbaca_' + uid;
+}
+
+function muatProgresPeraturan() {
+ try {
+  var raw = localStorage.getItem(peraturanKunciBaca());
+  var arr = raw ? JSON.parse(raw) : [];
+  var map = {};
+  (Array.isArray(arr) ? arr : []).forEach(function(id) { map[String(id)] = 1; });
+  return map;
+ } catch (e) { return {}; }
+}
+
+function simpanProgresPeraturan() {
+ try { localStorage.setItem(peraturanKunciBaca(), JSON.stringify(Object.keys(_peraturanState.terbaca))); } catch (e) {}
+}
+
 function getPeraturanDriveItem(data) {
  return (data || []).find(function(item) {
   return String(item.kategori || '').trim().toUpperCase() === PERATURAN_DRIVE_CATEGORY;
@@ -3289,49 +3310,275 @@ function getPeraturanDriveItem(data) {
 
 function renderPeraturanDriveCard(item, isOwner) {
  var card = document.getElementById('peraturan-drive-card');
- if (!card) return;
  var link = item && /^https?:\/\//i.test(String(item.isi || '')) ? String(item.isi) : '';
  var editor = document.getElementById('peraturan-drive-link');
  if (editor) editor.value = link;
- card.className = 'peraturan-drive-card' + (link ? ' has-document' : ' is-empty');
+ var buka = document.getElementById('peraturan-drive-open');
+ if (buka) {
+  if (link) { buka.href = link; buka.style.display = 'inline-flex'; }
+  else { buka.style.display = 'none'; }
+ }
+ if (!card) return;
+ if (!link) { card.hidden = true; card.innerHTML = ''; return; }
+ card.hidden = false;
+ card.className = 'peraturan-drive-card has-document';
  card.innerHTML = '<div class="peraturan-drive-icon">'+uiIcon('book')+'</div><div class="peraturan-drive-copy">'+
-   '<div class="eyebrow">DOKUMEN RESMI</div><h2>Peraturan Kantor Hosela</h2><p>'+
-   (link ? 'Buka dokumen Google Drive untuk membaca peraturan kantor versi terbaru.' : (isOwner ? 'Belum ada link dokumen. Masukkan link Google Drive pada panel Owner di bawah.' : 'Dokumen peraturan belum tersedia. Silakan hubungi Owner.'))+
-   '</p></div>'+
-   (link ? '<a class="btn btn-primary peraturan-open-btn" href="'+jobdeskSafe(link)+'" target="_blank" rel="noopener noreferrer">Buka Peraturan Kantor</a>' : '<span class="status-pill status-pill-muted">Belum tersedia</span>');
+  '<div class="eyebrow">DOKUMEN RESMI</div><h3>Dokumen peraturan lengkap</h3>'+
+  '<p>Versi resmi dalam Google Drive — dipakai bila tim perlu dokumen cetak atau lampiran.</p></div>'+
+  '<a class="btn btn-secondary peraturan-open-btn" href="'+jobdeskSafe(link)+'" target="_blank" rel="noopener noreferrer">Buka dokumen</a>';
 }
 
+
+function renderPeraturanHero() {
+ var totalKat = _peraturanState.order.length;
+ var total = _peraturanState.total;
+ var kata = _peraturanState.rules.reduce(function(n, p) { return n + String(p.isi || '').split(/\s+/).length; }, 0);
+ var menit = Math.max(1, Math.round(kata / 180));
+ var meta = document.getElementById('peraturan-meta');
+ if (meta) {
+  meta.innerHTML = '<span class="peraturan-meta-chip">'+total+' pasal</span>' +
+   '<span class="peraturan-meta-chip">'+totalKat+' kategori</span>' +
+   '<span class="peraturan-meta-chip">± '+menit+' menit baca</span>' +
+   '<span class="peraturan-meta-chip">Berlaku untuk seluruh tim</span>';
+ }
+ var sub = document.getElementById('peraturan-hero-sub');
+ if (sub) sub.textContent = 'Baca berurutan sampai pasal terakhir. Progres Ko tersimpan otomatis dan tombol konfirmasi aktif setelah semua pasal terbaca.';
+}
+
+function updatePeraturanProgress() {
+ var total = _peraturanState.total;
+ var terbaca = Object.keys(_peraturanState.terbaca).length;
+ if (terbaca > total) terbaca = total;
+ var persen = total ? Math.round((terbaca / total) * 100) : 0;
+ ['peraturan-progress-label', 'peraturan-sticky-label'].forEach(function(id) {
+  var el = document.getElementById(id);
+  if (el) el.textContent = 'Terbaca ' + terbaca + ' dari ' + total + ' pasal';
+ });
+ ['peraturan-progress-persen', 'peraturan-sticky-persen'].forEach(function(id) {
+  var el = document.getElementById(id);
+  if (el) el.textContent = persen + '%';
+ });
+ ['peraturan-progress-fill', 'peraturan-sticky-fill'].forEach(function(id) {
+  var el = document.getElementById(id);
+  if (el) el.style.width = persen + '%';
+ });
+ // hitungan per kategori
+ _peraturanState.order.forEach(function(kat) {
+  var list = _peraturanState.rules.filter(function(p) { return p.kategori === kat; });
+  var sudah = list.filter(function(p) { return _peraturanState.terbaca[String(p.id)]; }).length;
+  var el = document.getElementById('kat-state-' + pId(kat));
+  if (el) {
+   el.textContent = sudah + '/' + list.length;
+   el.classList.toggle('is-done', list.length > 0 && sudah === list.length);
+  }
+  var card = document.getElementById('kat-card-' + pId(kat));
+  if (card) card.classList.toggle('is-done', list.length > 0 && sudah === list.length);
+ });
+ cekBisaKonfirmasiPeraturan();
+}
+
+function pId(teks) {
+ return String(teks || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+}
+
+function renderPeraturanList() {
+ var ikonAck = document.getElementById('peraturan-ack-icon');
+ if (ikonAck) ikonAck.innerHTML = uiIcon('check');
+ var el = document.getElementById('peraturan-content');
+ if (!el) return;
+ var html = '';
+ _peraturanState.order.forEach(function(kat, ki) {
+  var list = _peraturanState.rules.filter(function(p) { return p.kategori === kat; });
+  var nomorKat = String(ki + 1).padStart(2, '0');
+  html += '<section class="peraturan-kategori" id="kat-card-' + pId(kat) + '">' +
+   '<button type="button" class="peraturan-kat-head" aria-expanded="true" onclick="togglePeraturanKategori(\'' + jobdeskSafe(pId(kat)) + '\')">' +
+   '<span class="peraturan-kat-no">' + nomorKat + '</span>' +
+   '<span class="peraturan-kat-title">' + jobdeskSafe(kat) + '<small>' + list.length + ' pasal</small></span>' +
+   '<span class="peraturan-kat-state" id="kat-state-' + pId(kat) + '">0/' + list.length + '</span>' +
+   '<span class="peraturan-kat-caret" aria-hidden="true"></span></button>' +
+   '<ol class="peraturan-pasal-list" id="kat-list-' + pId(kat) + '">';
+  list.forEach(function(p) {
+   var sudah = !!_peraturanState.terbaca[String(p.id)];
+   html += '<li class="peraturan-pasal' + (sudah ? ' is-read' : '') + '" data-rule-id="' + jobdeskSafe(String(p.id || '')) + '" id="pasal-' + pId(String(p.id || '')) + '">' +
+    '<span class="peraturan-pasal-no">' + String(p.no || '').padStart(2, '0') + '</span>' +
+    '<div class="peraturan-pasal-body"><p>' + jobdeskSafe(p.isi) + '</p></div>' +
+    '<span class="peraturan-pasal-check" aria-hidden="true">' + uiIcon('check', 'peraturan-check-svg') + '</span>' +
+    (currentUser && currentUser.bagian === 'Owner'
+     ? '<button type="button" class="peraturan-pasal-edit" data-rule-id="' + jobdeskSafe(String(p.id || '')) + '" onclick="editPeraturan(this.getAttribute(\'data-rule-id\'))">Edit</button>'
+     : '') +
+    '</li>';
+  });
+  html += '</ol></section>';
+ });
+ el.innerHTML = html;
+ pasangObserverPeraturan();
+ pasangStickyPeraturan();
+ updatePeraturanProgress();
+}
+
+function pasangStickyPeraturan() {
+ var hero = document.getElementById('peraturan-hero');
+ var sticky = document.getElementById('peraturan-sticky');
+ if (!hero || !sticky) return;
+ if (!('IntersectionObserver' in window)) { sticky.hidden = false; return; }
+ if (_peraturanState.heroIo) { try { _peraturanState.heroIo.disconnect(); } catch (e) {} }
+ _peraturanState.heroIo = new IntersectionObserver(function(entries) {
+  entries.forEach(function(e) { sticky.hidden = e.isIntersecting; });
+ }, { threshold: 0.15 });
+ _peraturanState.heroIo.observe(hero);
+ sticky.hidden = true;
+}
+
+function togglePeraturanKategori(kunci) {
+ var list = document.getElementById('kat-list-' + kunci);
+ var head = document.querySelector('#kat-card-' + kunci + ' .peraturan-kat-head');
+ if (!list) return;
+ var tutup = list.style.display === 'none';
+ list.style.display = tutup ? '' : 'none';
+ if (head) head.setAttribute('aria-expanded', tutup ? 'true' : 'false');
+}
+
+function tandaiTerbaca(id) {
+ var kunci = String(id || '');
+ if (!kunci || _peraturanState.terbaca[kunci]) return;
+ _peraturanState.terbaca[kunci] = 1;
+ simpanProgresPeraturan();
+ var li = document.getElementById('pasal-' + pId(kunci));
+ if (li) li.classList.add('is-read');
+ updatePeraturanProgress();
+}
+
+function pasangObserverPeraturan() {
+ if (_peraturanState.io) { try { _peraturanState.io.disconnect(); } catch (e) {} }
+ var items = document.querySelectorAll('.peraturan-pasal');
+ if (!items.length) return;
+ if (!('IntersectionObserver' in window)) {
+  // browser lama: anggap semua terbaca supaya tombol konfirmasi tetap bisa dipakai
+  items.forEach(function(el) { tandaiTerbaca(el.getAttribute('data-rule-id')); });
+  return;
+ }
+ _peraturanState.io = new IntersectionObserver(function(entries) {
+  entries.forEach(function(e) {
+   if (e.isIntersecting && e.intersectionRatio >= 0.55) tandaiTerbaca(e.target.getAttribute('data-rule-id'));
+  });
+ }, { threshold: [0.55, 0.9], rootMargin: '0px 0px -8% 0px' });
+ items.forEach(function(el) { _peraturanState.io.observe(el); });
+}
+
+function lanjutBacaPeraturan() {
+ var belum = null;
+ var items = document.querySelectorAll('.peraturan-pasal');
+ for (var i = 0; i < items.length; i++) {
+  if (!_peraturanState.terbaca[items[i].getAttribute('data-rule-id')]) { belum = items[i]; break; }
+ }
+ if (belum) {
+  var list = belum.closest('.peraturan-pasal-list');
+  if (list && list.style.display === 'none') list.style.display = '';
+  belum.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  return;
+ }
+ var ack = document.getElementById('peraturan-ack');
+ if (ack) ack.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function cekBisaKonfirmasiPeraturan() {
+ var total = _peraturanState.total;
+ var terbaca = Object.keys(_peraturanState.terbaca).length;
+ var semua = total > 0 && terbaca >= total;
+ var check = document.getElementById('peraturan-ack-check');
+ var btn = document.getElementById('peraturan-ack-btn');
+ var ack = document.getElementById('peraturan-ack');
+ var sub = document.getElementById('peraturan-ack-sub');
+ if (ack) ack.hidden = false;
+ if (btn) btn.disabled = !(semua && check && check.checked);
+ if (sub) {
+  sub.textContent = semua
+   ? (_peraturanState.ack ? 'Sudah tercatat pada ' + _peraturanState.ack + '.' : 'Semua pasal sudah terbaca. Centang pernyataan untuk mengaktifkan tombol.')
+   : 'Masih ada ' + (total - terbaca) + ' pasal belum terbaca — tombol konfirmasi aktif setelah semua pasal terbaca.';
+ }
+}
+
+function catatBacaPeraturan() {
+ var btn = document.getElementById('peraturan-ack-btn');
+ if (btn) { btn.disabled = true; btn.textContent = 'Menyimpan...'; }
+ gasCall('catatBacaPeraturan', [_peraturanState.total], function(res) {
+  if (btn) { btn.disabled = false; btn.textContent = 'Saya sudah membaca'; }
+  if (!res || res.success === false) {
+   var pesan = (res && res.msg) || 'Gagal menyimpan konfirmasi baca';
+   if (/does not exist|schema cache|PGRST202|tidak ada/i.test(pesan)) {
+    showToast('Fitur konfirmasi belum aktif. Jalankan migrasi 057_baca_peraturan di Supabase.');
+   } else {
+    showToast(pesan);
+   }
+   return;
+  }
+  _peraturanState.ack = res.tanggal || new Date().toLocaleString('id-ID');
+  tampilkanAckSelesai(_peraturanState.ack);
+  showToast('Terima kasih — konfirmasi baca peraturan tersimpan.');
+ }, function() {
+  if (btn) { btn.disabled = false; btn.textContent = 'Saya sudah membaca'; }
+  showToast('Koneksi gagal menyimpan konfirmasi');
+ });
+}
+
+function tampilkanAckSelesai(tanggal) {
+ var ack = document.getElementById('peraturan-ack');
+ var done = document.getElementById('peraturan-ack-done');
+ var check = document.getElementById('peraturan-ack-check');
+ var btn = document.getElementById('peraturan-ack-btn');
+ var heroDone = document.getElementById('peraturan-hero-done');
+ if (check) { check.checked = true; check.disabled = true; }
+ if (btn) { btn.disabled = true; btn.textContent = 'Sudah dikonfirmasi'; }
+ if (done) { done.hidden = false; done.innerHTML = '<b>Sudah dikonfirmasi</b><span>' + jobdeskSafe(tanggal || '') + '</span>'; }
+ if (heroDone) {
+  heroDone.hidden = false;
+  heroDone.innerHTML = '<span class="peraturan-hero-done-icon">' + uiIcon('check') + '</span><div><b>Peraturan sudah dibaca & dikonfirmasi</b><span>Dicatat pada ' + jobdeskSafe(tanggal || '') + '</span></div>';
+ }
+ if (ack) ack.classList.add('is-done');
+}
 function loadPeraturan() {
  var el = document.getElementById('peraturan-content');
- el.innerHTML = skelCards(4);
+ if (el) el.innerHTML = skelCards(4);
+ var heroDone = document.getElementById('peraturan-hero-done');
+ if (heroDone) heroDone.hidden = true;
  var isOwner = currentUser && currentUser.bagian === 'Owner';
  var notifBtn = document.getElementById('peraturan-notif-btn');
  var ownerTools = document.getElementById('peraturan-owner-tools');
  if (notifBtn) notifBtn.style.display = isOwner ? 'block' : 'none';
  if (ownerTools) ownerTools.style.display = isOwner ? 'grid' : 'none';
+
  gasCall('getPeraturan', [], function(data) {
- window._peraturanData = data || [];
- var driveItem = getPeraturanDriveItem(data);
- renderPeraturanDriveCard(driveItem, isOwner);
- var rules = (data || []).filter(function(item) { return item !== driveItem; });
- if (!rules.length) { el.innerHTML = '<div class="empty-state">Belum ada poin tata tertib ringkas.</div>'; return; }
- var grouped = {};
- var order = [];
- rules.forEach(function(p) {
- if (!grouped[p.kategori]) { grouped[p.kategori] = []; order.push(p.kategori); }
- grouped[p.kategori].push(p);
+  window._peraturanData = data || [];
+  var driveItem = getPeraturanDriveItem(data);
+  renderPeraturanDriveCard(driveItem, isOwner);
+  var rules = (data || []).filter(function(item) { return item !== driveItem; });
+  terapkanDataPeraturan(rules);
+  gasCall('getStatusBacaPeraturan', [], function(status) {
+   if (status && status.tanggal) {
+    _peraturanState.ack = status.tanggal;
+    tampilkanAckSelesai(status.tanggal);
+   }
+  });
+ }, function() { renderPeraturanDriveCard(null, isOwner); el.innerHTML = '<div class="empty-state">Gagal memuat peraturan</div>'; });
+}
+
+function terapkanDataPeraturan(rules) {
+ var el = document.getElementById('peraturan-content');
+ _peraturanState.rules = Array.isArray(rules) ? rules.slice() : [];
+ _peraturanState.total = _peraturanState.rules.length;
+ _peraturanState.terbaca = muatProgresPeraturan();
+ _peraturanState.order = [];
+ _peraturanState.rules.forEach(function(p) {
+  if (_peraturanState.order.indexOf(p.kategori) === -1) _peraturanState.order.push(p.kategori);
  });
- var html = '';
- order.forEach(function(kat, ki) {
- html += '<div class="section-label"'+(ki>0?' style="margin-top:12px"':'')+'>'+jobdeskSafe(kat)+'</div>';
- grouped[kat].forEach(function(p) {
- var num = String(p.no).padStart(2,'0');
- html += '<article class="peraturan-item"><div class="peraturan-num">'+num+'</div><div class="peraturan-text">'+jobdeskSafe(p.isi)+'</div>'+
-   (isOwner ? '<button class="btn btn-sm btn-secondary peraturan-edit-btn" data-rule-id="'+jobdeskSafe(p.id || '')+'" onclick="editPeraturan(this.getAttribute(\'data-rule-id\'))">Edit</button>' : '')+'</article>';
- });
- });
- el.innerHTML = html;
- }, function(){ renderPeraturanDriveCard(null, isOwner); el.innerHTML = '<div class="empty-state">Gagal memuat peraturan</div>'; });
+ renderPeraturanHero();
+ if (!_peraturanState.total) {
+  if (el) el.innerHTML = '<div class="empty-state">Belum ada poin tata tertib ringkas.</div>';
+  var ack = document.getElementById('peraturan-ack');
+  if (ack) ack.hidden = true;
+  return;
+ }
+ renderPeraturanList();
 }
 
 function savePeraturanDriveLink() {
