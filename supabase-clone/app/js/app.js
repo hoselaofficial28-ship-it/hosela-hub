@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbw6q_5ZaIGrekeBwZ5TKh6X1GpWkFHsa5i6whdwacQkTEa-vvNezHlxFMEQFKZkmm5ffQ/exec';
-var APP_VERSION = '20261117j';
+var APP_VERSION = '20261117k';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -1217,6 +1217,45 @@ function doLogin() {
  });
 }
 
+// Pengingat wajib baca peraturan: tampil sampai karyawan menekan "Saya sudah membaca".
+// Sumber kebenaran = server (rule_acknowledgements). Bila fitur belum aktif (migrasi 057
+// belum dijalankan) pengingat disembunyikan agar tidak muncul pengingat yang tak bisa hilang.
+var _wajibBaca = { dicek: false, sudah: null };
+
+function sembunyikanWajibBaca() {
+ var el = document.getElementById('wajib-baca-peraturan');
+ if (el) el.hidden = true;
+}
+
+function tampilkanWajibBaca() {
+ var el = document.getElementById('wajib-baca-peraturan');
+ if (!el) return;
+ var ikon = document.getElementById('wajib-baca-icon');
+ if (ikon && !ikon.innerHTML.trim()) ikon.innerHTML = uiIcon('file');
+ el.hidden = false;
+}
+
+function refreshWajibBacaPeraturan(paksa) {
+ if (!currentUser) { sembunyikanWajibBaca(); return; }
+ if (_wajibBaca.dicek && !paksa) {
+  if (_wajibBaca.sudah) sembunyikanWajibBaca(); else tampilkanWajibBaca();
+  return;
+ }
+ _wajibBaca.dicek = true;
+ gasCall('getStatusBacaPeraturan', [], function(status) {
+  if (status && status.tanggal) {
+   _wajibBaca.sudah = true;
+   sembunyikanWajibBaca();
+  } else {
+   _wajibBaca.sudah = false;
+   tampilkanWajibBaca();
+  }
+ }, function() {
+  _wajibBaca.sudah = true;
+  sembunyikanWajibBaca();
+ });
+}
+
 function loadHome(forceRefresh) {
  var u = currentUser;
  if (!u) return;
@@ -1312,6 +1351,7 @@ menus.push({id:'s-slip-gaji', icon:'receipt', bg:'#e0f2fe', label:'Slip Gaji', s
  var prevBtn = document.querySelector('.preview-btn');
  if (prevBtn) prevBtn.style.display = (!isTouchDevice && (u.bagian === 'Owner' || u.bagian === 'Finance')) ? 'flex' : 'none';
  document.getElementById('home-menu').innerHTML = renderHomeMenuSections(menus);
+ refreshWajibBacaPeraturan();
  window._homeMenus = menus;
  applyDesktopNavigation();
  loadDesktopReports(true);
@@ -3520,6 +3560,9 @@ function catatBacaPeraturan() {
   }
   _peraturanState.ack = res.tanggal || new Date().toLocaleString('id-ID');
   tampilkanAckSelesai(_peraturanState.ack);
+  _wajibBaca.sudah = true;
+  _wajibBaca.dicek = true;
+  sembunyikanWajibBaca();
   showToast('Terima kasih — konfirmasi baca peraturan tersimpan.');
  }, function() {
   if (btn) { btn.disabled = false; btn.textContent = 'Saya sudah membaca'; }
