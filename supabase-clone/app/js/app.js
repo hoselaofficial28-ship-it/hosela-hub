@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbw6q_5ZaIGrekeBwZ5TKh6X1GpWkFHsa5i6whdwacQkTEa-vvNezHlxFMEQFKZkmm5ffQ/exec';
-var APP_VERSION = '20261117h';
+var APP_VERSION = '20261117i';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -3492,9 +3492,15 @@ function cekBisaKonfirmasiPeraturan() {
  if (ack) ack.hidden = false;
  if (btn) btn.disabled = !(semua && check && check.checked);
  if (sub) {
-  sub.textContent = semua
-   ? (_peraturanState.ack ? 'Sudah tercatat pada ' + _peraturanState.ack + '.' : 'Semua pasal sudah terbaca. Centang pernyataan untuk mengaktifkan tombol.')
-   : 'Masih ada ' + (total - terbaca) + ' pasal belum terbaca — tombol konfirmasi aktif setelah semua pasal terbaca.';
+  if (!semua) {
+   sub.textContent = 'Masih ada ' + (total - terbaca) + ' pasal belum terbaca — tombol konfirmasi aktif setelah semua pasal terbaca.';
+  } else if (_peraturanState.ack) {
+   sub.textContent = 'Sudah tercatat pada ' + _peraturanState.ack + '.';
+  } else if (_peraturanState.ackUsang) {
+   sub.textContent = 'Peraturan telah diperbarui (konfirmasi sebelumnya ' + _peraturanState.ackUsang + '). Mohon konfirmasi ulang.';
+  } else {
+   sub.textContent = 'Semua pasal sudah terbaca. Centang pernyataan untuk mengaktifkan tombol.';
+  }
  }
 }
 
@@ -3555,8 +3561,16 @@ function loadPeraturan() {
   terapkanDataPeraturan(rules);
   gasCall('getStatusBacaPeraturan', [], function(status) {
    if (status && status.tanggal) {
-    _peraturanState.ack = status.tanggal;
-    tampilkanAckSelesai(status.tanggal);
+    var jumlahSaatKonfirmasi = parseInt(status.totalPasal, 10) || 0;
+    if (jumlahSaatKonfirmasi >= _peraturanState.total && _peraturanState.total > 0) {
+     _peraturanState.ack = status.tanggal;
+     tampilkanAckSelesai(status.tanggal);
+    } else {
+     // peraturan sudah diperbarui/ditambah -> karyawan perlu membaca & konfirmasi ulang
+     _peraturanState.ackUsang = status.tanggal;
+     _peraturanState.ack = null;
+     cekBisaKonfirmasiPeraturan();
+    }
    }
    // Owner/Finance: lihat berapa karyawan yang sudah membaca (pendorong kepatuhan)
    if (status && status.admin && status.targetKaryawan > 0) {
