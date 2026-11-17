@@ -4471,3 +4471,15 @@ body.phone-mode #app-wrap #s-daftar.screen.active{
  .shift-advanced-card>summary b{font-size:13px}
  .shift-advanced-card>summary small{font-size:10.5px;line-height:1.35}
 }
+
+/* Kelompok accordion Pengaturan Shift: flex, bukan baris grid,
+   supaya panel yang dibuka benar-benar mendorong panel di bawahnya. */
+.shift-accordion-group{grid-column:1/-1;display:flex;flex-direction:column;gap:12px;min-width:0;width:100%}
+.shift-accordion-group>.shift-advanced-card{flex:0 0 auto;width:100%;min-height:72px}
+.shift-accordion-group>.shift-advanced-card:last-child{margin-bottom:10px}
+@media (max-width:600px){ .shift-accordion-group{gap:10px} }
+
+/* Di PC: kelompok accordion cukup di kolom kiri, supaya kartu "Terapkan shift"
+   yang menempel (sticky) di kanan tidak menutupi panel yang sedang dibuka. */
+body:not(.phone-mode) .shift-accordion-group{grid-column:1!important}
+body:not(.phone-mode) .shift-apply-card{top:8px}

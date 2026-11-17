@@ -9,14 +9,14 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=20261117z">
+<link rel="stylesheet" href="css/style.css?v=20261118b">
 
 
 
 
 
 
-<link rel="manifest" href="/manifest.webmanifest?v=20261117z">
+<link rel="manifest" href="/manifest.webmanifest?v=20261118b">
 <meta name="theme-color" content="#1557d8">
 <meta name="application-name" content="Hosela Hub">
 <meta name="mobile-web-app-capable" content="yes">
@@ -973,7 +973,10 @@
    <button id="shift-apply-btn" class="btn btn-primary shift-primary-btn" type="button" onclick="applySelectedShift()" disabled>Terapkan ke Karyawan Terpilih</button>
   </section>
 
-  <details class="shift-card shift-advanced-card">
+  <!-- Tiga panel di bawah dibungkus agar tidak menjadi baris grid:
+       sebelumnya baris grid tidak ikut memanjang saat panel dibuka sehingga tampak bertumpuk -->
+  <div class="shift-accordion-group">
+<details class="shift-card shift-advanced-card">
    <summary><span><b>Pengecualian satu hari</b><small>Untuk tukar shift atau jadwal khusus pada tanggal tertentu</small></span><span class="shift-summary-chevron">&rsaquo;</span></summary>
    <div class="shift-advanced-body">
     <div class="shift-override-grid">
@@ -998,6 +1001,7 @@
    <summary><span><b>Atur jam shift</b><small>Ubah jam template untuk penempatan berikutnya</small></span><span class="shift-summary-chevron">&rsaquo;</span></summary>
    <div id="shift-template-list" class="shift-template-list"></div>
   </details>
+  </div>
  </div>
 </div>
 
@@ -1057,11 +1061,11 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="js/supabase-client.js"></script>
 <script src="js/photo-storage.js?v=20261015e"></script>
-<script src="js/real-backend.js?v=20261117z"></script>
+<script src="js/real-backend.js?v=20261118b"></script>
 <script src="js/dashboard-reports.js?v=20261015e"></script>
-<script src="js/mock-backend.js?v=20261117z"></script>
-<script src="js/app.js?v=20261117z"></script>
-<script src="js/payroll.js?v=20261117z"></script>
-<script src="js/preview.js?v=20261117z"></script>
+<script src="js/mock-backend.js?v=20261118b"></script>
+<script src="js/app.js?v=20261118b"></script>
+<script src="js/payroll.js?v=20261118b"></script>
+<script src="js/preview.js?v=20261118b"></script>
 </body>
 </html>
