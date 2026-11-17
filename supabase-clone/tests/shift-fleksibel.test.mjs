@@ -50,7 +50,7 @@ assert.match(app, /function loadShiftSaya\(/);
 assert.match(app, /function renderShiftSaya\(/);
 assert.match(app, /function bukaPilihShift\(/);
 assert.match(app, /function pilihShiftSaya\(/);
-assert.match(app, /function loadAbsensiCamera\(\) \{\s*\n\s*loadShiftSaya\(\);/);
+assert.match(app, /function loadAbsensiCamera\(\) \{[\s\S]{0,400}loadShiftSaya\(\);/);
 assert.match(app, /Catatan kehadiran diperbarui\.'\);\s*\n\s*loadShiftSaya\(\);/);
 assert.match(backend, /getShiftSaya:[\s\S]{0,160}get_shift_saya/);
 assert.match(backend, /pilihShiftSaya:[\s\S]{0,200}pilih_shift_saya/);

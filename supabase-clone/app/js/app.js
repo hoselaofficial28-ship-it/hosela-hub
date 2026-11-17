@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbw6q_5ZaIGrekeBwZ5TKh6X1GpWkFHsa5i6whdwacQkTEa-vvNezHlxFMEQFKZkmm5ffQ/exec';
-var APP_VERSION = '20261117n';
+var APP_VERSION = '20261117q';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -4118,6 +4118,10 @@ function pilihShiftSaya(kode) {
 }
 
 function loadAbsensiCamera() {
+ // Kamera ada di paling atas: pastikan layar tidak terbuka pada posisi scroll lama.
+ var isiKamera = document.querySelector('#s-absensi-camera .content');
+ if (isiKamera) isiKamera.scrollTop = 0;
+ try { window.scrollTo(0, 0); } catch (e) {}
  loadShiftSaya();
  resetCameraUi();
  _attendancePhotoData = '';
@@ -4391,6 +4395,7 @@ var _camProgress = 0;
 var _camRaf = null;
 var _camDeteksiLib = null;
 var _camDeteksiGagal = false;
+var _camDeteksiMulai = 0;
 var _camHasilDeteksi = null;
 
 function ukuranOverlayCam() {
@@ -4599,24 +4604,55 @@ function rasioOvalCam() {
 function wajahDalamOval(wajah) {
  if (!wajah) return false;
  var o = rasioOvalCam();
- var dx = (wajah.x - o.cx) / (o.rx * 0.74);
- var dy = (wajah.y - o.cy) / (o.ry * 0.74);
+ var dx = (wajah.x - o.cx) / (o.rx * 0.95);
+ var dy = (wajah.y - o.cy) / (o.ry * 0.95);
  var dekatTengah = Math.sqrt(dx * dx + dy * dy) <= 1;
  var rasio = wajah.h / (o.ry * 2);
- var ukuranWajar = rasio > 0.45 && rasio < 1.5;
+ var ukuranWajar = rasio > 0.28 && rasio < 1.9;
  return dekatTengah && ukuranWajar;
 }
 
 // Deteksi wajah: MediaPipe kalau tersedia, kalau tidak pakai analisis terang/kontras
 // di dalam area oval (bukan pengenalan identitas, hanya "ada wajah di depan kamera").
 function deteksiWajahCam(video, ctx, kecil, callback) {
+ // Jangan pernah menahan proses: kalau frame sebelumnya belum selesai lebih dari 1,5 detik,
+ // anggap macet lalu pindah ke analisis gambar (penyebab kamera "tidak mau scan").
+ if (_camSedangDeteksi) {
+  if (Date.now() - (_camDeteksiMulai || 0) < 1500) return;
+  _camSedangDeteksi = false;
+  _camDeteksiLib = null;
+  _camDeteksiGagal = true;
+ }
  if (_camDeteksiLib) {
+  _camSedangDeteksi = true;
+  _camDeteksiMulai = Date.now();
+  var selesai = false;
+  var tutup = function(hasil) {
+   if (selesai) return;
+   selesai = true;
+   _camSedangDeteksi = false;
+   callback(hasil);
+  };
+  setTimeout(function() {
+   if (!selesai) {
+    _camSedangDeteksi = false;
+    _camDeteksiLib = null;
+    _camDeteksiGagal = true;
+    tutup(heuristikWajahCam(ctx, kecil));
+   }
+  }, 1600);
   try {
    Promise.resolve(_camDeteksiLib.send({ image: video })).then(function() {
-    callback(_camHasilDeteksi);
-   }).catch(function() { callback(heuristikWajahCam(ctx, kecil)); });
+    // MediaPipe kadang tidak menemukan wajah walau wajah jelas ada di depan kamera
+    // (cahaya redup / model belum siap). Analisis gambar dipakai sebagai cadangan.
+    tutup(_camHasilDeteksi || heuristikWajahCam(ctx, kecil));
+   }).catch(function() {
+    _camDeteksiLib = null;
+    _camDeteksiGagal = true;
+    tutup(heuristikWajahCam(ctx, kecil));
+   });
    return;
-  } catch (e) { /* lanjut ke heuristik */ }
+  } catch (e) { _camSedangDeteksi = false; _camDeteksiLib = null; _camDeteksiGagal = true; }
  }
  callback(heuristikWajahCam(ctx, kecil));
 }
@@ -4739,6 +4775,7 @@ function mulaiPindaiWajah() {
 
  function analisa() {
   if (_camSudahAmbil) return;
+  if (!_camGeo.w) ukuranOverlayCam();
   if (!video.videoWidth || video.paused || video.readyState < 2) { lanjut(); return; }
 
   deteksiWajahCam(video, ctx, kecil, function(wajah) {
@@ -4802,7 +4839,7 @@ function startAttendanceCamera() {
  }
  if (_attendanceStream) { _attendanceStream.getTracks().forEach(function(t){ t.stop(); }); _attendanceStream = null; }
  setCamState('scanning', 'Menyiapkan kamera…');
- navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 900 }, height: { ideal: 1200 } }, audio: false })
+ navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 960 }, aspectRatio: { ideal: 4 / 3 } }, audio: false })
  .then(function(stream) {
   _attendanceStream = stream;
   if (video) { video.srcObject = stream; video.style.display = 'block'; video.play().catch(function(){}); }

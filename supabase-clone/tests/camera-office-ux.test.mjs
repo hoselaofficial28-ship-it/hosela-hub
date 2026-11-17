@@ -136,7 +136,9 @@ assert.match(backendSrc, /legacyId: p\.legacy_id/);
 assert.match(app, /function ulangiFotoAbsen\(/);
 assert.match(app, /function kirimAbsenDariKamera\(/);
 assert.match(app, /gasCall\('submitAbsensiCamera'/);
-assert.match(app, /function loadAbsensiCamera\(\) \{[\s\S]{0,900}startAttendanceCamera\(\);/);
+assert.match(app, /function loadAbsensiCamera\(\) \{[\s\S]{0,1400}startAttendanceCamera\(\);/);
+assert.match(app, /isiKamera\.scrollTop = 0/);
+assert.match(css, /\.cam-frame video,\.cam-frame img\{[^}]*object-fit:contain/);
 assert.match(app, /getUserMedia\(\{ video: \{ facingMode: 'user'/);
 
 // --- Versi cache harus naik serentak supaya HP tidak memakai file lama ---
