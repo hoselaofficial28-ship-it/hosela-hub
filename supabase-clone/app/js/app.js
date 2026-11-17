@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbw6q_5ZaIGrekeBwZ5TKh6X1GpWkFHsa5i6whdwacQkTEa-vvNezHlxFMEQFKZkmm5ffQ/exec';
-var APP_VERSION = '20261117d';
+var APP_VERSION = '20261117e';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -4037,7 +4037,10 @@ function sembunyikanKartuAbsen() {
 // ===== Face Oval Cutout Overlay + Color Flash Liveness (17 Nov 2026) =====
 // Kanvas overlay menutup seluruh bingkai kamera dengan warna solid, menyisakan
 // lubang oval transparan sebagai panduan wajah, plus cincin progres + badge teks.
-var _camOval = { cx: 0.5, cy: 0.5, rx: 0.29, ry: 0.34 }; // rasio terhadap bingkai
+// Oval: lebar 68% bingkai, rasio lebar:tinggi 0.78 (lebih lega, wajah & dagu masuk)
+var _camOval = { cx: 0.5, cy: 0.5, lebarRasio: 0.68, rasio: 0.78 };
+// Analisis cahaya: gelap / normal / silau -> filter video & palet warna flash
+var _camCahaya = { rata: 128, level: 'normal' };
 var _camGeo = { w: 0, h: 0, cx: 0, cy: 0, rx: 0, ry: 0, dpr: 1 };
 var _camSesi = 0;
 var _camSedangDeteksi = false;
@@ -4049,7 +4052,6 @@ var _camRaf = null;
 var _camDeteksiLib = null;
 var _camDeteksiGagal = false;
 var _camHasilDeteksi = null;
-var _camStatusWarna = { backdrop: 'rgba(8,15,32,0.72)', ring: 'rgba(236,72,153,0.85)' };
 
 function ukuranOverlayCam() {
  var frame = document.getElementById('cam-frame');
@@ -4064,12 +4066,71 @@ function ukuranOverlayCam() {
  cv.style.height = r.height + 'px';
  _camGeo.cx = r.width * _camOval.cx;
  _camGeo.cy = r.height * _camOval.cy;
- _camGeo.rx = r.width * _camOval.rx;
- _camGeo.ry = r.height * _camOval.ry;
+ // lebar oval = 68% bingkai; tinggi mengikuti rasio 0.78 (lebar:tinggi)
+ _camGeo.rx = (r.width * _camOval.lebarRasio) / 2;
+ _camGeo.ry = _camGeo.rx / _camOval.rasio;
+ var maksRy = r.height * 0.47;
+ if (_camGeo.ry > maksRy) _camGeo.ry = maksRy;
  gambarOverlayCam();
 }
 
 // Gambar backdrop + lubang oval + cincin + tanda centang.
+// Palet warna flash: pekat saat silau, terang saat gelap.
+function paletFlashCam() {
+ if (_camCahaya.level === 'silau') return ['#c2185b', '#1233a8', '#0b6b2f', '#a86b00'];
+ if (_camCahaya.level === 'gelap') return ['#ffffff', '#fff2a8', '#ff4fa3', '#ffe066'];
+ return ['#ec4899', '#2563eb', '#16a34a', '#eab308'];
+}
+
+function warnaBackdropCam() {
+ var stage = document.getElementById('cam-stage');
+ var state = stage ? stage.getAttribute('data-state') : 'idle';
+ if (state === 'verified') return '#064e3b';
+ if (state === 'liveness') return paletFlashCam()[_camFlashIndex % 4];
+ if (state === 'fitting') return '#1b2a44';
+ if (state === 'error') return '#2b1416';
+ return '#0b1220';
+}
+
+// Ukur kecerahan rata-rata frame video, lalu set filter video + filter capture.
+function analisaCahayaCam() {
+ var video = document.getElementById('attendance-video');
+ if (!video || !video.videoWidth) return;
+ if (!_camKecilCahaya) {
+  _camKecilCahaya = document.createElement('canvas');
+  _camKecilCahaya.width = 40; _camKecilCahaya.height = 40;
+ }
+ var ctx = _camKecilCahaya.getContext('2d', { willReadFrequently: true });
+ try { ctx.drawImage(video, 0, 0, 40, 40); } catch (e) { return; }
+ var data;
+ try { data = ctx.getImageData(0, 0, 40, 40).data; } catch (e) { return; }
+ var total = 0, n = 0;
+ for (var i = 0; i < data.length; i += 4) {
+  total += data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114;
+  n++;
+ }
+ var rata = n ? total / n : 128;
+ _camCahaya.rata = Math.round(rata);
+ var level = 'normal';
+ var filterVideo = 'brightness(1.03) contrast(1.06) saturate(1.05)';
+ if (rata < 62) {
+  level = 'gelap';
+  filterVideo = 'brightness(1.5) contrast(1.04) saturate(1.08)';
+ } else if (rata > 188) {
+  level = 'silau';
+  filterVideo = 'brightness(0.74) contrast(1.22) saturate(1.02)';
+ }
+ var berubah = _camCahaya.level !== level;
+ _camCahaya.level = level;
+ _camFilterVideo = filterVideo;
+ _camFilterCapture = filterVideo;
+ if (video.style.filter !== filterVideo) video.style.filter = filterVideo;
+ if (berubah) gambarOverlayCam();
+}
+var _camKecilCahaya = null;
+var _camFilterVideo = 'none';
+var _camFilterCapture = 'none';
+
 function gambarOverlayCam() {
  var cv = document.getElementById('cam-overlay');
  if (!cv || !_camGeo.w) return;
@@ -4080,13 +4141,11 @@ function gambarOverlayCam() {
 
  var stage = document.getElementById('cam-stage');
  var state = stage ? stage.getAttribute('data-state') : 'idle';
- var backdrop = _camStatusWarna.backdrop;
- var ring = _camStatusWarna.ring;
- if (state === 'verified') { backdrop = 'rgba(6,78,59,0.55)'; ring = '#22c55e'; }
- else if (state === 'liveness') { ring = _camFlashColors[_camFlashIndex % _camFlashColors.length]; backdrop = 'rgba(8,15,32,0.6)'; }
- else if (state === 'fitting') { ring = '#f59e0b'; }
+ var backdrop = warnaBackdropCam();
+ var ring = state === 'verified' ? '#22c55e'
+  : (state === 'liveness' ? paletFlashCam()[_camFlashIndex % 4] : (state === 'fitting' ? '#f59e0b' : '#ec4899'));
 
- // backdrop + lubang oval (aturan even-odd = bagian dalam oval tidak dicat)
+ // BACKDROP 100% SOLID: hanya lubang oval yang memperlihatkan video
  ctx.save();
  ctx.beginPath();
  ctx.rect(0, 0, _camGeo.w, _camGeo.h);
@@ -4102,7 +4161,7 @@ function gambarOverlayCam() {
  ctx.strokeStyle = ring;
  ctx.stroke();
 
- // cincin progres (busur) saat liveness
+ // busur progres
  if (state === 'liveness' || state === 'verified') {
   ctx.beginPath();
   ctx.ellipse(_camGeo.cx, _camGeo.cy, _camGeo.rx + 7, _camGeo.ry + 7, 0, -Math.PI / 2,
@@ -4113,15 +4172,15 @@ function gambarOverlayCam() {
   ctx.stroke();
  }
 
- // tanda centang ketika terverifikasi
+ // tanda centang saat terverifikasi
  if (state === 'verified') {
   ctx.beginPath();
   ctx.lineWidth = 5;
   ctx.lineCap = 'round';
   ctx.strokeStyle = '#22c55e';
-  ctx.moveTo(_camGeo.cx - 16, _camGeo.cy + 2);
-  ctx.lineTo(_camGeo.cx - 4, _camGeo.cy + 15);
-  ctx.lineTo(_camGeo.cx + 20, _camGeo.cy - 14);
+  ctx.moveTo(_camGeo.cx - 18, _camGeo.cy + 2);
+  ctx.lineTo(_camGeo.cx - 5, _camGeo.cy + 17);
+  ctx.lineTo(_camGeo.cx + 23, _camGeo.cy - 16);
   ctx.stroke();
  }
 }
@@ -4189,12 +4248,21 @@ function muatDeteksiWajah() {
 }
 
 // Apakah wajah berada di dalam oval dan ukurannya wajar?
+function rasioOvalCam() {
+ if (_camGeo.w && _camGeo.h) {
+  return { cx: _camGeo.cx / _camGeo.w, cy: _camGeo.cy / _camGeo.h,
+           rx: _camGeo.rx / _camGeo.w, ry: _camGeo.ry / _camGeo.h };
+ }
+ return { cx: 0.5, cy: 0.5, rx: 0.34, ry: 0.436 };
+}
+
 function wajahDalamOval(wajah) {
  if (!wajah) return false;
- var dx = (wajah.x - _camOval.cx) / (_camOval.rx * 0.72);
- var dy = (wajah.y - _camOval.cy) / (_camOval.ry * 0.72);
+ var o = rasioOvalCam();
+ var dx = (wajah.x - o.cx) / (o.rx * 0.74);
+ var dy = (wajah.y - o.cy) / (o.ry * 0.74);
  var dekatTengah = Math.sqrt(dx * dx + dy * dy) <= 1;
- var rasio = wajah.h / (_camOval.ry * 2);
+ var rasio = wajah.h / (o.ry * 2);
  var ukuranWajar = rasio > 0.45 && rasio < 1.5;
  return dekatTengah && ukuranWajar;
 }
@@ -4218,8 +4286,9 @@ function heuristikWajahCam(ctx, kecil) {
  try { ctx.drawImage(document.getElementById('attendance-video'), 0, 0, w, h); } catch (e) { return null; }
  var data;
  try { data = ctx.getImageData(0, 0, w, h).data; } catch (e) { return null; }
+ var o = rasioOvalCam();
  var j1 = 0, j2 = 0, n = 0, o1 = 0, on = 0;
- var x0 = _camOval.cx * w, y0 = _camOval.cy * h, rx = _camOval.rx * w, ry = _camOval.ry * h;
+ var x0 = o.cx * w, y0 = o.cy * h, rx = o.rx * w, ry = o.ry * h;
  for (var i = 0; i < data.length; i += 4) {
   var px = (i / 4) % w, py = ((i / 4) / w) | 0;
   var l = data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114;
@@ -4234,20 +4303,14 @@ function heuristikWajahCam(ctx, kecil) {
  var kulit = rata > 45 && rata < 225 && simpang > 12;
  var beda = rata - rataLuar;
  if (!kulit) return null;
- // perkiraan kotak wajah dari bagian tengah oval
- return {
-  x: _camOval.cx + (beda > 8 ? 0 : 0),
-  y: _camOval.cy,
-  w: _camOval.rx * 1.15,
-  h: _camOval.ry * (beda > 8 ? 1.25 : 0.95),
- };
+ return { x: o.cx, y: o.cy, w: o.rx * 1.15, h: o.ry * (beda > 8 ? 1.25 : 0.95) };
 }
 
 function mulaiFlashLiveness() {
  _camFlashIndex = 0;
  _camProgress = 0;
  var mulai = Date.now();
- var durasi = 2200;
+ var durasi = 2400;
  if (_camFlashTimer) clearInterval(_camFlashTimer);
  _camFlashTimer = setInterval(function() {
   var lewat = Date.now() - mulai;
@@ -4259,7 +4322,7 @@ function mulaiFlashLiveness() {
    _camFlashTimer = null;
    selesaikanVerifikasiCam();
   }
- }, 220);
+ }, 240);
 }
 
 function hentikanFlashLiveness() {
@@ -4438,6 +4501,8 @@ function captureAttendancePhoto(otomatis) {
  ctx.translate(canvas.width, 0);
  ctx.scale(-1, 1);
  }
+ // Filter mengikuti hasil analisis cahaya supaya foto sama dengan yang terlihat di layar.
+ try { if (_camFilterCapture && _camFilterCapture !== 'none') ctx.filter = _camFilterCapture; } catch (e) {}
  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
  ctx.restore();
  _camSudahAmbil = true;

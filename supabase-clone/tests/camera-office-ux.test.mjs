@@ -75,9 +75,8 @@ assert.match(app, /function ukuranOverlayCam\(/);
 assert.match(app, /function gambarOverlayCam\(/);
 assert.match(app, /ctx\.ellipse\(_camGeo\.cx, _camGeo\.cy, _camGeo\.rx, _camGeo\.ry/);
 assert.match(app, /ctx\.fill\('evenodd'\)/);
-assert.match(app, /_camFlashColors = \['#ec4899', '#3b82f6', '#22c55e', '#f59e0b'\]/);
 assert.match(app, /function mulaiFlashLiveness\(/);
-assert.match(app, /var durasi = 2200;/);
+assert.match(app, /var durasi = 2400;/);
 assert.match(app, /function selesaikanVerifikasiCam\(/);
 assert.match(app, /function bunyiSuksesCam\(/);
 assert.match(app, /setCamState\('verified', 'Verifikasi berhasil'\)/);
@@ -85,6 +84,39 @@ assert.match(app, /'Posisikan wajah di dalam lingkaran'/);
 assert.match(app, /'Tahan sebentar/);
 assert.match(app, /'Isi lingkaran dengan wajah, jangan terlalu jauh'/);
 assert.match(app, /window\.addEventListener\('resize', function \(\) \{ if \(typeof ukuranOverlayCam/);
+
+// --- Perbaikan 1: backdrop luar oval 100% solid (tanpa transparansi) ---
+assert.match(app, /function warnaBackdropCam\(/);
+assert.match(app, /if \(state === 'verified'\) return '#064e3b';/);
+assert.match(app, /if \(state === 'liveness'\) return paletFlashCam\(\)\[_camFlashIndex % 4\];/);
+assert.match(app, /return '#0b1220';/);
+assert.match(app, /ctx\.fillStyle = backdrop;/);
+assert.doesNotMatch(app, /backdrop = 'rgba\(/, 'backdrop tidak boleh transparan');
+assert.doesNotMatch(app, /rgba\(8,15,32,0\.72\)/, 'warna backdrop lama (transparan) harus hilang');
+
+// --- Perbaikan 2: oval lebih lebar (68% bingkai, rasio lebar:tinggi 0.78) ---
+assert.match(app, /lebarRasio: 0\.68, rasio: 0\.78/);
+assert.match(app, /_camGeo\.rx = \(r\.width \* _camOval\.lebarRasio\) \/ 2;/);
+assert.match(app, /_camGeo\.ry = _camGeo\.rx \/ _camOval\.rasio;/);
+assert.match(app, /function rasioOvalCam\(/);
+assert.match(app, /var o = rasioOvalCam\(\);/);
+
+// --- Perbaikan 3: auto-brightness (luminance -> filter video & capture + palet) ---
+assert.match(app, /function analisaCahayaCam\(/);
+assert.match(app, /data\[i\] \* 0\.299 \+ data\[i \+ 1\] \* 0\.587 \+ data\[i \+ 2\] \* 0\.114/);
+assert.match(app, /if \(rata < 62\) \{/);
+assert.match(app, /else if \(rata > 188\) \{/);
+assert.match(app, /level = 'gelap';/);
+assert.match(app, /level = 'silau';/);
+assert.match(app, /filterVideo = 'brightness\(1\.5\) contrast\(1\.04\) saturate\(1\.08\)';/);
+assert.match(app, /filterVideo = 'brightness\(0\.74\) contrast\(1\.22\) saturate\(1\.02\)';/);
+assert.match(app, /video\.style\.filter = filterVideo;/);
+assert.match(app, /_camFilterCapture = filterVideo;/);
+assert.match(app, /if \(_camFilterCapture && _camFilterCapture !== 'none'\) ctx\.filter = _camFilterCapture;/);
+assert.match(app, /function paletFlashCam\(/);
+assert.match(app, /if \(_camCahaya\.level === 'silau'\) return \['#c2185b'/);
+assert.match(app, /if \(_camCahaya\.level === 'gelap'\) return \['#ffffff'/);
+assert.match(css, /\.cam-frame video\{transform:scaleX\(-1\);transition:filter \.3s ease\}/);
 
 // --- Deteksi wajah: MediaPipe (ringan) + cadangan heuristik ---
 assert.match(app, /function muatDeteksiWajah\(/);
