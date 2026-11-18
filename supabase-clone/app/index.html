@@ -9,14 +9,14 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=20261118k">
+<link rel="stylesheet" href="css/style.css?v=20261118l">
 
 
 
 
 
 
-<link rel="manifest" href="/manifest.webmanifest?v=20261118k">
+<link rel="manifest" href="/manifest.webmanifest?v=20261118l">
 <meta name="theme-color" content="#1557d8">
 <meta name="application-name" content="Hosela Hub">
 <meta name="mobile-web-app-capable" content="yes">
@@ -1039,19 +1039,23 @@
   </details>
 
   <details class="shift-card shift-advanced-card" id="shift-range-card">
-   <summary><span><b>Atur shift beberapa tanggal</b><small>Perbaiki pembacaan absensi yang sudah terjadi (mis. 2-16 Nov seharusnya Shift Siang)</small></span><span class="shift-summary-chevron">&rsaquo;</span></summary>
+   <summary><span><b>Atur shift per tanggal (kalender)</b><small>Pilih tanggal di kalender, tentukan Pagi/Siang untuk tanggal itu</small></span><span class="shift-summary-chevron">&rsaquo;</span></summary>
    <div class="shift-advanced-body">
-    <p class="field-help">Pakai bagian ini untuk mengoreksi shift pada tanggal yang <b>sudah lewat</b>. Setelah disimpan, catatan kehadiran membaca ulang jam masuk sesuai shift yang dipilih.</p>
+    <p class="field-help">Cocok untuk memperbaiki absensi yang sudah terjadi. Pilih karyawan &amp; bulan, lalu ketuk tanggalnya untuk memilih <b>Pagi</b>, <b>Siang</b>, atau <b>ikut jadwal</b> (tanpa pengecualian).</p>
     <div class="shift-override-grid">
-     <label><span>Karyawan</span><select id="shift-range-user" class="form-input" onchange="muatShiftRentangPreview()"></select></label>
-     <label><span>Dari tanggal</span><input type="date" class="form-input" id="shift-range-mulai" onchange="muatShiftRentangPreview()"></label>
-     <label><span>Sampai tanggal</span><input type="date" class="form-input" id="shift-range-selesai"></label>
-     <label><span>Shift</span><select id="shift-range-shift" class="form-input"></select></label>
-     <label><span>Catatan (opsional)</span><input type="text" class="form-input" id="shift-range-note" maxlength="120" placeholder="Contoh: perbaikan shift 2-16 Nov"></label>
+     <label><span>Karyawan</span><select id="shift-kal-user" class="form-input" onchange="renderShiftKalender()"></select></label>
+     <label><span>Bulan</span><input type="month" class="form-input" id="shift-kal-bulan" onchange="renderShiftKalender()"></label>
     </div>
-    <button type="button" class="btn btn-primary" id="shift-range-btn" onclick="simpanShiftRentang()">Simpan rentang shift</button>
-    <div class="field-help" id="shift-range-preview" style="color:#1557d8;font-weight:650"></div>
-    <div class="field-help" id="shift-range-status"></div>
+    <div class="shift-kal-legend">
+     <span class="kal-dot kal-pagi"></span> Pagi 08.00–18.00
+     <span class="kal-dot kal-siang"></span> Siang 14.00–22.00
+     <span class="kal-dot kal-normal"></span> Ikut jadwal
+     <span class="kal-dot kal-ubah"></span> Perubahan belum disimpan
+    </div>
+    <div class="shift-kal-head"><span>Sen</span><span>Sel</span><span>Rab</span><span>Kam</span><span>Jum</span><span>Sab</span><span>Min</span></div>
+    <div class="shift-kal-grid" id="shift-kal-grid"></div>
+    <button type="button" class="btn btn-primary" id="shift-kal-btn" onclick="simpanShiftKalender()">Simpan perubahan tanggal</button>
+    <div class="field-help" id="shift-kal-status"></div>
    </div>
   </details>
   </div>
@@ -1114,11 +1118,11 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="js/supabase-client.js"></script>
 <script src="js/photo-storage.js?v=20261015e"></script>
-<script src="js/real-backend.js?v=20261118k"></script>
+<script src="js/real-backend.js?v=20261118l"></script>
 <script src="js/dashboard-reports.js?v=20261015e"></script>
-<script src="js/mock-backend.js?v=20261118k"></script>
-<script src="js/app.js?v=20261118k"></script>
-<script src="js/payroll.js?v=20261118k"></script>
-<script src="js/preview.js?v=20261118k"></script>
+<script src="js/mock-backend.js?v=20261118l"></script>
+<script src="js/app.js?v=20261118l"></script>
+<script src="js/payroll.js?v=20261118l"></script>
+<script src="js/preview.js?v=20261118l"></script>
 </body>
 </html>
