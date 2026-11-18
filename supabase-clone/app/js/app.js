@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbw6q_5ZaIGrekeBwZ5TKh6X1GpWkFHsa5i6whdwacQkTEa-vvNezHlxFMEQFKZkmm5ffQ/exec';
-var APP_VERSION = '20261118i';
+var APP_VERSION = '20261118j';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -6118,6 +6118,31 @@ function siapkanAccordionShift() {
 }
 
 // Isi pilihan karyawan & shift pada panel "Atur shift beberapa tanggal".
+// Pratinjau: shift apa yang SEKARANG berlaku pada tanggal mulai rentang.
+// Ini mencegah salah pilih (mis. memilih Pagi padahal seharusnya Siang).
+function muatShiftRentangPreview() {
+ var userSel = document.getElementById('shift-range-user');
+ var mulai = document.getElementById('shift-range-mulai');
+ var preview = document.getElementById('shift-range-preview');
+ var shiftSel = document.getElementById('shift-range-shift');
+ if (!userSel || !mulai || !preview) return;
+ var userId = userSel.value;
+ var tanggal = mulai.value;
+ if (!userId || !tanggal) { preview.textContent = ''; return; }
+ var bulan = tanggal.slice(0, 7);
+ gasCall('getJadwalKaryawanBulan', [bulan, userId], function(r) {
+  if (!r || r.success === false || !Array.isArray(r.data)) { preview.textContent = ''; return; }
+  var row = r.data.find(function(x) { return String(x.tanggal).slice(0, 10) === tanggal; });
+  if (!row) { preview.textContent = ''; return; }
+  preview.textContent = 'Jadwal saat ini pada ' + tanggal + ': ' + row.shiftName + ' (' + row.jamMasuk + '-' + row.jamPulang + ').' +
+   ' Pilih shift yang seharusnya dipakai untuk rentang ini.';
+  if (shiftSel && row.shiftId) {
+   var opsi = [...shiftSel.options].find(function(o) { return o.textContent.indexOf(row.shiftName) === 0; });
+   if (opsi) shiftSel.value = opsi.value;
+  }
+ }, function() { preview.textContent = ''; });
+}
+
 function renderShiftRangeForm() {
  var userSel = document.getElementById('shift-range-user');
  var shiftSel = document.getElementById('shift-range-shift');
@@ -6137,6 +6162,7 @@ function renderShiftRangeForm() {
  var selesai = document.getElementById('shift-range-selesai');
  if (mulai && !mulai.value) mulai.value = shiftTodayKey();
  if (selesai && !selesai.value) selesai.value = shiftTodayKey();
+ setTimeout(muatShiftRentangPreview, 200);
 }
 
 // Simpan rentang shift (mis. 2-16 Nov seharusnya Shift Siang).

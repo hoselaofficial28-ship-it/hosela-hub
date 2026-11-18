@@ -300,6 +300,15 @@
     },
 
     // Shift efektif hari ini + boleh ganti atau tidak (terkunci setelah absen masuk).
+    // Jadwal efektif sebulan (dipakai pratinjau pada panel "Atur shift beberapa tanggal").
+    getJadwalKaryawanBulan: async function (args) {
+      var r = await window.sb.rpc('get_employee_schedule_month', {
+        p_bulan: String(args[0] || ''), p_user_id: args[1] || null,
+      });
+      if (r.error) return { success: false, msg: r.error.message, data: [] };
+      return { success: true, data: r.data || [] };
+    },
+
     // Atur shift untuk rentang tanggal (termasuk tanggal yang sudah lewat),
     // dipakai untuk memperbaiki pembacaan absensi lama.
     simpanShiftRentang: async function (args) {
