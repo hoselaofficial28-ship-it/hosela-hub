@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbw6q_5ZaIGrekeBwZ5TKh6X1GpWkFHsa5i6whdwacQkTEa-vvNezHlxFMEQFKZkmm5ffQ/exec';
-var APP_VERSION = '20261118c';
+var APP_VERSION = '20261118d';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -1212,6 +1212,94 @@ function toggleLihatSandi() {
  var tampil = input.type === 'password';
  input.type = tampil ? 'text' : 'password';
  btn.textContent = tampil ? 'Sembunyi' : 'Lihat';
+}
+
+// Saat keyboard HP terbuka, gulir kolom yang sedang diisi ke tengah layar.
+function siapkanScrollLogin() {
+ ['login-username', 'login-password', 'lupa-sandi-input'].forEach(function(id) {
+  var el = document.getElementById(id);
+  if (!el || el.getAttribute('data-scroll') === '1') return;
+  el.setAttribute('data-scroll', '1');
+  el.addEventListener('focus', function() {
+   setTimeout(function() {
+    try { el.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (e) { el.scrollIntoView(); }
+   }, 260);
+  });
+ });
+}
+
+// Lupa sandi: kirim tautan reset ke Gmail terdaftar.
+function bukaLupaSandi() {
+ var panel = document.getElementById('lupa-sandi-panel');
+ var status = document.getElementById('lupa-sandi-status');
+ if (panel) panel.hidden = false;
+ if (status) { status.textContent = ''; status.classList.remove('is-error'); }
+ var isi = document.getElementById('lupa-sandi-input');
+ if (isi) { isi.value = (document.getElementById('login-username') || {}).value || ''; isi.focus(); }
+}
+
+function tutupLupaSandi() {
+ var panel = document.getElementById('lupa-sandi-panel');
+ if (panel) panel.hidden = true;
+}
+
+function kirimTautanReset() {
+ var input = document.getElementById('lupa-sandi-input');
+ var btn = document.getElementById('lupa-sandi-btn');
+ var status = document.getElementById('lupa-sandi-status');
+ var nilai = ((input && input.value) || '').trim();
+ if (!nilai) { if (status) { status.textContent = 'Isi email atau nama pengguna dulu.'; status.classList.add('is-error'); } return; }
+ if (btn) { btn.disabled = true; btn.textContent = 'Mengirim...'; }
+ if (status) { status.textContent = ''; status.classList.remove('is-error'); }
+ gasCall('resetPasswordEmail', [nilai], function(r) {
+  if (btn) { btn.disabled = false; btn.textContent = 'Kirim tautan reset'; }
+  if (!r || r.success === false) {
+   if (status) { status.textContent = (r && r.msg) || 'Gagal mengirim tautan reset.'; status.classList.add('is-error'); }
+   return;
+  }
+  if (status) status.textContent = 'Tautan reset dikirim ke ' + (r.email || 'email terdaftar') + '. Buka Gmail dan cek folder Spam juga.';
+  showToast('Tautan reset dikirim ke email terdaftar.');
+ }, function() {
+  if (btn) { btn.disabled = false; btn.textContent = 'Kirim tautan reset'; }
+  if (status) { status.textContent = 'Koneksi gagal. Coba lagi.'; status.classList.add('is-error'); }
+ });
+}
+
+// Layar "buat sandi baru" (dibuka dari tautan reset di email).
+function tampilkanResetSandi() {
+ document.querySelectorAll('.screen').forEach(function(s){ s.classList.remove('active'); s.style.display = 'none'; });
+ var sc = document.getElementById('s-reset-sandi');
+ if (sc) { sc.classList.add('active'); sc.style.display = 'block'; }
+ if (window.sb && window.sb.auth) {
+  window.sb.auth.getUser().then(function(r) {
+   var el = document.getElementById('sandi-baru-email');
+   if (el && r && r.data && r.data.user) el.textContent = r.data.user.email || '-';
+  }).catch(function(){});
+ }
+}
+
+function simpanSandiBaru() {
+ var a = (document.getElementById('sandi-baru') || {}).value || '';
+ var b = (document.getElementById('sandi-baru-ulang') || {}).value || '';
+ var err = document.getElementById('sandi-baru-error');
+ var btn = document.getElementById('sandi-baru-btn');
+ if (err) err.textContent = '';
+ if (a.length < 6) { if (err) err.textContent = 'Sandi minimal 6 karakter.'; return; }
+ if (a !== b) { if (err) err.textContent = 'Ulangan sandi tidak sama.'; return; }
+ if (btn) { btn.disabled = true; btn.textContent = 'Menyimpan...'; }
+ window.sb.auth.updateUser({ password: a }).then(function(r) {
+  if (btn) { btn.disabled = false; btn.textContent = 'Simpan sandi baru'; }
+  if (r.error) { if (err) err.textContent = r.error.message; return; }
+  showToast('Sandi baru tersimpan. Silakan masuk.');
+  window.sb.auth.signOut().catch(function(){});
+  try { history.replaceState(null, '', location.pathname); } catch (e) {}
+  document.querySelectorAll('.screen').forEach(function(s){ s.classList.remove('active'); s.style.display = 'none'; });
+  var login = document.getElementById('s-login');
+  if (login) { login.classList.add('active'); login.style.display = 'block'; }
+ }).catch(function(e) {
+  if (btn) { btn.disabled = false; btn.textContent = 'Simpan sandi baru'; }
+  if (err) err.textContent = (e && e.message) || 'Gagal menyimpan sandi.';
+ });
 }
 
 function doLogin() {
@@ -6285,6 +6373,13 @@ function restoreVerifiedLogin(session) {
 
 window.onload = function() {
  setupPWAInstall();
+ siapkanScrollLogin();
+ // Tautan reset dari email membawa #...type=recovery -> tampilkan layar sandi baru
+ try {
+  if ((location.hash || '').indexOf('type=recovery') !== -1 || (location.search || '').indexOf('type=recovery') !== -1) {
+   setTimeout(tampilkanResetSandi, 900);
+  }
+ } catch (e) {}
  warmUpGAS();
  setTimeout(function() {
  document.getElementById('loading').style.display = 'none';

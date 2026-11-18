@@ -300,6 +300,21 @@
     },
 
     // Shift efektif hari ini + boleh ganti atau tidak (terkunci setelah absen masuk).
+    // Kirim tautan reset kata sandi ke email terdaftar (dipakai tombol "Lupa sandi?").
+    resetPasswordEmail: async function (args) {
+      var nilai = String(args[0] || '').trim();
+      if (!nilai) return { success: false, msg: 'Isi email atau nama pengguna dulu.' };
+      var email = nilai;
+      if (nilai.indexOf('@') === -1) {
+        var r = await window.sb.rpc('resolve_login_email', { p_nama: nilai });
+        if (r.error || !r.data) return { success: false, msg: 'Nama pengguna tidak ditemukan.' };
+        email = String(r.data);
+      }
+      var r2 = await window.sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin + '/' });
+      if (r2.error) return { success: false, msg: r2.error.message };
+      return { success: true, email: email };
+    },
+
     // Konfirmasi karyawan sudah membaca seluruh peraturan (dicatat di server).
     catatBacaPeraturan: async function (args) {
       var r = await window.sb.rpc('catat_baca_peraturan', { p_total_pasal: parseInt(args[0], 10) || 0 });

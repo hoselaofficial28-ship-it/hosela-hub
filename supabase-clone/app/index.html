@@ -9,14 +9,14 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=20261118c">
+<link rel="stylesheet" href="css/style.css?v=20261118d">
 
 
 
 
 
 
-<link rel="manifest" href="/manifest.webmanifest?v=20261118c">
+<link rel="manifest" href="/manifest.webmanifest?v=20261118d">
 <meta name="theme-color" content="#1557d8">
 <meta name="application-name" content="Hosela Hub">
 <meta name="mobile-web-app-capable" content="yes">
@@ -57,7 +57,9 @@
   <input type="password" class="form-input" id="login-password" placeholder="Kata sandi"
    autocomplete="current-password" autocapitalize="off" autocorrect="off" spellcheck="false"
    onkeydown="if(event.key==='Enter')doLogin()">
-  <button type="button" class="pin-toggle" id="login-password-toggle" onclick="toggleLihatSandi()" aria-label="Lihat sandi">Lihat</button>
+  <button type="button" class="pin-toggle" id="login-password-toggle" onclick="toggleLihatSandi()" aria-label="Lihat sandi" title="Lihat sandi">
+   <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+  </button>
  </div>
  </div>
  <div id="pin-spinner" style="display:none;justify-content:center;margin:8px 0">
@@ -68,6 +70,17 @@
  <div style="text-align:center;margin-top:14px">
   <span style="font-size:13px;color:var(--text-muted)">Belum punya akun? </span>
   <span style="font-size:13px;color:var(--blue);cursor:pointer;font-weight:600" onclick="goTo('s-daftar')">Daftar di sini</span>
+ </div>
+ <div style="text-align:center;margin-top:10px">
+  <span class="login-link" onclick="bukaLupaSandi()">Lupa sandi?</span>
+ </div>
+ <div id="lupa-sandi-panel" class="lupa-panel" hidden>
+  <div class="lupa-title">Reset kata sandi</div>
+  <p class="lupa-desc">Masukkan email atau nama pengguna. Kami kirim tautan untuk membuat sandi baru ke Gmail yang terdaftar.</p>
+  <input type="text" class="form-input" id="lupa-sandi-input" placeholder="email@gmail.com atau nama pengguna" autocapitalize="off" autocorrect="off" spellcheck="false">
+  <button type="button" class="btn btn-primary" id="lupa-sandi-btn" onclick="kirimTautanReset()">Kirim tautan reset</button>
+  <div class="lupa-status" id="lupa-sandi-status"></div>
+  <button type="button" class="lupa-batal" onclick="tutupLupaSandi()">Batal</button>
  </div>
  <div id="login-install-panel" class="pwa-install-panel">
   <button type="button" id="login-install-btn" class="pwa-install-btn" onclick="installApp()"><span class="pwa-install-icon" aria-hidden="true"></span><span>Install Hosela Hub</span></button>
@@ -183,6 +196,27 @@
   <span class="sm-version" id="sm-version">Hosela Hub</span>
  </footer>
 </aside>
+
+<!-- BUAT SANDI BARU (dibuka dari tautan reset email) -->
+<div class="screen" id="s-reset-sandi">
+ <div class="statusbar"></div>
+ <div class="header">
+  <div class="header-row"><div><h1>Sandi Baru</h1><p>Buat kata sandi baru untuk akunmu</p></div></div>
+  <div class="gold-line"></div>
+ </div>
+ <div class="content">
+  <div class="card">
+   <div class="card-title"><div class="card-dot"></div>Kata sandi baru</div>
+   <div class="form-group"><label class="form-label" for="sandi-baru">Sandi baru</label>
+    <input type="password" class="form-input" id="sandi-baru" placeholder="Minimal 6 karakter" autocomplete="new-password" autocapitalize="off"></div>
+   <div class="form-group"><label class="form-label" for="sandi-baru-ulang">Ulangi sandi baru</label>
+    <input type="password" class="form-input" id="sandi-baru-ulang" placeholder="Ketik ulang sandi" autocomplete="new-password" autocapitalize="off"></div>
+   <button class="btn btn-primary" id="sandi-baru-btn" onclick="simpanSandiBaru()">Simpan sandi baru</button>
+   <div class="pin-error" id="sandi-baru-error"></div>
+   <div class="field-help">Email: <b id="sandi-baru-email">-</b></div>
+  </div>
+ </div>
+</div>
 
 <!-- HOME -->
 <div class="screen" id="s-home">
@@ -1066,11 +1100,11 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="js/supabase-client.js"></script>
 <script src="js/photo-storage.js?v=20261015e"></script>
-<script src="js/real-backend.js?v=20261118c"></script>
+<script src="js/real-backend.js?v=20261118d"></script>
 <script src="js/dashboard-reports.js?v=20261015e"></script>
-<script src="js/mock-backend.js?v=20261118c"></script>
-<script src="js/app.js?v=20261118c"></script>
-<script src="js/payroll.js?v=20261118c"></script>
-<script src="js/preview.js?v=20261118c"></script>
+<script src="js/mock-backend.js?v=20261118d"></script>
+<script src="js/app.js?v=20261118d"></script>
+<script src="js/payroll.js?v=20261118d"></script>
+<script src="js/preview.js?v=20261118d"></script>
 </body>
 </html>
