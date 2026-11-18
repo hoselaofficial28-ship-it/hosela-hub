@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbw6q_5ZaIGrekeBwZ5TKh6X1GpWkFHsa5i6whdwacQkTEa-vvNezHlxFMEQFKZkmm5ffQ/exec';
-var APP_VERSION = '20261118h';
+var APP_VERSION = '20261118i';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -1230,15 +1230,6 @@ function siapkanScrollLogin() {
 }
 
 // Lupa sandi: kirim tautan reset ke Gmail terdaftar.
-var _lupaEmail = '';
-
-function tampilLangkahLupa(nomor) {
- [1, 2, 3].forEach(function(n) {
-  var el = document.getElementById('lupa-step-' + n);
-  if (el) el.hidden = n !== nomor;
- });
-}
-
 function setStatusLupa(teks, error) {
  var el = document.getElementById('lupa-sandi-status');
  if (!el) return;
@@ -1249,8 +1240,6 @@ function setStatusLupa(teks, error) {
 function bukaLupaSandi() {
  var panel = document.getElementById('lupa-sandi-panel');
  if (panel) panel.hidden = false;
- _lupaEmail = '';
- tampilLangkahLupa(1);
  setStatusLupa('');
  var isi = document.getElementById('lupa-sandi-input');
  if (isi) {
@@ -1262,83 +1251,30 @@ function bukaLupaSandi() {
 function tutupLupaSandi() {
  var panel = document.getElementById('lupa-sandi-panel');
  if (panel) panel.hidden = true;
- _lupaEmail = '';
  setStatusLupa('');
- tampilLangkahLupa(1);
 }
 
-// Langkah 1: kirim KODE ke email terdaftar (email tidak terdaftar akan ditolak)
-function kirimKodeReset(kirimUlang) {
+// Kirim tautan reset ke email terdaftar. Tautan dibuka -> aplikasi menampilkan
+// layar "Sandi Baru" (tanpa kode OTP, karena Supabase mengirim tautan).
+function kirimTautanReset() {
  var input = document.getElementById('lupa-sandi-input');
- var btn = document.getElementById(kirimUlang ? 'lupa-verifikasi-btn' : 'lupa-sandi-btn');
+ var btn = document.getElementById('lupa-sandi-btn');
  var nilai = ((input && input.value) || '').trim();
  if (!nilai) { setStatusLupa('Isi email atau nama pengguna dulu.', true); return; }
- if (btn) { btn.disabled = true; }
- setStatusLupa('Mengirim kode ke email terdaftar...');
+ if (btn) { btn.disabled = true; btn.textContent = 'Mengirim...'; }
+ setStatusLupa('Mengirim tautan reset...');
  gasCall('resetPasswordEmail', [nilai], function(r) {
-  if (btn) btn.disabled = false;
+  if (btn) { btn.disabled = false; btn.textContent = 'Kirim tautan reset'; }
   if (!r || r.success === false) {
-   setStatusLupa((r && r.msg) || 'Gagal mengirim kode verifikasi.', true);
+   setStatusLupa((r && r.msg) || 'Gagal mengirim tautan reset.', true);
    return;
   }
-  _lupaEmail = r.email || '';
-  tampilLangkahLupa(2);
-  setStatusLupa('Kode sudah dikirim ke ' + _lupaEmail + '. Cek Inbox/Spam, lalu masukkan 6 digit kodenya.');
-  var kode = document.getElementById('lupa-kode-input');
-  if (kode) { kode.value = ''; kode.focus(); }
+  setStatusLupa('Tautan reset sudah dikirim ke ' + (r.email || 'email terdaftar') +
+   '. Buka Gmail (cek juga Spam), lalu klik tautannya untuk membuat sandi baru.');
+  showToast('Tautan reset dikirim ke email terdaftar.');
  }, function() {
-  if (btn) btn.disabled = false;
+  if (btn) { btn.disabled = false; btn.textContent = 'Kirim tautan reset'; }
   setStatusLupa('Koneksi gagal. Coba lagi.', true);
- });
-}
-
-// Langkah 2: verifikasi kode OTP dari email
-function verifikasiKodeReset() {
- var kodeEl = document.getElementById('lupa-kode-input');
- var btn = document.getElementById('lupa-verifikasi-btn');
- var kode = ((kodeEl && kodeEl.value) || '').replace(/\s+/g, '');
- if (!_lupaEmail) { setStatusLupa('Kirim kode dulu.', true); tampilLangkahLupa(1); return; }
- if (kode.length < 6) { setStatusLupa('Kode terdiri dari 6 digit.', true); return; }
- if (btn) { btn.disabled = true; }
- setStatusLupa('Memeriksa kode...');
- gasCall('verifikasiKodeReset', [_lupaEmail, kode], function(r) {
-  if (btn) btn.disabled = false;
-  if (!r || r.success === false) {
-   setStatusLupa((r && r.msg) || 'Kode salah atau kedaluwarsa.', true);
-   return;
-  }
-  tampilLangkahLupa(3);
-  setStatusLupa('Kode benar. Sekarang buat sandi baru.');
-  var s = document.getElementById('lupa-sandi-baru');
-  if (s) s.focus();
- }, function() {
-  if (btn) btn.disabled = false;
-  setStatusLupa('Koneksi gagal saat memeriksa kode.', true);
- });
-}
-
-// Langkah 3: simpan sandi baru (tanpa meninggalkan halaman login)
-function simpanSandiBaruLupa() {
- var a = (document.getElementById('lupa-sandi-baru') || {}).value || '';
- var b = (document.getElementById('lupa-sandi-ulang') || {}).value || '';
- var btn = document.getElementById('lupa-simpan-btn');
- if (a.length < 6) { setStatusLupa('Sandi minimal 6 karakter.', true); return; }
- if (a !== b) { setStatusLupa('Ulangan sandi tidak sama.', true); return; }
- if (btn) { btn.disabled = true; }
- setStatusLupa('Menyimpan sandi baru...');
- gasCall('simpanSandiBaruReset', [a], function(r) {
-  if (btn) btn.disabled = false;
-  if (!r || r.success === false) { setStatusLupa((r && r.msg) || 'Gagal menyimpan sandi.', true); return; }
-  setStatusLupa('Sandi baru tersimpan. Silakan masuk dengan sandi baru.', false);
-  showToast('Sandi berhasil diubah. Silakan masuk.');
-  setTimeout(function() {
-   tutupLupaSandi();
-   var pwd = document.getElementById('login-password');
-   if (pwd) { pwd.value = ''; pwd.focus(); }
-  }, 1200);
- }, function() {
-  if (btn) btn.disabled = false;
-  setStatusLupa('Koneksi gagal menyimpan sandi.', true);
  });
 }
 
@@ -1355,6 +1291,24 @@ function tampilkanResetSandi() {
  }
 }
 
+// Supabase menolak sandi yang sama dengan sandi saat ini. Supaya karyawan bebas
+// memakai sandi apa pun (termasuk sandi lama), lakukan dua langkah: set sandi acak
+// sementara lalu set sandi yang diinginkan.
+function simpanSandiTanpaBatas(sandi) {
+ return window.sb.auth.updateUser({ password: sandi }).then(function(r) {
+  if (r.error) {
+   var pesan = String(r.error.message || '');
+   if (/different from the old password|should be different|sama dengan/i.test(pesan)) {
+    var sementara = 'Hosela-' + Math.random().toString(36).slice(2, 10) + '!' + Date.now().toString().slice(-4);
+    return window.sb.auth.updateUser({ password: sementara }).then(function() {
+     return window.sb.auth.updateUser({ password: sandi });
+    });
+   }
+  }
+  return r;
+ });
+}
+
 function simpanSandiBaru() {
  var a = (document.getElementById('sandi-baru') || {}).value || '';
  var b = (document.getElementById('sandi-baru-ulang') || {}).value || '';
@@ -1364,7 +1318,7 @@ function simpanSandiBaru() {
  if (a.length < 6) { if (err) err.textContent = 'Sandi minimal 6 karakter.'; return; }
  if (a !== b) { if (err) err.textContent = 'Ulangan sandi tidak sama.'; return; }
  if (btn) { btn.disabled = true; btn.textContent = 'Menyimpan...'; }
- window.sb.auth.updateUser({ password: a }).then(function(r) {
+ simpanSandiTanpaBatas(a).then(function(r) {
   if (btn) { btn.disabled = false; btn.textContent = 'Simpan sandi baru'; }
   if (r.error) { if (err) err.textContent = r.error.message; return; }
   showToast('Sandi baru tersimpan. Silakan masuk.');
