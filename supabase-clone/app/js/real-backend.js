@@ -300,18 +300,38 @@
     },
 
     // Shift efektif hari ini + boleh ganti atau tidak (terkunci setelah absen masuk).
-    // Kirim tautan reset kata sandi ke email terdaftar (dipakai tombol "Lupa sandi?").
+    // Kirim tautan reset kata sandi. HANYA ke email yang benar-benar terdaftar
+    // pada profil karyawan AKTIF; email sembarang ditolak.
     resetPasswordEmail: async function (args) {
       var nilai = String(args[0] || '').trim();
       if (!nilai) return { success: false, msg: 'Isi email atau nama pengguna dulu.' };
-      var email = nilai;
+
+      var email = '';
       if (nilai.indexOf('@') === -1) {
-        var r = await window.sb.rpc('resolve_login_email', { p_nama: nilai });
-        if (r.error || !r.data) return { success: false, msg: 'Nama pengguna tidak ditemukan.' };
-        email = String(r.data);
+        // input nama pengguna -> cari email resmi milik akun itu
+        var rNama = await window.sb.rpc('resolve_login_email', { p_nama: nilai });
+        if (rNama.error || !rNama.data) {
+          return { success: false, msg: 'Nama pengguna tidak ditemukan atau akun tidak aktif.' };
+        }
+        email = String(rNama.data);
+      } else {
+        // input email -> wajib cocok dengan email yang terdaftar
+        var rCek = await window.sb.rpc('email_terdaftar', { p_email: nilai });
+        if (rCek.error) {
+          // fungsi verifikasi belum ada (migrasi 059 belum dijalankan)
+          if (/does not exist|schema cache|PGRST202/i.test(String(rCek.error.message || ''))) {
+            return { success: false, msg: 'Verifikasi email belum aktif. Untuk sementara masukkan NAMA PENGGUNA (bukan email).' };
+          }
+          return { success: false, msg: rCek.error.message };
+        }
+        if (rCek.data !== true) {
+          return { success: false, msg: 'Email ini tidak terdaftar sebagai akun karyawan. Periksa kembali atau gunakan nama pengguna.' };
+        }
+        email = nilai;
       }
-      var r2 = await window.sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin + '/' });
-      if (r2.error) return { success: false, msg: r2.error.message };
+
+      var rKirim = await window.sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin + '/' });
+      if (rKirim.error) return { success: false, msg: rKirim.error.message };
       return { success: true, email: email };
     },
 
