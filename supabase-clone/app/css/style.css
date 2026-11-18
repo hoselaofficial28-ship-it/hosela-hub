@@ -4483,3 +4483,11 @@ body.phone-mode #app-wrap #s-daftar.screen.active{
    yang menempel (sticky) di kanan tidak menutupi panel yang sedang dibuka. */
 body:not(.phone-mode) .shift-accordion-group{grid-column:1!important}
 body:not(.phone-mode) .shift-apply-card{top:8px}
+
+/* Kolom sandi + tombol lihat sandi (form login) */
+.pin-wrap{position:relative}
+.pin-wrap .form-input{padding-right:72px}
+.pin-toggle{position:absolute;right:8px;top:50%;transform:translateY(-50%);
+  border:1px solid #cfe0ff;background:#eef4ff;color:#1557d8;border-radius:8px;
+  font:inherit;font-size:11.5px;font-weight:750;padding:6px 10px;cursor:pointer}
+.pin-toggle:active{background:#e0ebff}

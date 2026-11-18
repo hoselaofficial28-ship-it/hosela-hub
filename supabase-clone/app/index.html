@@ -9,14 +9,14 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=20261118b">
+<link rel="stylesheet" href="css/style.css?v=20261118c">
 
 
 
 
 
 
-<link rel="manifest" href="/manifest.webmanifest?v=20261118b">
+<link rel="manifest" href="/manifest.webmanifest?v=20261118c">
 <meta name="theme-color" content="#1557d8">
 <meta name="application-name" content="Hosela Hub">
 <meta name="mobile-web-app-capable" content="yes">
@@ -48,12 +48,17 @@
  <p class="login-help">Gunakan email atau nama pengguna akun Anda.</p>
  <div class="form-group" id="username-group">
  <label class="form-label">Nama Pengguna</label>
- <input type="text" class="form-input" id="login-username" placeholder="Nama kamu" autocomplete="username">
+ <input type="text" class="form-input" id="login-username" placeholder="Nama kamu" autocomplete="username" autocapitalize="off" autocorrect="off" spellcheck="false">
  <div style="font-size:11px;color:var(--blue);margin-top:4px;cursor:pointer" onclick="gantiAkun()">Bukan kamu? Ganti akun</div>
  </div>
  <div class="form-group">
  <label class="form-label">Kata Sandi</label>
- <input type="password" class="form-input" id="login-password" placeholder="Kata sandi" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
+ <div class="pin-wrap">
+  <input type="password" class="form-input" id="login-password" placeholder="Kata sandi"
+   autocomplete="current-password" autocapitalize="off" autocorrect="off" spellcheck="false"
+   onkeydown="if(event.key==='Enter')doLogin()">
+  <button type="button" class="pin-toggle" id="login-password-toggle" onclick="toggleLihatSandi()" aria-label="Lihat sandi">Lihat</button>
+ </div>
  </div>
  <div id="pin-spinner" style="display:none;justify-content:center;margin:8px 0">
  <div style="width:28px;height:28px;border:3px solid rgba(14,79,163,0.2);border-top:3px solid #0e4fa3;border-radius:50%;animation:spin .7s linear infinite"></div>
@@ -1061,11 +1066,11 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="js/supabase-client.js"></script>
 <script src="js/photo-storage.js?v=20261015e"></script>
-<script src="js/real-backend.js?v=20261118b"></script>
+<script src="js/real-backend.js?v=20261118c"></script>
 <script src="js/dashboard-reports.js?v=20261015e"></script>
-<script src="js/mock-backend.js?v=20261118b"></script>
-<script src="js/app.js?v=20261118b"></script>
-<script src="js/payroll.js?v=20261118b"></script>
-<script src="js/preview.js?v=20261118b"></script>
+<script src="js/mock-backend.js?v=20261118c"></script>
+<script src="js/app.js?v=20261118c"></script>
+<script src="js/payroll.js?v=20261118c"></script>
+<script src="js/preview.js?v=20261118c"></script>
 </body>
 </html>

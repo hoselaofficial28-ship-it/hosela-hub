@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbw6q_5ZaIGrekeBwZ5TKh6X1GpWkFHsa5i6whdwacQkTEa-vvNezHlxFMEQFKZkmm5ffQ/exec';
-var APP_VERSION = '20261118b';
+var APP_VERSION = '20261118c';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -1204,9 +1204,19 @@ function submitDaftarAkun() {
  });
 }
 
+// Tombol "Lihat" pada kolom sandi (membantu karyawan memeriksa ketikan).
+function toggleLihatSandi() {
+ var input = document.getElementById('login-password');
+ var btn = document.getElementById('login-password-toggle');
+ if (!input || !btn) return;
+ var tampil = input.type === 'password';
+ input.type = tampil ? 'text' : 'password';
+ btn.textContent = tampil ? 'Sembunyi' : 'Lihat';
+}
+
 function doLogin() {
  var username = document.getElementById('login-username').value.trim();
- var password = document.getElementById('login-password').value;
+ var password = (document.getElementById('login-password').value || '').trim();
  var errEl = document.getElementById('pin-error');
  if (!username) { errEl.textContent = 'Nama pengguna tidak boleh kosong'; return; }
  if (!password) { errEl.textContent = 'Kata sandi tidak boleh kosong'; return; }
@@ -1229,7 +1239,7 @@ function doLogin() {
  history.replaceState({ screen: 's-home' }, '', '#home');
  goTo('s-home');
  } else {
- errEl.textContent = (r && r.msg) ? r.msg : 'Nama pengguna atau kata sandi salah.';
+ errEl.textContent = (r && r.msg) ? (r.msg + ' — periksa huruf besar/kecil dan spasi di akhir sandi.') : 'Nama pengguna atau kata sandi salah.';
  document.getElementById('login-password').value = '';
  }
  }, function() {
