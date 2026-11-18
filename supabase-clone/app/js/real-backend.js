@@ -1101,7 +1101,11 @@
     var employeeSchedules = results[4].data || [];
     var employeeScheduleMap = {};
     employeeSchedules.forEach(function (row) {
-      employeeScheduleMap[row.userId + '|' + row.tanggal] = row;
+      // RPC mengirim tanggal sebagai "2026-11-02T00:00:00+00:00"; kunci pencarian memakai
+      // "2026-11-02". Tanpa normalisasi ini, jadwal shift tidak pernah terpakai dan semua
+      // hari dihitung memakai jam bawaan 08:00-18:00 (penyebab Shift Siang selalu "telat").
+      var kunciTanggal = String(row.tanggal || '').slice(0, 10);
+      if (row.userId && kunciTanggal) employeeScheduleMap[String(row.userId) + '|' + kunciTanggal] = row;
     });
     users.forEach(function (u) {
       Object.keys(u.days).forEach(function (day) {

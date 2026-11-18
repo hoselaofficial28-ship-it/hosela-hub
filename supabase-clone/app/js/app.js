@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbw6q_5ZaIGrekeBwZ5TKh6X1GpWkFHsa5i6whdwacQkTEa-vvNezHlxFMEQFKZkmm5ffQ/exec';
-var APP_VERSION = '20261118j';
+var APP_VERSION = '20261118k';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -6132,7 +6132,7 @@ function muatShiftRentangPreview() {
  var bulan = tanggal.slice(0, 7);
  gasCall('getJadwalKaryawanBulan', [bulan, userId], function(r) {
   if (!r || r.success === false || !Array.isArray(r.data)) { preview.textContent = ''; return; }
-  var row = r.data.find(function(x) { return String(x.tanggal).slice(0, 10) === tanggal; });
+  var row = r.data.find(function(x) { return String(x.tanggal || '').slice(0, 10) === tanggal; });
   if (!row) { preview.textContent = ''; return; }
   preview.textContent = 'Jadwal saat ini pada ' + tanggal + ': ' + row.shiftName + ' (' + row.jamMasuk + '-' + row.jamPulang + ').' +
    ' Pilih shift yang seharusnya dipakai untuk rentang ini.';
@@ -6148,7 +6148,7 @@ function renderShiftRangeForm() {
  var shiftSel = document.getElementById('shift-range-shift');
  if (!userSel || !shiftSel) return;
  if (userSel.options.length === 0) {
-  userSel.innerHTML = (_shiftManagement.employees || []).map(function(e) {
+  userSel.innerHTML = '<option value="">— Pilih karyawan —</option>' + (_shiftManagement.employees || []).map(function(e) {
    return '<option value="' + e.id + '">' + htmlEscape(e.nama) + (e.bagian ? ' — ' + htmlEscape(e.bagian) : '') + '</option>';
   }).join('');
  }
@@ -6181,6 +6181,9 @@ function simpanShiftRentang() {
  if (!userId) { if (status) status.textContent = 'Pilih karyawan dulu.'; return; }
  if (!t1 || !t2) { if (status) status.textContent = 'Isi tanggal mulai dan selesai.'; return; }
  if (t2 < t1) { if (status) status.textContent = 'Tanggal selesai harus setelah tanggal mulai.'; return; }
+ var namaKaryawan = (userSel.options[userSel.selectedIndex] || {}).textContent || '';
+ var namaShift = (shiftSel.options[shiftSel.selectedIndex] || {}).textContent || '';
+ if (!confirm('Terapkan ' + namaShift + '\nuntuk ' + namaKaryawan + '\npada ' + t1 + ' sampai ' + t2 + '?\n\nCatatan kehadiran akan dihitung ulang memakai shift ini.')) return;
  if (status) status.textContent = 'Menyimpan...';
  if (btn) btn.disabled = true;
  gasCall('simpanShiftRentang', [userId, t1, t2, kode, (catatan && catatan.value) || ''], function(r) {
