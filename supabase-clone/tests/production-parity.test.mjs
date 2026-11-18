@@ -1,4 +1,4 @@
-import assert from 'node:assert/strict';
+﻿import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 const html = readFileSync(new URL('../app/index.html', import.meta.url), 'utf8');
@@ -16,7 +16,7 @@ const realHandlers = new Set(
 );
 const missingHandlers = [...calledActions].filter((action) => !realHandlers.has(action)).sort();
 
-assert.equal(calledActions.size, 93, 'Jumlah aksi frontend berubah; audit handler Supabase wajib diperbarui');
+assert.equal(calledActions.size, 95, 'Jumlah aksi frontend berubah; audit handler Supabase wajib diperbarui');
 assert.deepEqual(missingHandlers, [], `Aksi frontend tanpa handler Supabase: ${missingHandlers.join(', ')}`);
 
 const expectedScreens = [

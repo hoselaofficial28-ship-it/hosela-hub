@@ -4544,3 +4544,15 @@ body:not(.phone-mode) .shift-apply-card{top:8px}
  .shift-kal-hari small{font-size:8.5px}
  .shift-kal-kosong{height:58px}
 }
+
+/* Layar Shift Saya (karyawan) */
+.shift-saya-hari{display:flex;flex-direction:column;gap:10px;margin:12px 0}
+.shift-saya-baris{border:1px solid #e2eaf6;border-radius:12px;padding:11px 12px;background:#fff}
+.shift-saya-baris.is-now{border-color:#9dbdf5;background:#f5f9ff}
+.shift-saya-label{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
+.shift-saya-label b{font-size:13px;color:#132036}
+.shift-saya-label span{font-size:11px;color:#7b8798}
+.shift-saya-opsi{display:flex;gap:8px}
+.shift-saya-opsi .btn{flex:1;min-height:40px;font-size:12.5px}
+.shift-saya-opsi .btn.is-on{background:#1557d8;color:#fff;border-color:#1557d8}
+.shift-saya-opsi .btn.kosong{background:#fff;color:#7b8798;border:1px solid #d7e0ee;flex:0 0 auto;padding:0 12px}

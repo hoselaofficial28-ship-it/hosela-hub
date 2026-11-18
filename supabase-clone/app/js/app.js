@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbw6q_5ZaIGrekeBwZ5TKh6X1GpWkFHsa5i6whdwacQkTEa-vvNezHlxFMEQFKZkmm5ffQ/exec';
-var APP_VERSION = '20261118l';
+var APP_VERSION = '20261118m';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -918,6 +918,7 @@ function goTo(id) {
  if (id === 's-sanksi-manual') loadSanksiManual();
  if (id === 's-review-telat') loadReviewTelat();
  if (id === 's-catatan-kehadiran') loadAttendanceMatrix();
+ if (id === 's-shift-saya') loadShiftSayaLayar();
  if (id === 's-setting-gaji') loadSalarySettings();
  if (id === 's-payroll') loadPayroll();
  if (id === 's-slip-gaji') loadSlipGaji();
@@ -1492,6 +1493,8 @@ function loadHome(forceRefresh) {
  menus.push({id:'s-absensi-camera', icon:'camera', bg:'#e8f0ff', label:'Absensi Kamera', sub:'Foto & lokasi kantor'});
  menus.push({id:'s-catatan-kehadiran', icon:'calendar', bg:'#e8f0ff', label:'Catatan Kehadiran', sub:'Riwayat masuk & pulang'});
  menus.push({id:'s-izin', icon:'edit', bg:'#d1fae5', label:'Izin / Sakit', sub:'Ajukan ketidakhadiran'});
+  if (u.bagian !== 'Owner' && u.bagian !== 'Finance')
+   menus.push({id:'s-shift-saya', icon:'clock', bg:'#e0f2fe', label:'Shift Saya', sub:'Atur shift kemarin/hari ini/besok'});
 if (u.bagian !== 'Owner' && u.bagian !== 'Finance')
 menus.push({id:'s-slip-gaji', icon:'receipt', bg:'#e0f2fe', label:'Slip Gaji', sub:'Riwayat gaji kamu'});
  if (u.bagian === 'Owner' || u.bagian === 'Finance')
@@ -6263,6 +6266,79 @@ function simpanShiftKalender() {
  }, function() {
   if (btn) btn.disabled = false;
   if (status) status.textContent = 'Koneksi gagal menyimpan.';
+ });
+}
+
+// ===== Menu "Shift Saya": atur shift kemarin / hari ini / besok =====
+function tanggalLokalShift(offsetHari) {
+ var d = new Date();
+ d.setDate(d.getDate() + (offsetHari || 0));
+ return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+
+function loadShiftSayaLayar() {
+ var list = document.getElementById('shift-saya-hari-list');
+ var status = document.getElementById('shift-saya-status');
+ if (!list) return;
+ list.innerHTML = '<div class="field-help">Memuat jadwal...</div>';
+ if (status) status.textContent = '';
+ var dari = tanggalLokalShift(-1), sampai = tanggalLokalShift(1);
+ gasCall('getShiftSayaRentang', [dari, sampai], function(r) {
+  if (!r || r.success === false || !Array.isArray(r.data)) {
+   list.innerHTML = '<div class="field-help">Gagal memuat jadwal: ' + htmlEscape((r && r.msg) || 'tidak diketahui') + '</div>';
+   return;
+  }
+  renderShiftSayaHari(r.data);
+ }, function() {
+  list.innerHTML = '<div class="field-help">Koneksi gagal memuat jadwal.</div>';
+ });
+}
+
+function renderShiftSayaHari(data) {
+ var list = document.getElementById('shift-saya-hari-list');
+ if (!list) return;
+ var map = {};
+ (data || []).forEach(function(x) { map[String(x.tanggal).slice(0, 10)] = x; });
+
+ var hariIni = tanggalLokalShift(0);
+ var definisi = [{ offset: -1, judul: 'Kemarin' }, { offset: 0, judul: 'Hari ini' }, { offset: 1, judul: 'Besok' }];
+ var html = '';
+
+ definisi.forEach(function(d) {
+  var iso = tanggalLokalShift(d.offset);
+  var row = map[iso] || null;
+  var nama = row ? row.shiftName : '-';
+  var jam = row ? (row.jamMasuk + '-' + row.jamPulang) : '-';
+  var kodeSkrg = row && String(row.shiftName || '').toLowerCase().indexOf('siang') !== -1 ? 'SIANG' : (row ? 'PAGI' : '');
+  var tglTeks = new Date(iso + 'T12:00:00').toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'short' });
+  var kelas = 'shift-saya-baris' + (iso === hariIni ? ' is-now' : '');
+  html += '<div class="' + kelas + '" data-tanggal="' + iso + '">' +
+   '<div class="shift-saya-label"><b>' + d.judul + ' · ' + htmlEscape(tglTeks) + '</b><span>' + htmlEscape(nama) + ' ' + htmlEscape(jam) + '</span></div>' +
+   '<div class="shift-saya-opsi">' +
+    '<button type="button" class="btn btn-sm btn-secondary' + (kodeSkrg === 'PAGI' ? ' is-on' : '') + '" onclick="pilihShiftTanggalSaya(\'' + iso + '\',\'PAGI\')">Shift Pagi</button>' +
+    '<button type="button" class="btn btn-sm btn-secondary' + (kodeSkrg === 'SIANG' ? ' is-on' : '') + '" onclick="pilihShiftTanggalSaya(\'' + iso + '\',\'SIANG\')">Shift Siang</button>' +
+    (row && row.pengecualian ? '<button type="button" class="btn btn-sm kosong" title="Kembali ikut jadwal" onclick="pilihShiftTanggalSaya(\'' + iso + '\',\'\')">Reset</button>' : '') +
+   '</div></div>';
+ });
+ list.innerHTML = html;
+}
+
+function pilihShiftTanggalSaya(tanggal, kode) {
+ var status = document.getElementById('shift-saya-status');
+ if (status) status.textContent = 'Menyimpan...';
+ gasCall('pilihShiftTanggal', [tanggal, kode], function(r) {
+  if (!r || r.success === false) {
+   if (status) status.textContent = (r && r.msg) || 'Gagal menyimpan shift.';
+   showToast((r && r.msg) || 'Gagal menyimpan shift');
+   return;
+  }
+  if (status) status.textContent = r.shift ? ('Tersimpan: ' + r.shift + ' pada ' + tanggal + '.') : 'Tanggal dikembalikan mengikuti jadwal.';
+  showToast(r.shift ? ('Shift ' + r.shift + ' tersimpan') : 'Kembali ikut jadwal');
+  cacheClearAction('getShiftSaya');
+  loadShiftSayaLayar();
+  if (typeof loadShiftSaya === 'function') loadShiftSaya();
+ }, function() {
+  if (status) status.textContent = 'Koneksi gagal menyimpan shift.';
  });
 }
 

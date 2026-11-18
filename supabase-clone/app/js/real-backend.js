@@ -350,6 +350,20 @@
       return { success: true };
     },
 
+    // Shift Saya: jadwal efektif milik sendiri untuk beberapa tanggal.
+    getShiftSayaRentang: async function (args) {
+      var r = await window.sb.rpc('get_shift_saya_rentang', { p_dari: args[0], p_sampai: args[1] });
+      if (r.error) return { success: false, msg: r.error.message, data: [] };
+      return { success: true, data: r.data || [] };
+    },
+
+    // Shift Saya: pilih shift untuk satu tanggal (kemarin/hari ini/besok).
+    pilihShiftTanggal: async function (args) {
+      var r = await window.sb.rpc('pilih_shift_tanggal', { p_tanggal: args[0], p_kode: args[1] || null });
+      if (r.error) return { success: false, msg: r.error.message };
+      return r.data;
+    },
+
     // Kirim tautan reset kata sandi. HANYA ke email yang benar-benar terdaftar
     // pada profil karyawan AKTIF; email sembarang ditolak.
     resetPasswordEmail: async function (args) {
