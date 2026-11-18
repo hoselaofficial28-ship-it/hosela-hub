@@ -60,7 +60,7 @@
         else if (p.status === 'NONAKTIF') msg = 'Akun kamu nonaktif. Hubungi Owner.';
         return { success: false, msg: msg };
       }
-      return { success: true, isDefaultPassword: false, user: { id: p.id, nama: p.nama, bagian: p.bagian, jabatan: p.jabatan, legacyId: p.legacy_id || '' } };
+      return { success: true, isDefaultPassword: false, user: { id: p.id, nama: p.nama, bagian: p.bagian, jabatan: p.jabatan, legacyId: p.legacy_id || '', boleh_pilih_shift: !!p.boleh_pilih_shift } };
     },
 
     getDaftarOptions: async function () {
@@ -348,6 +348,14 @@
       if (r.error) return { success: false, msg: r.error.message };
       try { await window.sb.auth.signOut(); } catch (e) {}
       return { success: true };
+    },
+
+    // Izin memilih shift sendiri (dipakai untuk menampilkan menu "Shift Saya").
+    getBolehPilihShift: async function () {
+      var r = await window.sb.rpc('get_my_profile');
+      if (r.error || !r.data) return { success: false, boleh: false };
+      var p = Array.isArray(r.data) ? r.data[0] : r.data;
+      return { success: true, boleh: !!(p && p.boleh_pilih_shift) };
     },
 
     // Shift Saya: jadwal efektif milik sendiri untuk beberapa tanggal.

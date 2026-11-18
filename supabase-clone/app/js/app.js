@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbw6q_5ZaIGrekeBwZ5TKh6X1GpWkFHsa5i6whdwacQkTEa-vvNezHlxFMEQFKZkmm5ffQ/exec';
-var APP_VERSION = '20261118m';
+var APP_VERSION = '20261118n';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -1425,6 +1425,14 @@ function bukaGotoAwal() {
  setTimeout(function() { goTo(tujuan); }, 120);
 }
 
+// Siapa yang boleh melihat menu "Shift Saya": karyawan (bukan Owner/Finance)
+// yang sudah dicentang "Izinkan pilih shift sendiri" oleh Owner.
+function bolehMenuShiftSaya(u) {
+ if (!u) return false;
+ if (u.bagian === 'Owner' || u.bagian === 'Finance') return false;
+ return u.boleh_pilih_shift === true || u.bolehPilihShift === true;
+}
+
 function loadHome(forceRefresh) {
  var u = currentUser;
  if (!u) return;
@@ -1493,7 +1501,8 @@ function loadHome(forceRefresh) {
  menus.push({id:'s-absensi-camera', icon:'camera', bg:'#e8f0ff', label:'Absensi Kamera', sub:'Foto & lokasi kantor'});
  menus.push({id:'s-catatan-kehadiran', icon:'calendar', bg:'#e8f0ff', label:'Catatan Kehadiran', sub:'Riwayat masuk & pulang'});
  menus.push({id:'s-izin', icon:'edit', bg:'#d1fae5', label:'Izin / Sakit', sub:'Ajukan ketidakhadiran'});
-  if (u.bagian !== 'Owner' && u.bagian !== 'Finance')
+  // Menu Shift Saya HANYA untuk karyawan yang diizinkan Owner (boleh_pilih_shift).
+  if (bolehMenuShiftSaya(u))
    menus.push({id:'s-shift-saya', icon:'clock', bg:'#e0f2fe', label:'Shift Saya', sub:'Atur shift kemarin/hari ini/besok'});
 if (u.bagian !== 'Owner' && u.bagian !== 'Finance')
 menus.push({id:'s-slip-gaji', icon:'receipt', bg:'#e0f2fe', label:'Slip Gaji', sub:'Riwayat gaji kamu'});
@@ -6278,6 +6287,10 @@ function tanggalLokalShift(offsetHari) {
 
 function loadShiftSayaLayar() {
  var list = document.getElementById('shift-saya-hari-list');
+ if (currentUser && currentUser.boleh_pilih_shift === false) {
+  if (list) list.innerHTML = '<div class="field-help">Kamu belum diizinkan memilih shift sendiri. Hubungi Owner untuk mengaktifkan di Pengaturan Shift.</div>';
+  return;
+ }
  var status = document.getElementById('shift-saya-status');
  if (!list) return;
  list.innerHTML = '<div class="field-help">Memuat jadwal...</div>';
@@ -6622,6 +6635,19 @@ function openInitialLogin() {
 
 function restoreVerifiedLogin(session) {
  currentUser = session.user;
+
+ // Sesi lama mungkin belum menyimpan izin pilih shift -> sinkronkan sekali.
+ if (currentUser && currentUser.bagian !== 'Owner' && currentUser.bagian !== 'Finance' && typeof currentUser.boleh_pilih_shift === 'undefined') {
+  gasCall('getBolehPilihShift', [], function(r) {
+   if (r && r.success) {
+    currentUser.boleh_pilih_shift = !!r.boleh;
+    try { saveLoginSession(currentUser, session.username || ''); } catch (e) {}
+    // segarkan menu Home supaya item "Shift Saya" langsung muncul/hilang
+    var aktif = document.querySelector('.screen.active');
+    if (aktif && aktif.id === 's-home' && typeof loadHome === 'function') loadHome(true);
+   }
+  }, function() {});
+ }
  if (session.username) localStorage.setItem('hh_username', session.username);
  _navHistory = [];
  history.replaceState({ screen: 's-home' }, '', '#home');
