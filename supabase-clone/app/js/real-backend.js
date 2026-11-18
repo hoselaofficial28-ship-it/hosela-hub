@@ -300,6 +300,17 @@
     },
 
     // Shift efektif hari ini + boleh ganti atau tidak (terkunci setelah absen masuk).
+    // Atur shift untuk rentang tanggal (termasuk tanggal yang sudah lewat),
+    // dipakai untuk memperbaiki pembacaan absensi lama.
+    simpanShiftRentang: async function (args) {
+      var r = await window.sb.rpc('simpan_shift_rentang', {
+        p_user_id: args[0], p_mulai: args[1], p_selesai: args[2],
+        p_shift_kode: args[3], p_catatan: args[4] || null,
+      });
+      if (r.error) return { success: false, msg: r.error.message };
+      return r.data;
+    },
+
     // Kirim tautan reset kata sandi. HANYA ke email yang benar-benar terdaftar
     // pada profil karyawan AKTIF; email sembarang ditolak.
     resetPasswordEmail: async function (args) {

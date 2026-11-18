@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbw6q_5ZaIGrekeBwZ5TKh6X1GpWkFHsa5i6whdwacQkTEa-vvNezHlxFMEQFKZkmm5ffQ/exec';
-var APP_VERSION = '20261118e';
+var APP_VERSION = '20261118f';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -6086,6 +6086,62 @@ function siapkanAccordionShift() {
  });
 }
 
+// Isi pilihan karyawan & shift pada panel "Atur shift beberapa tanggal".
+function renderShiftRangeForm() {
+ var userSel = document.getElementById('shift-range-user');
+ var shiftSel = document.getElementById('shift-range-shift');
+ if (!userSel || !shiftSel) return;
+ if (userSel.options.length === 0) {
+  userSel.innerHTML = (_shiftManagement.employees || []).map(function(e) {
+   return '<option value="' + e.id + '">' + htmlEscape(e.nama) + (e.bagian ? ' — ' + htmlEscape(e.bagian) : '') + '</option>';
+  }).join('');
+ }
+ if (shiftSel.options.length === 0) {
+  shiftSel.innerHTML = (_shiftManagement.shifts || []).map(function(s) {
+   return '<option value="' + jobdeskSafe(s.kode) + '">' + htmlEscape(s.nama) +
+    ' (' + String(s.jam_masuk || s.jamMasuk || '').slice(0, 5) + '-' + String(s.jam_pulang || s.jamPulang || '').slice(0, 5) + ')</option>';
+  }).join('');
+ }
+ var mulai = document.getElementById('shift-range-mulai');
+ var selesai = document.getElementById('shift-range-selesai');
+ if (mulai && !mulai.value) mulai.value = shiftTodayKey();
+ if (selesai && !selesai.value) selesai.value = shiftTodayKey();
+}
+
+// Simpan rentang shift (mis. 2-16 Nov seharusnya Shift Siang).
+function simpanShiftRentang() {
+ var userSel = document.getElementById('shift-range-user');
+ var shiftSel = document.getElementById('shift-range-shift');
+ var mulai = document.getElementById('shift-range-mulai');
+ var selesai = document.getElementById('shift-range-selesai');
+ var catatan = document.getElementById('shift-range-note');
+ var status = document.getElementById('shift-range-status');
+ var btn = document.getElementById('shift-range-btn');
+ var userId = userSel && userSel.value;
+ var kode = shiftSel && shiftSel.value;
+ var t1 = mulai && mulai.value;
+ var t2 = selesai && selesai.value;
+ if (!userId) { if (status) status.textContent = 'Pilih karyawan dulu.'; return; }
+ if (!t1 || !t2) { if (status) status.textContent = 'Isi tanggal mulai dan selesai.'; return; }
+ if (t2 < t1) { if (status) status.textContent = 'Tanggal selesai harus setelah tanggal mulai.'; return; }
+ if (status) status.textContent = 'Menyimpan...';
+ if (btn) btn.disabled = true;
+ gasCall('simpanShiftRentang', [userId, t1, t2, kode, (catatan && catatan.value) || ''], function(r) {
+  if (btn) btn.disabled = false;
+  if (!r || r.success === false) {
+   if (status) status.textContent = (r && r.msg) || 'Gagal menyimpan rentang shift.';
+   showToast((r && r.msg) || 'Gagal menyimpan rentang shift');
+   return;
+  }
+  if (status) status.textContent = 'Tersimpan: ' + r.nama + ' — ' + r.shift + ' (' + r.jamMasuk + '-' + r.jamPulang + '), ' + r.hari + ' hari (' + r.mulai + ' s/d ' + r.selesai + ').';
+  showToast('Rentang shift ' + r.nama + ' tersimpan.');
+  loadShiftSettings(true);
+ }, function() {
+  if (btn) btn.disabled = false;
+  if (status) status.textContent = 'Koneksi gagal menyimpan rentang shift.';
+ });
+}
+
 function loadShiftSettings(force) {
  var list = document.getElementById('shift-employee-list');
  if (!list) return;
@@ -6115,6 +6171,7 @@ function loadShiftSettings(force) {
   renderShiftEmployees();
   renderShiftOverrideOptions();
   renderShiftTemplates();
+  renderShiftRangeForm();
  }, function(err) {
   list.innerHTML = '<div class="shift-error-state"><b>Database belum dapat dihubungi</b><p>'+htmlEscape((err && err.message) || 'Periksa koneksi lalu coba lagi.')+'</p><button class="btn btn-secondary" onclick="loadShiftSettings(true)">Coba Lagi</button></div>';
  });
