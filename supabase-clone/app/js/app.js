@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbw6q_5ZaIGrekeBwZ5TKh6X1GpWkFHsa5i6whdwacQkTEa-vvNezHlxFMEQFKZkmm5ffQ/exec';
-var APP_VERSION = '20261118f';
+var APP_VERSION = '20261118g';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -468,6 +468,7 @@ function invalidateReadCacheAfterMutation(action) {
   ,bulkAssignEmployeeShift: ['getShiftManagementData','getAbsensiMatrix','getAbsensiMatrixUser','getAbsensiRekap','getRekapBulananSemua','getPayrollPreview']
   ,saveEmployeeShiftOverride: ['getShiftManagementData','getAbsensiMatrix','getAbsensiMatrixUser','getAbsensiRekap','getRekapBulananSemua','getPayrollPreview']
   ,saveShiftTemplate: ['getShiftManagementData']
+  ,simpanShiftRentang: ['getShiftManagementData','getAbsensiMatrix','getAbsensiMatrixUser','getAbsensiRekap','getRekapBulananSemua','getAllAbsensiRekap','getPayrollPreview','getPayrollDetail']
  };
  (affected[action] || []).forEach(cacheClearAction);
 }
@@ -6135,11 +6136,25 @@ function simpanShiftRentang() {
   }
   if (status) status.textContent = 'Tersimpan: ' + r.nama + ' — ' + r.shift + ' (' + r.jamMasuk + '-' + r.jamPulang + '), ' + r.hari + ' hari (' + r.mulai + ' s/d ' + r.selesai + ').';
   showToast('Rentang shift ' + r.nama + ' tersimpan.');
+  refreshCatatanKehadiranJikaAktif();
   loadShiftSettings(true);
  }, function() {
   if (btn) btn.disabled = false;
   if (status) status.textContent = 'Koneksi gagal menyimpan rentang shift.';
  });
+}
+
+// Setelah shift diubah, matriks kehadiran yang sedang terbuka harus ikut diperbarui.
+function refreshCatatanKehadiranJikaAktif() {
+ try {
+  var aktif = document.querySelector('.screen.active');
+  var id = aktif ? aktif.id : '';
+  if (id === 's-catatan-kehadiran') {
+   if (typeof clearAttendanceMatrixCache === 'function') clearAttendanceMatrixCache(null, null);
+   if (typeof loadAttendanceMatrix === 'function') { loadAttendanceMatrix(true); return; }
+  }
+  if (id === 's-laporan-absensi' && typeof loadLaporanAbsensi === 'function') loadLaporanAbsensi(true);
+ } catch (e) {}
 }
 
 function loadShiftSettings(force) {
