@@ -9,14 +9,14 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=20261118g">
+<link rel="stylesheet" href="css/style.css?v=20261118h">
 
 
 
 
 
 
-<link rel="manifest" href="/manifest.webmanifest?v=20261118g">
+<link rel="manifest" href="/manifest.webmanifest?v=20261118h">
 <meta name="theme-color" content="#1557d8">
 <meta name="application-name" content="Hosela Hub">
 <meta name="mobile-web-app-capable" content="yes">
@@ -75,17 +75,34 @@
   <span class="login-link" onclick="bukaLupaSandi()">Lupa sandi?</span>
  </div>
  <div id="lupa-sandi-panel" class="lupa-panel" hidden>
-  <div class="lupa-title">Reset kata sandi</div>
-  <p class="lupa-desc">Masukkan nama pengguna atau email yang <b>benar-benar terdaftar</b>. Tautan reset hanya dikirim ke Gmail milik akun itu — email lain akan ditolak.</p>
-  <input type="text" class="form-input" id="lupa-sandi-input" placeholder="nama pengguna atau email terdaftar" autocapitalize="off" autocorrect="off" spellcheck="false">
-  <button type="button" class="btn btn-primary" id="lupa-sandi-btn" onclick="kirimTautanReset()">Kirim tautan reset</button>
-  <div class="lupa-status" id="lupa-sandi-status"></div>
-  <button type="button" class="lupa-batal" onclick="tutupLupaSandi()">Batal</button>
- </div>
- <div id="login-install-panel" class="pwa-install-panel">
-  <button type="button" id="login-install-btn" class="pwa-install-btn" onclick="installApp()"><span class="pwa-install-icon" aria-hidden="true"></span><span>Install Hosela Hub</span></button>
-  <div id="pwa-install-help" class="pwa-install-help" role="status" aria-live="polite"></div>
- </div>
+    <div class="lupa-title">Lupa kata sandi</div>
+    <p class="lupa-desc">Masukkan email atau nama pengguna terdaftar. Supabase akan mengirim <b>kode verifikasi</b> ke Gmail akun tersebut — aplikasi tidak akan terbuka otomatis.</p>
+
+    <div class="lupa-step" id="lupa-step-1">
+     <label class="lupa-label" for="lupa-sandi-input">Email atau nama pengguna</label>
+     <input type="text" class="form-input" id="lupa-sandi-input" placeholder="nama pengguna atau email terdaftar" autocapitalize="off" autocorrect="off" spellcheck="false">
+     <button type="button" class="btn btn-primary" id="lupa-sandi-btn" onclick="kirimKodeReset()">Kirim kode verifikasi</button>
+    </div>
+
+    <div class="lupa-step" id="lupa-step-2" hidden>
+     <label class="lupa-label" for="lupa-kode-input">Kode dari email (6 digit)</label>
+     <input type="text" class="form-input lupa-kode" id="lupa-kode-input" placeholder="______" inputmode="numeric"
+      maxlength="10" autocomplete="one-time-code" autocapitalize="off" autocorrect="off" spellcheck="false">
+     <button type="button" class="btn btn-primary" id="lupa-verifikasi-btn" onclick="verifikasiKodeReset()">Verifikasi kode</button>
+     <button type="button" class="lupa-link" onclick="kirimKodeReset(true)">Kirim ulang kode</button>
+    </div>
+
+    <div class="lupa-step" id="lupa-step-3" hidden>
+     <label class="lupa-label" for="lupa-sandi-baru">Sandi baru</label>
+     <input type="password" class="form-input" id="lupa-sandi-baru" placeholder="Minimal 6 karakter" autocomplete="new-password" autocapitalize="off">
+     <label class="lupa-label" for="lupa-sandi-ulang">Ulangi sandi baru</label>
+     <input type="password" class="form-input" id="lupa-sandi-ulang" placeholder="Ketik ulang sandi baru" autocomplete="new-password" autocapitalize="off">
+     <button type="button" class="btn btn-primary" id="lupa-simpan-btn" onclick="simpanSandiBaruLupa()">Simpan sandi baru</button>
+    </div>
+
+    <div class="lupa-status" id="lupa-sandi-status"></div>
+    <button type="button" class="lupa-batal" onclick="tutupLupaSandi()">Batal</button>
+   </div>
  </div>
  </main>
 </div>
@@ -1116,11 +1133,11 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="js/supabase-client.js"></script>
 <script src="js/photo-storage.js?v=20261015e"></script>
-<script src="js/real-backend.js?v=20261118g"></script>
+<script src="js/real-backend.js?v=20261118h"></script>
 <script src="js/dashboard-reports.js?v=20261015e"></script>
-<script src="js/mock-backend.js?v=20261118g"></script>
-<script src="js/app.js?v=20261118g"></script>
-<script src="js/payroll.js?v=20261118g"></script>
-<script src="js/preview.js?v=20261118g"></script>
+<script src="js/mock-backend.js?v=20261118h"></script>
+<script src="js/app.js?v=20261118h"></script>
+<script src="js/payroll.js?v=20261118h"></script>
+<script src="js/preview.js?v=20261118h"></script>
 </body>
 </html>

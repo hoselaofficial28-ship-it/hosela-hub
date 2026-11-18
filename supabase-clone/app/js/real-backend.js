@@ -311,6 +311,27 @@
       return r.data;
     },
 
+    // Verifikasi kode OTP dari email reset (tidak membuka aplikasi otomatis).
+    verifikasiKodeReset: async function (args) {
+      var email = String(args[0] || '').trim();
+      var kode = String(args[1] || '').replace(/\s+/g, '');
+      if (!email || !kode) return { success: false, msg: 'Email dan kode wajib diisi.' };
+      var r = await window.sb.auth.verifyOtp({ email: email, token: kode, type: 'recovery' });
+      if (r.error) return { success: false, msg: r.error.message };
+      var sesi = r.data && r.data.session;
+      return { success: !!sesi || !!(r.data && r.data.user), email: email };
+    },
+
+    // Simpan sandi baru setelah kode terverifikasi, lalu keluar agar login ulang.
+    simpanSandiBaruReset: async function (args) {
+      var sandi = String(args[0] || '');
+      if (sandi.length < 6) return { success: false, msg: 'Sandi minimal 6 karakter.' };
+      var r = await window.sb.auth.updateUser({ password: sandi });
+      if (r.error) return { success: false, msg: r.error.message };
+      try { await window.sb.auth.signOut(); } catch (e) {}
+      return { success: true };
+    },
+
     // Kirim tautan reset kata sandi. HANYA ke email yang benar-benar terdaftar
     // pada profil karyawan AKTIF; email sembarang ditolak.
     resetPasswordEmail: async function (args) {

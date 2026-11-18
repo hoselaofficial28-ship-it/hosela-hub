@@ -28,7 +28,7 @@ assert.ok(statSync(new URL('assets/icon-512.png', appRoot)).size > 0);
 
 assert.match(html, /rel="manifest" href="\/manifest\.webmanifest\?v=/);
 assert.match(html, /name="mobile-web-app-capable" content="yes"/);
-assert.match(html, /id="login-install-panel"/);
+assert.doesNotMatch(html, /id="login-install-panel"/, 'tombol install di layar login sudah dihapus');
 assert.match(html, /id="install-app-row"/);
 assert.match(app, /navigator\.serviceWorker\.register\('\/sw\.js\?v=' \+ APP_VERSION, \{ scope: '\/' \}\)/);
 assert.match(app, /beforeinstallprompt/);
