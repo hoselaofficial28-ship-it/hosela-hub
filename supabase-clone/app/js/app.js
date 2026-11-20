@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbw6q_5ZaIGrekeBwZ5TKh6X1GpWkFHsa5i6whdwacQkTEa-vvNezHlxFMEQFKZkmm5ffQ/exec';
-var APP_VERSION = '20261118o';
+var APP_VERSION = '20261118p';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -6335,8 +6335,10 @@ function setShiftSticky(kode) {
  });
 }
 
-// ===== Popup: shift tercatat tidak cocok dengan jam masuk =====
-var _shiftPopup = { tanggal: '', kode: '' };
+// ===== Popup konfirmasi shift saat absen masuk =====
+// Aturan: lateness normal hanya puluhan menit, jadi kalau jam masuk menjauh
+// (>90 menit) dari shift yang tercatat, tanya karyawan shift sebenarnya.
+var _shiftPopup = { tanggal: '', kode: '', menitJadwal: 0, menitMasuk: 0 };
 
 function cekShiftPopupAbsen() {
  if (!currentUser || currentUser.bagian === 'Owner' || currentUser.bagian === 'Finance') return;
@@ -6345,27 +6347,44 @@ function cekShiftPopupAbsen() {
   if (!r || r.success === false || !Array.isArray(r.data) || !r.data.length) return;
   var row = r.data[0];
   if (!row || !row.jamMasuk) return;
+
   var sekarang = new Date();
-  var menitSekarang = sekarang.getHours() * 60 + sekarang.getMinutes();
+  var menitMasuk = sekarang.getHours() * 60 + sekarang.getMinutes();
   var bagian = String(row.jamMasuk).split(':');
   var menitJadwal = parseInt(bagian[0], 10) * 60 + parseInt(bagian[1] || '0', 10);
-  var selisih = menitSekarang - menitJadwal;
-  if (Math.abs(selisih) < 120) return;   // masih wajar, tidak perlu tanya
+  var selisih = menitMasuk - menitJadwal;
+  if (Math.abs(selisih) <= 90) return; // telat wajar -> tidak perlu tanya
+
+  // shift yang paling dekat dengan jam masuk
+  var kandidat = selisih > 0 ? 'SIANG' : 'PAGI';
   _shiftPopup.tanggal = hariIni;
-  _shiftPopup.kode = selisih > 0 ? 'SIANG' : 'PAGI';
-  var popup = document.getElementById('shift-popup');
+  _shiftPopup.kode = kandidat;
+  _shiftPopup.menitJadwal = menitJadwal;
+  _shiftPopup.menitMasuk = menitMasuk;
+
+  var namaKandidat = kandidat === 'SIANG' ? 'Shift Siang (14.00–22.00)' : 'Shift Pagi (08.00–18.00)';
   var desc = document.getElementById('shift-popup-desc');
   var btn = document.getElementById('popup-btn-cocok');
-  if (btn) btn.textContent = selisih > 0 ? 'Ya, hari ini saya Shift Siang' : 'Ya, hari ini saya Shift Pagi';
+  var btnTelat = document.getElementById('popup-btn-telat');
+  if (btn) btn.textContent = 'Ya, hari ini saya ' + (kandidat === 'SIANG' ? 'Shift Siang' : 'Shift Pagi');
+  if (btnTelat) btnTelat.textContent = 'Saya telat (' + Math.floor(Math.abs(selisih) / 60) + ' jam ' + (Math.abs(selisih) % 60) + ' menit) — hitung sesuai peraturan';
   if (desc) {
-   desc.innerHTML = 'Tercatat shift kamu <b>' + htmlEscape(row.shiftName) + ' (' + row.jamMasuk + '-' + row.jamPulang + ')</b>, ' +
-    'tetapi absen masuk jam <b>' + String(sekarang.getHours()).padStart(2, '0') + ':' + String(sekarang.getMinutes()).padStart(2, '0') + '</b>.<br>' +
-    (selisih > 0 ? 'Apakah hari ini kamu sebenarnya masuk <b>Shift Siang</b>?' : 'Apakah hari ini kamu sebenarnya masuk <b>Shift Pagi</b>?') +
-    '<br>Pilih salah satu supaya catatan kehadiranmu benar.';
+   desc.innerHTML = 'Kamu tercatat <b>' + htmlEscape(row.shiftName) + ' (' + row.jamMasuk + '–' + row.jamPulang + ')</b>, ' +
+    'tetapi absen masuk <b>' + duaAngka(sekarang.getHours()) + ':' + duaAngka(sekarang.getMinutes()) + '</b>.<br>' +
+    'Kalau hari ini kamu sebenarnya ' + namaKandidat + ', pilih tombol pertama. Kalau memang telat, pilih tombol kedua. ' +
+    'Kalau berhalangan, catat alasannya.';
   }
+  var alasanBox = document.getElementById('shift-popup-alasan-box');
+  if (alasanBox) alasanBox.hidden = true;
+  // hanya karyawan yang boleh memilih shift sendiri yang melihat tombol ganti shift
+  var bolehPilih = !!(currentUser && (currentUser.boleh_pilih_shift === true || currentUser.bolehPilihShift === true));
+  if (btn) btn.hidden = !bolehPilih;
+  var popup = document.getElementById('shift-popup');
   if (popup) popup.hidden = false;
  }, function() {});
 }
+
+function duaAngka(n) { return String(n).padStart(2, '0'); }
 
 function tutupShiftPopup() {
  var popup = document.getElementById('shift-popup');
@@ -6378,7 +6397,7 @@ function popupShiftHariIni() {
  tutupShiftPopup();
  gasCall('pilihShiftTanggal', [tanggal, kode], function(r) {
   if (!r || r.success === false) { showToast((r && r.msg) || 'Gagal menyimpan'); return; }
-  showToast('Shift ' + (r.shift || kode) + ' untuk hari ini tersimpan');
+  showToast('Shift hari ini: ' + (r.shift || kode));
   cacheClearAction('getShiftSaya');
   cacheClearAction('getAbsensiMatrixUser');
   if (typeof loadAttendanceToday === 'function') loadAttendanceToday();
@@ -6386,13 +6405,38 @@ function popupShiftHariIni() {
 }
 
 function popupTelat() {
+ var selisih = (_shiftPopup.menitMasuk || 0) - (_shiftPopup.menitJadwal || 0);
+ var jam = Math.floor(Math.abs(selisih) / 60);
+ var menit = Math.abs(selisih) % 60;
  tutupShiftPopup();
- showToast('Dicatat: kamu memang telat hari ini.');
+ showToast('Telat ' + jam + ' jam ' + menit + ' menit — dihitung sesuai peraturan.');
 }
 
-function popupIzin() {
- tutupShiftPopup();
- goTo('s-izin');
+function popupMintaAlasan() {
+ var box = document.getElementById('shift-popup-alasan-box');
+ if (box) {
+  box.hidden = false;
+  var ta = document.getElementById('shift-popup-alasan');
+  if (ta) { ta.value = ''; ta.focus(); }
+ }
+}
+
+function popupSimpanIzin() {
+ var ta = document.getElementById('shift-popup-alasan');
+ var btn = document.getElementById('popup-btn-simpan-izin');
+ var alasan = ((ta && ta.value) || '').trim();
+ if (!alasan) { showToast('Tulis alasan dulu'); return; }
+ if (btn) btn.disabled = true;
+ gasCall('catatKeteranganAbsen', [_shiftPopup.tanggal || tanggalLokalShift(0), alasan], function(r) {
+  if (btn) btn.disabled = false;
+  if (!r || r.success === false) { showToast((r && r.msg) || 'Gagal menyimpan alasan'); return; }
+  tutupShiftPopup();
+  showToast('Alasan tersimpan.');
+  if (typeof loadAttendanceToday === 'function') loadAttendanceToday();
+ }, function() {
+  if (btn) btn.disabled = false;
+  showToast('Koneksi gagal menyimpan alasan');
+ });
 }
 
 function loadShiftSayaLayar() {

@@ -358,6 +358,13 @@
       return { success: true, boleh: !!(p && p.boleh_pilih_shift) };
     },
 
+    // Simpan alasan/izin karyawan pada absen masuk hari itu.
+    catatKeteranganAbsen: async function (args) {
+      var r = await window.sb.rpc('catat_keterangan_absen', { p_tanggal: args[0], p_catatan: args[1] });
+      if (r.error) return { success: false, msg: r.error.message };
+      return r.data;
+    },
+
     // Shift Saya: jadwal efektif milik sendiri untuk beberapa tanggal.
     getShiftSayaRentang: async function (args) {
       var r = await window.sb.rpc('get_shift_saya_rentang', { p_dari: args[0], p_sampai: args[1] });

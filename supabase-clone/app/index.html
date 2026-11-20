@@ -9,14 +9,14 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=20261118o">
+<link rel="stylesheet" href="css/style.css?v=20261118p">
 
 
 
 
 
 
-<link rel="manifest" href="/manifest.webmanifest?v=20261118o">
+<link rel="manifest" href="/manifest.webmanifest?v=20261118p">
 <meta name="theme-color" content="#1557d8">
 <meta name="application-name" content="Hosela Hub">
 <meta name="mobile-web-app-capable" content="yes">
@@ -258,11 +258,15 @@
 <!-- POPUP: shift tercatat tidak cocok dengan jam masuk -->
 <div class="shift-popup" id="shift-popup" hidden>
  <div class="shift-popup-card">
-  <div class="shift-popup-title">Shift kamu hari ini berbeda</div>
+  <div class="shift-popup-title">Konfirmasi shift hari ini</div>
   <div class="shift-popup-desc" id="shift-popup-desc"></div>
-  <button type="button" class="btn btn-primary shift-popup-btn" id="popup-btn-cocok" onclick="popupShiftHariIni()">Ya, saya masuk shift itu hari ini</button>
-  <button type="button" class="btn btn-secondary shift-popup-btn" onclick="popupTelat()">Saya memang telat</button>
-  <button type="button" class="btn btn-secondary shift-popup-btn" onclick="popupIzin()">Saya mau ajukan izin</button>
+  <button type="button" class="btn btn-primary shift-popup-btn" id="popup-btn-cocok" onclick="popupShiftHariIni()">Ya, hari ini saya shift itu</button>
+  <button type="button" class="btn btn-secondary shift-popup-btn" id="popup-btn-telat" onclick="popupTelat()">Saya telat, hitung sesuai peraturan</button>
+  <button type="button" class="btn btn-secondary shift-popup-btn" onclick="popupMintaAlasan()">Saya izin — catat alasan</button>
+  <div id="shift-popup-alasan-box" hidden>
+   <textarea class="form-input" id="shift-popup-alasan" rows="2" maxlength="300" placeholder="Contoh: ke dokter, urusan keluarga"></textarea>
+   <button type="button" class="btn btn-primary shift-popup-btn" id="popup-btn-simpan-izin" onclick="popupSimpanIzin()">Simpan alasan</button>
+  </div>
   <button type="button" class="shift-popup-batal" onclick="tutupShiftPopup()">Nanti saja</button>
  </div>
 </div>
@@ -1169,11 +1173,11 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="js/supabase-client.js"></script>
 <script src="js/photo-storage.js?v=20261015e"></script>
-<script src="js/real-backend.js?v=20261118o"></script>
+<script src="js/real-backend.js?v=20261118p"></script>
 <script src="js/dashboard-reports.js?v=20261015e"></script>
-<script src="js/mock-backend.js?v=20261118o"></script>
-<script src="js/app.js?v=20261118o"></script>
-<script src="js/payroll.js?v=20261118o"></script>
-<script src="js/preview.js?v=20261118o"></script>
+<script src="js/mock-backend.js?v=20261118p"></script>
+<script src="js/app.js?v=20261118p"></script>
+<script src="js/payroll.js?v=20261118p"></script>
+<script src="js/preview.js?v=20261118p"></script>
 </body>
 </html>
