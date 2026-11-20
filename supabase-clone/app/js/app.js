@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbw6q_5ZaIGrekeBwZ5TKh6X1GpWkFHsa5i6whdwacQkTEa-vvNezHlxFMEQFKZkmm5ffQ/exec';
-var APP_VERSION = '20261118q';
+var APP_VERSION = '20261118r';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -607,6 +607,31 @@ function gasFormPost(action, args, success, failure) {
 var _gasInFlight = {};
 var GAS_TIMEOUT_MS = 25000;
 
+// Sesi Supabase bisa kedaluwarsa walau tampilan masih menyimpan data user lama.
+// Kalau server menjawab "permission denied"/401, kita paksa kembali ke layar login.
+var _paksaLoginUlangTerakhir = 0;
+function paksaLoginUlang(pesan) {
+ var sekarang = Date.now();
+ if (sekarang - _paksaLoginUlangTerakhir < 4000) return;
+ _paksaLoginUlangTerakhir = sekarang;
+ try {
+  if (window.sb && window.sb.auth) window.sb.auth.signOut().catch(function () {});
+ } catch (e) {}
+ try { localStorage.removeItem('hh_session'); } catch (e) {}
+ currentUser = null;
+ showToast(pesan || 'Sesi login berakhir. Silakan masuk lagi.');
+ openInitialLogin();
+}
+
+function pesanSesiTidakValid(payload) {
+ var teks = '';
+ try {
+  teks = String((payload && (payload.message || payload.msg)) || payload || '');
+ } catch (e) { teks = ''; }
+ if (!teks) return false;
+ return /permission denied|JWT|42501|Harus login|Akses ditolak|invalid claim|session/i.test(teks);
+}
+
 function gasCall(action, args, success, failure) {
  var cacheKey = action + JSON.stringify(args || []);
  function applyCache(data) {
@@ -645,8 +670,10 @@ function gasCall(action, args, success, failure) {
   waiters.forEach(function (w) {
    try {
     if (ok) { if (w.success) w.success(payload); }
-    else if (w.failure) w.failure(payload);
-    else console.error('GAS Error [' + action + ']:', payload);
+    else {
+     if (pesanSesiTidakValid(payload)) { paksaLoginUlang('Sesi login berakhir. Silakan masuk lagi.'); return; }
+     if (w.failure) w.failure(payload);
+    }
    } catch (e) {
     console.error('Callback error [' + action + ']:', e);
    }
@@ -6802,24 +6829,37 @@ function openInitialLogin() {
 }
 
 function restoreVerifiedLogin(session) {
- currentUser = session.user;
-
- // Sesi lama mungkin belum menyimpan izin pilih shift -> sinkronkan sekali.
- if (currentUser && currentUser.bagian !== 'Owner' && currentUser.bagian !== 'Finance' && typeof currentUser.boleh_pilih_shift === 'undefined') {
-  gasCall('getBolehPilihShift', [], function(r) {
-   if (r && r.success) {
-    currentUser.boleh_pilih_shift = !!r.boleh;
-    try { saveLoginSession(currentUser, session.username || ''); } catch (e) {}
-    // segarkan menu Home supaya item "Shift Saya" langsung muncul/hilang
-    var aktif = document.querySelector('.screen.active');
-    if (aktif && aktif.id === 's-home' && typeof loadHome === 'function') loadHome(true);
-   }
-  }, function() {});
- }
- if (session.username) localStorage.setItem('hh_username', session.username);
- _navHistory = [];
- history.replaceState({ screen: 's-home' }, '', '#home');
- goTo('s-home');
+ // Validasi sesi Supabase sebelum memakai data user lama.
+ var lanjut = function () {
+  currentUser = session.user;
+  if (session.username) localStorage.setItem('hh_username', session.username);
+  if (currentUser && currentUser.bagian !== 'Owner' && currentUser.bagian !== 'Finance' && typeof currentUser.boleh_pilih_shift === 'undefined') {
+   gasCall('getBolehPilihShift', [], function(r) {
+    if (r && r.success) {
+     currentUser.boleh_pilih_shift = !!r.boleh;
+     try { saveLoginSession(currentUser, session.username || ''); } catch (e) {}
+     var aktif = document.querySelector('.screen.active');
+     if (aktif && aktif.id === 's-home' && typeof loadHome === 'function') loadHome(true);
+    }
+   }, function() {});
+  }
+  _navHistory = [];
+  history.replaceState({ screen: 's-home' }, '', '#home');
+  goTo('s-home');
+ };
+ var periksa = function () {
+  try {
+   if (!window.sb || !window.sb.auth) { lanjut(); return; }
+   window.sb.auth.getSession().then(function (r) {
+    if (r && r.data && r.data.session) { lanjut(); return; }
+    try { localStorage.removeItem('hh_session'); } catch (e) {}
+    currentUser = null;
+    showToast('Sesi login berakhir. Silakan masuk lagi.');
+    openInitialLogin();
+   }).catch(function () { lanjut(); });
+  } catch (e) { lanjut(); }
+ };
+ periksa();
 }
 
 window.onload = function() {
