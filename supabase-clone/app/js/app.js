@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbw6q_5ZaIGrekeBwZ5TKh6X1GpWkFHsa5i6whdwacQkTEa-vvNezHlxFMEQFKZkmm5ffQ/exec';
-var APP_VERSION = '20261118p';
+var APP_VERSION = '20261118q';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -6785,11 +6785,20 @@ function showToast(msg) {
 
 function openInitialLogin() {
  goTo('s-login');
+ var input = document.getElementById('login-username');
  var savedUsername = localStorage.getItem('hh_username');
- if (savedUsername) {
-  document.getElementById('login-username').value = savedUsername;
-  document.getElementById('login-password').focus();
- }
+ if (savedUsername && input) input.value = savedUsername;
+ // Tautan khusus (?u=nama) supaya karyawan tidak perlu mengetik username.
+ try {
+  var qp = new URLSearchParams(location.search || '');
+  var dariTautan = (qp.get('u') || qp.get('username') || '').trim();
+  if (dariTautan && input) {
+   input.value = dariTautan;
+   try { localStorage.setItem('hh_username', dariTautan); } catch (e) {}
+  }
+ } catch (e) {}
+ var pwd = document.getElementById('login-password');
+ if (pwd) pwd.focus();
 }
 
 function restoreVerifiedLogin(session) {
