@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbw6q_5ZaIGrekeBwZ5TKh6X1GpWkFHsa5i6whdwacQkTEa-vvNezHlxFMEQFKZkmm5ffQ/exec';
-var APP_VERSION = '20261118n';
+var APP_VERSION = '20261118o';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -5260,6 +5260,7 @@ function submitAttendanceCamera() {
  });
  }
  function finishAttendanceSubmit(res) {
+ if (res && res.success && typeof tipe !== 'undefined' && tipe === 'MASUK') { setTimeout(cekShiftPopupAbsen, 1200); }
  resetAttendanceButton();
  if (!res || res.success === false) {
  updateAttendanceLocationStatus((res && res.msg) || 'Absensi ditolak.', 'bad');
@@ -6285,8 +6286,122 @@ function tanggalLokalShift(offsetHari) {
  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 }
 
+// ===== Shift Saya (versi sederhana): satu pilihan berlaku terus =====
+function renderShiftSticky(res) {
+ var nama = document.getElementById('shift-now-nama');
+ var jam = document.getElementById('shift-now-jam');
+ var info = document.getElementById('shift-now-berlaku');
+ var btnPagi = document.getElementById('btn-shift-pagi');
+ var btnSiang = document.getElementById('btn-shift-siang');
+ if (!nama) return;
+ if (!res || res.success === false || !res.shift) {
+  nama.textContent = 'Belum ada shift';
+  if (jam) jam.textContent = '-';
+  if (info) info.textContent = '';
+  return;
+ }
+ // get_shift_saya mengembalikan { shift: { nama, masuk, pulang } }, pilihShiftSaya: { shift: "Shift Pagi" }
+ var namaShift = (typeof res.shift === 'object' && res.shift) ? (res.shift.nama || res.shift.shiftName || '-') : String(res.shift || '-');
+ var jamMasuk = (typeof res.shift === 'object' && res.shift) ? (res.shift.masuk || res.shift.jamMasuk || '') : (res.jamMasuk || '');
+ var jamPulang = (typeof res.shift === 'object' && res.shift) ? (res.shift.pulang || res.shift.jamPulang || '') : (res.jamPulang || '');
+ nama.textContent = namaShift;
+ if (jam) jam.textContent = (jamMasuk && jamPulang) ? (String(jamMasuk).slice(0,5) + ' - ' + String(jamPulang).slice(0,5)) : '';
+ if (info) info.textContent = res.terkunci ? 'Hari ini sudah absen masuk — perubahan berlaku besok.' : '';
+ var siang = String(namaShift).toLowerCase().indexOf('siang') !== -1;
+ if (btnPagi) btnPagi.classList.toggle('is-on', !siang);
+ if (btnSiang) btnSiang.classList.toggle('is-on', siang);
+}
+
+function setShiftSticky(kode) {
+ var status = document.getElementById('shift-sticky-status');
+ if (status) status.textContent = 'Menyimpan...';
+ gasCall('pilihShiftSaya', [kode], function(res) {
+  if (!res || res.success === false) {
+   if (status) status.textContent = (res && res.msg) || 'Gagal menyimpan shift.';
+   showToast((res && res.msg) || 'Gagal menyimpan shift');
+   return;
+  }
+  if (status) {
+   status.textContent = 'Tersimpan: ' + res.shift + (res.berlakuHariIni ? ' mulai hari ini.' : ' mulai ' + res.berlakuMulai + ' (hari ini sudah absen masuk).');
+  }
+  showToast('Shift ' + res.shift + ' tersimpan');
+  cacheClearAction('getShiftSaya');
+  cacheClearAction('getAbsensiMatrixUser');
+  cacheClearAction('getAbsensiMatrix');
+  loadShiftSayaLayar();
+  if (typeof loadShiftSaya === 'function') loadShiftSaya();
+ }, function() {
+  if (status) status.textContent = 'Koneksi gagal menyimpan shift.';
+ });
+}
+
+// ===== Popup: shift tercatat tidak cocok dengan jam masuk =====
+var _shiftPopup = { tanggal: '', kode: '' };
+
+function cekShiftPopupAbsen() {
+ if (!currentUser || currentUser.bagian === 'Owner' || currentUser.bagian === 'Finance') return;
+ var hariIni = tanggalLokalShift(0);
+ gasCall('getShiftSayaRentang', [hariIni, hariIni], function(r) {
+  if (!r || r.success === false || !Array.isArray(r.data) || !r.data.length) return;
+  var row = r.data[0];
+  if (!row || !row.jamMasuk) return;
+  var sekarang = new Date();
+  var menitSekarang = sekarang.getHours() * 60 + sekarang.getMinutes();
+  var bagian = String(row.jamMasuk).split(':');
+  var menitJadwal = parseInt(bagian[0], 10) * 60 + parseInt(bagian[1] || '0', 10);
+  var selisih = menitSekarang - menitJadwal;
+  if (Math.abs(selisih) < 120) return;   // masih wajar, tidak perlu tanya
+  _shiftPopup.tanggal = hariIni;
+  _shiftPopup.kode = selisih > 0 ? 'SIANG' : 'PAGI';
+  var popup = document.getElementById('shift-popup');
+  var desc = document.getElementById('shift-popup-desc');
+  var btn = document.getElementById('popup-btn-cocok');
+  if (btn) btn.textContent = selisih > 0 ? 'Ya, hari ini saya Shift Siang' : 'Ya, hari ini saya Shift Pagi';
+  if (desc) {
+   desc.innerHTML = 'Tercatat shift kamu <b>' + htmlEscape(row.shiftName) + ' (' + row.jamMasuk + '-' + row.jamPulang + ')</b>, ' +
+    'tetapi absen masuk jam <b>' + String(sekarang.getHours()).padStart(2, '0') + ':' + String(sekarang.getMinutes()).padStart(2, '0') + '</b>.<br>' +
+    (selisih > 0 ? 'Apakah hari ini kamu sebenarnya masuk <b>Shift Siang</b>?' : 'Apakah hari ini kamu sebenarnya masuk <b>Shift Pagi</b>?') +
+    '<br>Pilih salah satu supaya catatan kehadiranmu benar.';
+  }
+  if (popup) popup.hidden = false;
+ }, function() {});
+}
+
+function tutupShiftPopup() {
+ var popup = document.getElementById('shift-popup');
+ if (popup) popup.hidden = true;
+}
+
+function popupShiftHariIni() {
+ var kode = _shiftPopup.kode || 'SIANG';
+ var tanggal = _shiftPopup.tanggal || tanggalLokalShift(0);
+ tutupShiftPopup();
+ gasCall('pilihShiftTanggal', [tanggal, kode], function(r) {
+  if (!r || r.success === false) { showToast((r && r.msg) || 'Gagal menyimpan'); return; }
+  showToast('Shift ' + (r.shift || kode) + ' untuk hari ini tersimpan');
+  cacheClearAction('getShiftSaya');
+  cacheClearAction('getAbsensiMatrixUser');
+  if (typeof loadAttendanceToday === 'function') loadAttendanceToday();
+ }, function() { showToast('Koneksi gagal menyimpan shift'); });
+}
+
+function popupTelat() {
+ tutupShiftPopup();
+ showToast('Dicatat: kamu memang telat hari ini.');
+}
+
+function popupIzin() {
+ tutupShiftPopup();
+ goTo('s-izin');
+}
+
 function loadShiftSayaLayar() {
  var list = document.getElementById('shift-saya-hari-list');
+ // setelan utama (berlaku terus)
+ gasCall('getShiftSaya', [], function(res) { renderShiftSticky(res); }, function() {
+  var nama = document.getElementById('shift-now-nama');
+  if (nama) nama.textContent = 'Gagal memuat shift';
+ });
  if (currentUser && currentUser.boleh_pilih_shift === false) {
   if (list) list.innerHTML = '<div class="field-help">Kamu belum diizinkan memilih shift sendiri. Hubungi Owner untuk mengaktifkan di Pengaturan Shift.</div>';
   return;

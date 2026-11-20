@@ -9,14 +9,14 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=20261118n">
+<link rel="stylesheet" href="css/style.css?v=20261118o">
 
 
 
 
 
 
-<link rel="manifest" href="/manifest.webmanifest?v=20261118n">
+<link rel="manifest" href="/manifest.webmanifest?v=20261118o">
 <meta name="theme-color" content="#1557d8">
 <meta name="application-name" content="Hosela Hub">
 <meta name="mobile-web-app-capable" content="yes">
@@ -219,16 +219,29 @@
 <div class="screen" id="s-shift-saya">
  <div class="statusbar"></div>
  <div class="header">
-  <div class="header-row"><button class="back-btn" onclick="goBack()">&#8249;</button><div><h1>Shift Saya</h1><p>Atur shift untuk kemarin, hari ini, dan besok</p></div></div>
+  <div class="header-row"><button class="back-btn" onclick="goBack()">&#8249;</button><div><h1>Shift Saya</h1><p>Pilih shift kerja kamu — berlaku sampai diganti</p></div></div>
   <div class="gold-line"></div>
  </div>
  <div class="content">
   <div class="card">
-   <div class="card-title"><div class="card-dot"></div>Pilih shift per tanggal</div>
-   <p class="field-help" style="margin-top:0">Ketuk <b>Pagi</b> atau <b>Siang</b> pada tanggal yang ingin diubah. Untuk membatalkan pilihan, ketuk lagi tombolnya (kembali ikut jadwal).</p>
+   <div class="card-title"><div class="card-dot"></div>Shift saya sekarang</div>
+   <div class="shift-now">
+    <div class="shift-now-nama" id="shift-now-nama">Memuat...</div>
+    <div class="shift-now-jam" id="shift-now-jam">-</div>
+    <div class="shift-now-berlaku" id="shift-now-berlaku"></div>
+   </div>
+   <div class="shift-now-opsi">
+    <button type="button" class="btn btn-primary" id="btn-shift-pagi" onclick="setShiftSticky('PAGI')">Shift Pagi</button>
+    <button type="button" class="btn btn-primary" id="btn-shift-siang" onclick="setShiftSticky('SIANG')">Shift Siang</button>
+   </div>
+   <div class="field-help">Pilih satu shift. Pilihan berlaku <b>terus-menerus</b> mulai hari ini (atau besok bila hari ini sudah absen masuk) sampai diganti lagi.</div>
+   <div class="field-help" id="shift-sticky-status" style="color:#0f7b3f;font-weight:650"></div>
+  </div>
+  <details class="shift-saya-koreksi" id="shift-saya-koreksi">
+   <summary>Perlu koreksi tanggal tertentu (kemarin / hari ini / besok)?</summary>
    <div class="shift-saya-hari" id="shift-saya-hari-list"></div>
    <div class="field-help" id="shift-saya-status"></div>
-  </div>
+  </details>
   <div class="card">
    <div class="card-title"><div class="card-dot"></div>Aturan singkat</div>
    <div class="field-help">
@@ -241,6 +254,18 @@
  </div>
 </div>
 
+
+<!-- POPUP: shift tercatat tidak cocok dengan jam masuk -->
+<div class="shift-popup" id="shift-popup" hidden>
+ <div class="shift-popup-card">
+  <div class="shift-popup-title">Shift kamu hari ini berbeda</div>
+  <div class="shift-popup-desc" id="shift-popup-desc"></div>
+  <button type="button" class="btn btn-primary shift-popup-btn" id="popup-btn-cocok" onclick="popupShiftHariIni()">Ya, saya masuk shift itu hari ini</button>
+  <button type="button" class="btn btn-secondary shift-popup-btn" onclick="popupTelat()">Saya memang telat</button>
+  <button type="button" class="btn btn-secondary shift-popup-btn" onclick="popupIzin()">Saya mau ajukan izin</button>
+  <button type="button" class="shift-popup-batal" onclick="tutupShiftPopup()">Nanti saja</button>
+ </div>
+</div>
 <!-- HOME -->
 <div class="screen" id="s-home">
  <div class="statusbar"></div>
@@ -1144,11 +1169,11 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="js/supabase-client.js"></script>
 <script src="js/photo-storage.js?v=20261015e"></script>
-<script src="js/real-backend.js?v=20261118n"></script>
+<script src="js/real-backend.js?v=20261118o"></script>
 <script src="js/dashboard-reports.js?v=20261015e"></script>
-<script src="js/mock-backend.js?v=20261118n"></script>
-<script src="js/app.js?v=20261118n"></script>
-<script src="js/payroll.js?v=20261118n"></script>
-<script src="js/preview.js?v=20261118n"></script>
+<script src="js/mock-backend.js?v=20261118o"></script>
+<script src="js/app.js?v=20261118o"></script>
+<script src="js/payroll.js?v=20261118o"></script>
+<script src="js/preview.js?v=20261118o"></script>
 </body>
 </html>
