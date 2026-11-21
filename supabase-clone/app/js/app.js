@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbw6q_5ZaIGrekeBwZ5TKh6X1GpWkFHsa5i6whdwacQkTEa-vvNezHlxFMEQFKZkmm5ffQ/exec';
-var APP_VERSION = '20261121b';
+var APP_VERSION = '20261121c';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -2003,16 +2003,28 @@ function renderAbsensiDetailHtml(res, bulanKey, scopeId) {
  html += '</div><div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">Kehadiran: '+persen+'%</div>';
  html += '<div style="background:#e2e8f0;border-radius:4px;height:8px"><div style="background:'+barColor+';height:8px;border-radius:4px;width:'+persen+'%"></div></div>';
 
+ // Satu tanggal/tipe bisa punya baris ganda di database (rekap + review).
+ // Daftar denda digabung per teks yang sama supaya alasan/potongan tidak dobel.
  var dendaItems = [];
- mingguList.forEach(function(w){ if (w.detail && w.detail.telat) w.detail.telat.forEach(function(d){ dendaItems.push(detailLine(d, true)); }); });
- if (b.detailPotonganAbsen) b.detailPotonganAbsen.forEach(function(d){ dendaItems.push('Potongan Absen: '+detailLine(d, true)); });
- if (b.detailDendaSP) b.detailDendaSP.forEach(function(d){ dendaItems.push('SP: '+detailLine(d, true)); });
- if (b.detailDendaManual && b.detailDendaManual.length) {
- dendaItems.push('Denda Manual');
- b.detailDendaManual.forEach(function(d){ dendaItems.push(formatTglJam(d.tanggal, d.jam)+detailLine(d, true)); });
+ var _dendaTeks = Object.create(null);
+ var _dendaGanda = 0;
+ function tambahDenda(teks, nominal) {
+  var kunci = String(teks || "").trim();
+  if (!kunci) return;
+  if (_dendaTeks[kunci]) { _dendaGanda += Number(nominal) || 0; return; }
+  _dendaTeks[kunci] = 1;
+  dendaItems.push(teks);
  }
- if (b.detailPotonganIzin) b.detailPotonganIzin.forEach(function(d){ dendaItems.push(formatTglJam(d.tanggal,d.jam)+detailLine(d,true)); });
- if (b.totalDenda > 0) html += dropdown('Estimasi Denda & Potongan Izin', '#fee2e2', '#991b1b', dendaItems, b.totalDenda);
+ mingguList.forEach(function(w){ if (w.detail && w.detail.telat) w.detail.telat.forEach(function(d){ tambahDenda(detailLine(d, true), d.nilai); }); });
+ if (b.detailPotonganAbsen) b.detailPotonganAbsen.forEach(function(d){ tambahDenda("Potongan Absen: "+detailLine(d, true), d.nilai); });
+ if (b.detailDendaSP) b.detailDendaSP.forEach(function(d){ tambahDenda("SP: "+detailLine(d, true), d.nilai); });
+ if (b.detailDendaManual && b.detailDendaManual.length) {
+  dendaItems.push("Denda Manual");
+  b.detailDendaManual.forEach(function(d){ tambahDenda(formatTglJam(d.tanggal, d.jam)+detailLine(d, true), d.nilai); });
+ }
+ if (b.detailPotonganIzin) b.detailPotonganIzin.forEach(function(d){ tambahDenda(formatTglJam(d.tanggal,d.jam)+detailLine(d,true), d.nilai); });
+ var totalDendaTampil = Math.max(0, (Number(b.totalDenda) || 0) - _dendaGanda);
+ if (totalDendaTampil > 0) html += dropdown("Estimasi Denda & Potongan Izin", "#fee2e2", "#991b1b", dendaItems, totalDendaTampil);
 
  var rewardItems = [];
  if (b.detailLemburPulang) b.detailLemburPulang.forEach(function(d){ rewardItems.push('Lembur Pulang: '+detailLine(d, true)); });
