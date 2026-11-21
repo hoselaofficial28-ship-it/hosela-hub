@@ -1,11 +1,56 @@
 /* Izin datang terlambat. Semua nominal keputusan dihitung ulang di Supabase. */
 var lateLeaveRows = Object.create(null);
+function lateLeaveStatus(s) { return {MENUNGGU:'Menunggu Owner',DISETUJUI:'Izin disetujui',DITOLAK:'Izin ditolak',BEBAS_POTONGAN:'Bebas potongan'}[s] || s; }
+function showLeaveInfoDialog(title,body) {
+ closeLateLeaveDecision(); lateLeavePreviousFocus=document.activeElement;
+ document.body.insertAdjacentHTML('beforeend','<div class="att-modal-backdrop" id="late-leave-modal"><section class="att-modal leave-review-dialog" role="dialog" aria-modal="true" aria-labelledby="late-leave-title"><h3 id="late-leave-title">'+esc(title)+'</h3>'+body+'<p id="late-leave-error" role="alert"></p><button class="btn btn-secondary" id="leave-info-close" onclick="closeLateLeaveDecision()">Tutup</button></section></div>');
+ document.getElementById('leave-info-close').focus();
+ document.getElementById('late-leave-modal').addEventListener('keydown',function(e){
+  if(e.key==='Escape' && !this.dataset.busy) closeLateLeaveDecision();
+  if(e.key==='Tab') {var nodes=Array.from(this.querySelectorAll('button:not(:disabled),textarea,select')); var a=nodes[0],z=nodes[nodes.length-1]; if(e.shiftKey&&document.activeElement===a){e.preventDefault();z.focus();} else if(!e.shiftKey&&document.activeElement===z){e.preventDefault();a.focus();}}
+ });
+}
+function openAttendanceDayInfo(userId,day) {
+ var matrix=window.lateLeaveMatrix; if(!matrix) return;
+ var u=matrix.users.find(function(x){return x.id===userId;}); if(!u) return;
+ var item=u.days[day] || {},date=matrix.bulan+'-'+String(day).padStart(2,'0'),note=item.leaveNote;
+ var html='<p>'+esc(u.nama)+' · '+esc(date)+'</p><div class="leave-review-summary"><span>Masuk<strong>'+esc((item.masuk||'-').slice(0,5))+'</strong></span><span>Pulang<strong>'+esc((item.pulang||'-').slice(0,5))+'</strong></span></div>';
+ if(note) html+='<span class="leave-review-badge">'+esc(lateLeaveStatus(note.status))+'</span><h4>Alasan / keterangan</h4><p class="leave-full-reason">'+esc(note.alasan || '-')+'</p>'+(note.catatanOwner && note.catatanOwner!==note.alasan?'<h4>Catatan Owner</h4><p class="leave-full-reason">'+esc(note.catatanOwner)+'</p>':'');
+ if(note && note.status==='MENUNGGU') html+='<p>Aturan telat tetap berlaku sampai Owner menyetujui.</p>';
+ if(note && note.status==='DITOLAK') html+='<p>Pengajuan ditolak. Denda dan hitungan telat tetap berlaku.</p>';
+ if(_attendanceMatrixCanEdit) html+='<button class="btn btn-primary" id="leave-info-edit">Kelola Kehadiran / Izin</button>';
+ else if(!note && item.masuk && attendanceDayIsLate(item,new Date(date+'T12:00:00'))) html+='<label for="leave-request-reason">Alasan izin kedatangan</label><textarea class="form-input" id="leave-request-reason" rows="4" maxlength="1000" placeholder="Jelaskan alasan keterlambatan"></textarea><p class="leave-review-help">Pengajuan akan dikirim ke Owner. Aturan telat tetap berlaku sampai disetujui.</p><button class="btn btn-primary" id="leave-request-submit">Ajukan Izin ke Owner</button>';
+ showLeaveInfoDialog('Detail Kehadiran',html);
+ var edit=document.getElementById('leave-info-edit'); if(edit) edit.onclick=function(){closeLateLeaveDecision();openAttendanceEdit(u.id,u.nama,matrix.bulan,day,item.masuk||'',item.pulang||'');};
+ var submit=document.getElementById('leave-request-submit'); if(submit) submit.onclick=function(){
+  var reason=document.getElementById('leave-request-reason').value.trim(); if(!reason){document.getElementById('late-leave-error').textContent='Isi alasan izin terlebih dahulu.';return;}
+  sendLeaveDialogAction('submitLateLeaveRequest',[date,reason]);
+ };
+}
+function openLateLeaveRequestDecision(id) {
+ var r=lateLeaveRows[id]; if(!r) return;
+ var basis=r.basisIzin;
+ showLeaveInfoDialog('Tinjau Pengajuan Izin','<p>'+esc(r.nama)+' · '+esc(r.tanggal)+'</p><h4>Alasan karyawan</h4><p class="leave-full-reason">'+esc(r.alasan)+'</p>'+
+ (basis&&!basis.error?'<div class="leave-review-summary"><span>Durasi izin<strong>'+Number(basis.menitIzin)+' menit</strong></span><span>Jika disetujui<strong>'+lateLeaveMoney(basis.potonganIzin)+'</strong></span></div>':'<p>Jika rekap belum tersedia, proses ke Rekap Resmi di Catatan Kehadiran dahulu.</p>')+
+ '<p>Disetujui: potongan izin sesuai upah, tidak dihitung telat. Ditolak: tetap denda dan sanksi telat.</p>'+
+ (r.terkunci?'<p>Slip sudah terbit. Batalkan penerbitannya dahulu.</p>':currentUser.bagian==='Owner'?'<div class="leave-review-actions"><button class="btn btn-secondary" id="leave-request-reject">Tolak Izin</button><button class="btn btn-primary" id="leave-request-approve">Setujui Izin</button></div>':'<p>Menunggu keputusan Owner.</p>'));
+ var approve=document.getElementById('leave-request-approve'),reject=document.getElementById('leave-request-reject');
+ if(approve) approve.onclick=function(){sendLeaveDialogAction('decideLateLeaveRequest',[id,true]);};
+ if(reject) reject.onclick=function(){sendLeaveDialogAction('decideLateLeaveRequest',[id,false]);};
+}
+function sendLeaveDialogAction(action,args) {
+ var modal=document.getElementById('late-leave-modal'); if(!modal || modal.dataset.busy) return;
+ modal.dataset.busy='1'; modal.querySelectorAll('button').forEach(function(b){b.disabled=true;});
+ function failed(e){delete modal.dataset.busy;modal.querySelectorAll('button').forEach(function(b){b.disabled=false;});document.getElementById('late-leave-error').textContent=e.message||'Gagal menyimpan. Coba kembali.';}
+ gasCall(action,args,function(r){if(!r || !r.success){failed({message:r&&r.msg});return;} closeLateLeaveDecision();clearAttendanceMatrixCache(null,null);loadAttendanceMatrix(true);if(currentUser.bagian==='Owner'||currentUser.bagian==='Finance')loadReviewTelat(true);showToast(r.msg||'Tersimpan.');},failed);
+}
 function lateLeaveMoney(value) {
  return 'Rp ' + Math.round(Number(value) || 0).toLocaleString('id-ID');
 }
 function renderLateLeaveReviews(rows) {
  return rows.map(function(row) {
   lateLeaveRows[row.id] = row;
+  if(row.requestId) return '<article class="review-telat-card leave-review-card" data-search="'+esc([row.nama,row.tanggal,row.alasan].join(' ').toLowerCase())+'"><div class="leave-review-heading"><div><h3>'+esc(row.nama)+'</h3><p>'+esc(row.tanggal)+'</p></div><span class="leave-review-badge">Pengajuan izin · Menunggu</span></div><p class="leave-full-reason">'+esc(row.alasan)+'</p><button class="btn btn-primary" onclick="openLateLeaveRequestDecision(\''+esc(row.id)+'\')">Tinjau Pengajuan</button></article>';
   var id = esc(row.id), basis = row.basisIzin;
   return '<article class="review-telat-card leave-review-card" data-search="'+esc([row.nama,row.tanggal,row.statusReview,row.alasan].join(' ').toLowerCase())+'">'+
    '<div class="leave-review-heading"><div><h3>'+esc(row.nama)+'</h3><p>'+esc(row.tanggal)+' &middot; Masuk '+esc(row.jamMasuk)+'</p></div><span class="leave-review-badge">'+esc(row.statusReview.replace(/_/g,' '))+'</span></div>'+
@@ -24,7 +69,7 @@ function openLateLeaveForDay(userId, tanggal, button) {
   if (!row) { showToast('Belum ada rekap telat untuk tanggal ini. Proses ke Rekap Resmi terlebih dahulu.'); return; }
   lateLeaveRows[row.id]=row;
   closeAttendanceEdit();
-  openLateLeaveDecision(row.id);
+  if(row.requestId) openLateLeaveRequestDecision(row.id); else openLateLeaveDecision(row.id);
  },function(error) {
   if (button) { button.disabled=false; button.textContent='Atur Izin Kedatangan'; }
   showToast((error && error.message) || 'Gagal memuat keputusan. Coba lagi.');

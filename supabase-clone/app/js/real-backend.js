@@ -194,9 +194,22 @@
         p_bulan: args[1] || 'ALL'
       });
       if (r.error) throw r.error;
-      return r.data || [];
+      var requests = await window.sb.rpc('get_pending_late_leave_requests', { p_bulan: args[1] || 'ALL' });
+      if (requests.error) throw requests.error;
+      var pending = Array.isArray(requests.data) ? requests.data : [];
+      pending = pending.map(function(q) { return Object.assign({},(r.data || []).find(function(d) {return d.userId===q.userId && d.tanggal===q.tanggal;}) || {},q); });
+      var rows = (r.data || []).filter(function(row) { return !pending.some(function(q) { return q.userId===row.userId && q.tanggal===row.tanggal; }); });
+      return (args[0]==='ALL' || !args[0] || args[0]==='MENUNGGU' ? pending : []).concat(rows);
     },
 
+    submitLateLeaveRequest: async function(args) {
+      var r=await window.sb.rpc('submit_late_leave_request',{p_tanggal:args[0],p_alasan:args[1]});
+      if(r.error) throw r.error; return r.data;
+    },
+    decideLateLeaveRequest: async function(args) {
+      var r=await window.sb.rpc('decide_late_leave_request',{p_id:args[0],p_approve:args[1]});
+      if(r.error) throw r.error; return r.data;
+    },
     reviewIzinTelat: async function (args) {
       var r = await window.sb.rpc('review_late_attendance', {
         p_attendance_detail_id: args[0],
@@ -1103,7 +1116,8 @@
       window.sb.from('attendance_events').select('id,user_id,tanggal,jam,tipe,status,source,catatan').gte('tanggal', start).lte('tanggal', endKey).order('created_at'),
       window.sb.from('attendance_details').select('id,user_id,tanggal,waktu,tipe,keterangan').gte('tanggal', start).lte('tanggal', endKey),
       window.sb.from('attendance_anomalies').select('id,user_id,tanggal,tipe,status').gte('tanggal', start).lte('tanggal', endKey).eq('status', 'MENUNGGU'),
-      window.sb.rpc('get_employee_schedule_month', { p_bulan: bulanKey, p_user_id: targetUserId || null })
+      window.sb.rpc('get_employee_schedule_month', { p_bulan: bulanKey, p_user_id: targetUserId || null }),
+      window.sb.rpc('get_late_leave_calendar', { p_bulan: bulanKey })
     ]);
     var failed = results.find(function (x) { return x.error; });
     if (failed) return { success: false, msg: failed.error.message };
@@ -1112,6 +1126,11 @@
     var userMap = {};
     users.forEach(function (u) { userMap[u.id] = u; });
     var totalMasuk = 0, totalPulang = 0;
+
+    (Array.isArray(results[5].data) ? results[5].data : []).forEach(function(row) {
+      var u=userMap[row.userId]; if(!u) return;
+      attendanceDayCell(u,parseInt(String(row.tanggal).slice(8,10),10)).leaveNote=row;
+    });
 
     (results[2].data || []).forEach(function (row) {
       var u = userMap[row.user_id]; if (!u) return;

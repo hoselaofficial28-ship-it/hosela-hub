@@ -2,7 +2,12 @@
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
 import {pathToFileURL} from 'node:url';
-const {chromium}=await import(pathToFileURL(process.env.PLAYWRIGHT_MODULE).href);
+const playwrightPath = process.env.PLAYWRIGHT_MODULE;
+if (!playwrightPath || !fs.existsSync(playwrightPath)) {
+  console.log('SKIP: modul Playwright tidak tersedia. Set PLAYWRIGHT_MODULE=<path playwright/index.js> untuk menjalankan tes ini.');
+  process.exit(0);
+}
+const {chromium}=await import(pathToFileURL(playwrightPath).href);
 const browser=await chromium.launch({headless:true,channel:'chrome'});
 try {
  for(const width of [375,1440]) {

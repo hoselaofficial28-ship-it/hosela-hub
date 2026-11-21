@@ -3,7 +3,12 @@
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
 import { pathToFileURL } from 'node:url';
-const { PGlite } = await import(pathToFileURL(process.env.PGLITE_MODULE).href);
+const pglitePath = process.env.PGLITE_MODULE || 'C:/Users/WINDOW-MASTER/Documents/Codex/hosela-test-tools/node_modules/@electric-sql/pglite/dist/index.js';
+if (!fs.existsSync(pglitePath)) {
+  console.log('SKIP: modul PGlite tidak ditemukan. Set PGLITE_MODULE=<path dist/index.js> untuk menjalankan tes ini.');
+  process.exit(0);
+}
+const { PGlite } = await import(pathToFileURL(pglitePath).href);
 const db = new PGlite();
 let stage = 'bootstrap';
 let checks = 0;

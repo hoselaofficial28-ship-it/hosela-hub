@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbw6q_5ZaIGrekeBwZ5TKh6X1GpWkFHsa5i6whdwacQkTEa-vvNezHlxFMEQFKZkmm5ffQ/exec';
-var APP_VERSION = '20261121a';
+var APP_VERSION = '20261121b';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -5661,6 +5661,7 @@ function attendanceDayIsLate(item, dateObj) {
 }
 
 function renderAttendanceMatrix(res) {
+ window.lateLeaveMatrix = res;
  var el = document.getElementById('att-matrix-content');
  var summary = document.getElementById('att-matrix-summary');
  if (!el) return;
@@ -5715,9 +5716,9 @@ function renderAttendanceMatrix(res) {
  var statusSymbol = status.symbol;
  var statusTitle = status.title;
  if (dateObj.getDay() === 0) statusClass += ' sunday';
- var click = _attendanceMatrixCanEdit ? ' onclick="openAttendanceEdit(&quot;'+u.id+'&quot;,&quot;'+esc(u.nama)+'&quot;,&quot;'+res.bulan+'&quot;,'+d+',&quot;'+esc(masuk)+'&quot;,&quot;'+esc(pulang)+'&quot;)"' : '';
+ var click = ' onclick="openAttendanceDayInfo(&quot;'+esc(u.id)+'&quot;,'+d+')"';
  days += '<button class="att-day'+statusClass+'" title="'+statusTitle+'"'+click+(_attendanceMatrixCanEdit?'':' type="button"')+'>'+
- '<span>'+d+'</span><small>'+(masuk ? masuk.substring(0,5) : '-')+'</small><small>'+(pulang ? pulang.substring(0,5) : '-')+'</small><em>'+statusSymbol+'</em></button>';
+ '<span>'+d+'</span><small>'+(masuk ? masuk.substring(0,5) : '-')+'</small><small>'+(pulang ? pulang.substring(0,5) : '-')+'</small><em>'+statusSymbol+'</em>'+(item.leaveNote?'<small class="att-leave-note">'+esc(lateLeaveStatus(item.leaveNote.status))+': '+esc(item.leaveNote.alasan)+'</small>':'')+'</button>';
  }
  return '<div class="card att-user-card" data-search="'+(u.nama+' '+u.bagian+' '+u.jabatan).toLowerCase()+'">'+
  '<div class="att-user-head"><div><b>'+u.nama+'</b><p>'+u.jabatan+' · '+u.bagian+'</p></div></div>'+
@@ -6436,7 +6437,8 @@ function popupSimpanIzin() {
   if (btn) btn.disabled = false;
   if (!r || r.success === false) { showToast((r && r.msg) || 'Gagal menyimpan alasan'); return; }
   tutupShiftPopup();
-  showToast('Alasan tersimpan.');
+  showToast(r.msg || 'Pengajuan izin dikirim ke Owner.');
+  clearAttendanceMatrixCache(null,null);
   if (typeof loadAttendanceToday === 'function') loadAttendanceToday();
  }, function() {
   if (btn) btn.disabled = false;
