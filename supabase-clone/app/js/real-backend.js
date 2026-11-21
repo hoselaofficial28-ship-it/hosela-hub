@@ -36,6 +36,27 @@
     return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
   }
 
+  // Baris kehadiran bisa tercatat ganda di database (rekap + review Owner).
+// Rapikan daftar denda/potongan supaya tidak tampil dan tidak dijumlah dua kali.
+function rapikanDendaRekap(b) {
+  if (!b || typeof b !== 'object') return b;
+  var seen = Object.create(null);
+  var hapus = 0;
+  ['detailPotonganIzin', 'detailTelat', 'detailDendaSP', 'detailDendaManual', 'detailPotonganAbsen'].forEach(function (k) {
+    if (!Array.isArray(b[k])) return;
+    var baru = [];
+    b[k].forEach(function (d) {
+      var kunci = k + '|' + (d.tanggal || '') + '|' + (d.jam || d.waktu || '') + '|' + (d.keterangan || '');
+      if (seen[kunci]) { hapus += Number(d.nilai) || 0; return; }
+      seen[kunci] = 1;
+      baru.push(d);
+    });
+    b[k] = baru;
+  });
+  if (hapus > 0) b.totalDenda = Math.max(0, (Number(b.totalDenda) || 0) - hapus);
+  return b;
+}
+
   var handlers = {
     validateLogin: async function (args) {
       var nama = args[0], password = args[1];
@@ -258,15 +279,20 @@
       return r.data;
     },
 
-    getAbsensiRekap: async function (args) {
+
+  getAbsensiRekap: async function (args) {
       var r = await window.sb.rpc('get_absensi_rekap', { p_user_id: args[0] });
       if (r.error) return { bulanIni: '', liburBulanIni: [], data: [], success: false, msg: r.error.message };
+      if (r.data && Array.isArray(r.data.data)) r.data.data = r.data.data.map(rapikanDendaRekap);
+      else if (Array.isArray(r.data)) r.data = r.data.map(rapikanDendaRekap);
       return r.data;
     },
 
     getAllAbsensiRekap: async function () {
       var r = await window.sb.rpc('get_all_absensi_rekap');
       if (r.error) return { minggu: '', data: [] };
+      if (r.data && Array.isArray(r.data.data)) r.data.data = r.data.data.map(rapikanDendaRekap);
+      else if (Array.isArray(r.data)) r.data = r.data.map(rapikanDendaRekap);
       return r.data;
     },
 
