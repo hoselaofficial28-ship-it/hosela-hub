@@ -31,7 +31,7 @@ Keputusan review lama tanpa `basis_izin` tidak diubah massal. Tinjau ulang tangg
 
 ## Penerapan
 
-Status 21 November 2026: **SQL produksi berhasil diterapkan** di project `lhiepqldpiaqcctmqjss`. Verifikasi read-only menghasilkan 19179 untuk contoh 88 menit dan 10 definisi cadangan di `migration_66_backup`. Frontend menunggu deployment; percobaan CLI ditolak `Not authorized`, dilanjutkan melalui GitHub.
+Status 21 November 2026: **SQL produksi dan frontend sudah diterapkan**. Supabase project `lhiepqldpiaqcctmqjss`: verifikasi read-only menghasilkan 19179 untuk contoh 88 menit dan 10 definisi cadangan di `migration_66_backup`. Commit fitur `e2b4741` sukses deploy Production melalui GitHub; production smoke lulus pada `https://hosela-hub.vercel.app` versi `20261121a`. Percobaan CLI langsung ditolak `Not authorized`, tetapi jalur GitHub berhasil. Belum melakukan keputusan izin atau penerbitan slip terhadap data karyawan nyata sebagai pengujian.
 
 1. Pastikan dashboard mengarah ke project `lhiepqldpiaqcctmqjss`.
 2. Simpan definisi fungsi terdampak sebelum SQL dijalankan. Jangan menjalankan ulang seluruh migrasi historis; riwayat CLI belum dibaseline.
