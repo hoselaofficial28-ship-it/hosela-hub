@@ -175,7 +175,7 @@ function buildPayrollSlipPdfHtml(res) {
  '<div class="pdf-head"><div class="brand"><div class="logo">H</div><div><h1>Hosela Hub</h1><p>Slip Gaji Karyawan</p></div></div><div class="meta"><b>'+salaryEsc(salaryMonthLabel(bulan))+'</b><p>Dipublish '+salaryEsc(d.dipublishPada || res.dipublishPada || '-')+'</p></div></div>'+
  '<div class="employee"><div class="box"><small>Nama Karyawan</small><b>'+salaryEsc(nama)+'</b><p style="margin:4px 0 0;color:#64748b;font-size:12px">'+salaryEsc(d.jabatan || '-')+' · '+salaryEsc(d.bagian || '-')+'</p></div><div class="box"><small>ID Slip</small><b>'+salaryEsc(d.id || '-').slice(0,24)+'</b></div></div>'+
  '<div class="metrics"><div class="metric"><b>'+payrollPdfMoney(d.hadir || 0)+'</b><span>Hadir</span></div><div class="metric"><b>'+payrollPdfMoney(d.absen || 0)+'</b><span>Absen</span></div><div class="metric"><b>'+payrollPdfMoney(d.telat || 0)+'</b><span>Telat</span></div><div class="metric"><b>'+payrollPdfMoney((d.lemburPulang || 0) + (d.lemburMinggu || 0) + (d.lemburLibur || 0))+'</b><span>Lembur</span></div></div>'+
- '<div class="section-title">Rincian Komponen</div>'+payrollPdfRow('Gaji Pokok', d.gajiPokok, 'plus')+payrollPdfRow('Penghargaan', d.totalReward, 'plus')+payrollPdfRow('Bonus Kerajinan', d.bonusKerajinan, 'plus')+payrollPdfRow('Denda', d.totalDenda, 'minus')+(d.adjustmentPlus ? payrollPdfRow('Penyesuaian Tambahan', d.adjustmentPlus, 'plus') : '')+(d.adjustmentMinus ? payrollPdfRow('Penyesuaian Potongan', d.adjustmentMinus, 'minus') : '')+
+ '<div class="section-title">Rincian Komponen</div>'+payrollPdfRow('Gaji Pokok', d.gajiPokok, 'plus')+payrollPdfRow('Penghargaan', d.totalReward, 'plus')+payrollPdfRow('Bonus Kerajinan', d.bonusKerajinan, 'plus')+payrollPdfRow('Denda', Number(d.totalDenda || 0) - payrollLeaveDeduction(items), 'minus')+payrollPdfRow('Potongan Izin', payrollLeaveDeduction(items), 'minus')+(d.adjustmentPlus ? payrollPdfRow('Penyesuaian Tambahan', d.adjustmentPlus, 'plus') : '')+(d.adjustmentMinus ? payrollPdfRow('Penyesuaian Potongan', d.adjustmentMinus, 'minus') : '')+
  '<div class="total"><span>Total Diterima</span><b>Rp '+payrollPdfMoney(d.totalGaji)+'</b></div><div class="section-title">Item Detail</div>'+itemHtml+
  '<div class="note">Dokumen ini dibuat otomatis dari Hosela Hub berdasarkan slip gaji yang sudah dipublish. Simpan PDF ini sebagai arsip pribadi karyawan.</div></div></div><script>setTimeout(function(){ window.focus(); window.print(); }, 500);<\/script></body></html>';
  return html;
@@ -596,7 +596,7 @@ function renderPayrollDetailBox(res) {
  html += payrollAmountRow('Gaji Pokok', d.gajiPokok, 'plus');
  html += payrollAmountRow('Penghargaan', d.totalReward, 'plus');
  html += payrollAmountRow('Bonus Kerajinan', d.bonusKerajinan, 'plus');
- html += payrollAmountRow('Denda', d.totalDenda, 'minus');
+ html += payrollAmountRow('Denda', Number(d.totalDenda || 0) - payrollLeaveDeduction(items), 'minus') + payrollAmountRow('Potongan Izin', payrollLeaveDeduction(items), 'minus');
  if (d.adjustmentPlus) html += payrollAmountRow('Penyesuaian Tambahan', d.adjustmentPlus, 'plus');
  if (d.adjustmentMinus) html += payrollAmountRow('Penyesuaian Potongan', d.adjustmentMinus, 'minus');
  html += '<div style="display:flex;justify-content:space-between;font-size:13px;font-weight:900;color:var(--text-dark);padding-top:8px;border-top:1px solid var(--gray-border);margin-top:6px"><span>Total Diterima</span><span>Rp '+(parseInt(d.totalGaji || 0, 10) || 0).toLocaleString('id-ID')+'</span></div>';
@@ -816,6 +816,7 @@ function payrollItemLabel(tipe) {
  LEMBUR_MINGGU: 'Lembur hari Minggu',
  LEMBUR_LIBUR: 'Lembur hari libur',
  POTONGAN_ABSEN: 'Potongan absen',
+ POTONGAN_IZIN: 'Potongan izin datang terlambat',
  BONUS_KERAJINAN: 'Bonus kerajinan',
  ADJUSTMENT_PLUS: 'Penyesuaian tambahan',
  ADJUSTMENT_MINUS: 'Penyesuaian potongan'
@@ -1191,4 +1192,10 @@ function toggleAdminSlipDetail(payrollDetailId, targetId) {
  }, function() {
  target.innerHTML = '<div class="empty-state" style="padding:12px">Gagal memuat detail slip</div>';
  });
+}
+
+function payrollLeaveDeduction(items) {
+ return (items || []).reduce(function(total,item) {
+  return total + (item.tipe === 'POTONGAN_IZIN' ? Number(item.nominal || 0) : 0);
+ }, 0);
 }

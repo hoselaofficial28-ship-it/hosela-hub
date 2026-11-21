@@ -1,4 +1,4 @@
-const APP_VERSION = '20261118r';
+const APP_VERSION = '20261121a';
 const CACHE_NAME = 'hosela-hub-' + APP_VERSION;
 const ASSETS = [
   './',
@@ -8,6 +8,7 @@ const ASSETS = [
   './js/dashboard-reports.js',
   './js/mock-backend.js',
   './js/payroll.js',
+  './js/late-leave.js',
   './js/photo-storage.js',
   './js/preview.js',
   './js/real-backend.js',

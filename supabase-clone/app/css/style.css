@@ -4579,3 +4579,16 @@ body:not(.phone-mode) .shift-apply-card{top:8px}
 #shift-popup-alasan-box[hidden]{display:none}
 #shift-popup-alasan-box{margin:4px 0 8px}
 #shift-popup-alasan{width:100%;margin-bottom:8px;resize:vertical}
+
+/* Izin kedatangan: satu keputusan, dasar perhitungan terlihat. */
+.leave-review-card{padding:20px;border:1px solid var(--gray-border);border-radius:16px;background:#fff;margin-bottom:16px}
+.leave-review-heading,.leave-review-actions{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.leave-review-heading h3{margin:0;font-size:17px}.leave-review-card p,.leave-review-dialog p{font-size:14px;line-height:1.6;overflow-wrap:anywhere}
+.leave-review-badge{padding:6px 10px;border-radius:20px;background:#eff6ff;color:#1e40af;font-size:12px}
+.leave-review-summary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:16px 0;padding:16px;border-radius:12px;background:#eff6ff;color:#1e3a8a}
+.leave-review-summary strong{display:block;margin-top:6px;font-size:20px;font-variant-numeric:tabular-nums}
+.leave-review-help{color:#475569;font-size:14px}.leave-review-dialog{width:min(560px,calc(100vw - 32px));max-height:85dvh;overflow-y:auto}
+.leave-review-dialog label{display:block;margin:16px 0 8px;font-size:14px;font-weight:600}.leave-review-dialog .form-input{font-size:16px;min-height:44px}
+.leave-review-actions .btn,.leave-review-card .btn{min-height:44px}.leave-review-actions .btn{flex:1}
+#late-leave-error{color:#b91c1c}.att-day.leave-approved{background:#eff6ff;border-color:#93c5fd;color:#1e40af}
+@media(max-width:420px){.leave-review-summary{grid-template-columns:1fr}.leave-review-card{padding:16px}}

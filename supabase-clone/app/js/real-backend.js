@@ -1118,6 +1118,7 @@
       var day = parseInt(String(row.tanggal).substring(8, 10), 10), cell = attendanceDayCell(u, day);
       if (row.tipe === 'ABSEN') cell.absen = true;
       else if (row.tipe === 'TELAT') cell.telat = true;
+      else if (row.tipe === 'IZIN_TELAT') cell.izinTelat = true;
       else if (row.tipe === 'LEMBUR_PULANG' || row.tipe === 'LEMBUR_MINGGU' || row.tipe === 'LEMBUR_LIBUR') cell.lembur = true;
     });
     (results[3].data || []).forEach(function (row) {
@@ -1155,7 +1156,7 @@
         if (cell.masuk && cell.pulang) cell.anomali = false;
         if (cell.anomali || cell.masuk || cell.pulang) cell.absen = false;
         var actual = attendanceMinutes(cell.masuk), required = attendanceMinutes(cell.jadwalMasuk);
-        if (actual !== null && required !== null && new Date(dateKey + 'T12:00:00').getDay() !== 0 && actual > required) cell.telat = true;
+        if (!cell.izinTelat && actual !== null && required !== null && new Date(dateKey + 'T12:00:00').getDay() !== 0 && actual > required) cell.telat = true;
       });
     });
     return { success: true, version: 'attendance-matrix-supabase-20261012', sources: ['attendance_details','attendance_events'], bulan: bulanKey, days: end.getDate(), users: users, totalMasuk: totalMasuk, totalPulang: totalPulang };

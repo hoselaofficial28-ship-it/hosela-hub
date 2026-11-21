@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbw6q_5ZaIGrekeBwZ5TKh6X1GpWkFHsa5i6whdwacQkTEa-vvNezHlxFMEQFKZkmm5ffQ/exec';
-var APP_VERSION = '20261118r';
+var APP_VERSION = '20261121a';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -450,7 +450,7 @@ function invalidateReadCacheAfterMutation(action) {
   konfirmasiAnomali: ['getAnomaliPending','getAbsensiMatrix','getAbsensiMatrixUser','getAbsensiRekap','getRekapBulananSemua','getHomeData','getNotifikasi'],
   addSanksiManual: ['getSanksiManual','getAbsensiRekap','getRekapBulananSemua','getPayrollPreview'],
   batalSanksiManual: ['getSanksiManual','getAbsensiRekap','getRekapBulananSemua','getPayrollPreview'],
-  reviewIzinTelat: ['getIzinTelatReview','getAbsensiRekap','getRekapBulananSemua','getPayrollPreview','getPayrollDetail','getAbsensiMatrix','getAbsensiMatrixUser','getHomeData','getNotifikasi'],
+  reviewIzinTelat: ['getAllAbsensiRekap','getPublishedPayrollSlips','getPayrollEmployeeSlipDetail','getIzinTelatReview','getAbsensiRekap','getRekapBulananSemua','getPayrollPreview','getPayrollDetail','getAbsensiMatrix','getAbsensiMatrixUser','getHomeData','getNotifikasi'],
   updatePayrollAdjustment: ['getPayrollPreview','getPayrollDetail','getPayrollEmployeeSlip','getPayrollEmployeeSlipDetail','getPublishedPayrollSlips'],
   gantiPIN: ['getHomeData'],
   updateEmail: ['getHomeData','getAllUsers'],
@@ -2011,7 +2011,8 @@ function renderAbsensiDetailHtml(res, bulanKey, scopeId) {
  dendaItems.push('Denda Manual');
  b.detailDendaManual.forEach(function(d){ dendaItems.push(formatTglJam(d.tanggal, d.jam)+detailLine(d, true)); });
  }
- if (b.totalDenda > 0) html += dropdown('Estimasi Denda Bulan Ini', '#fee2e2', '#991b1b', dendaItems, b.totalDenda);
+ if (b.detailPotonganIzin) b.detailPotonganIzin.forEach(function(d){ dendaItems.push(formatTglJam(d.tanggal,d.jam)+detailLine(d,true)); });
+ if (b.totalDenda > 0) html += dropdown('Estimasi Denda & Potongan Izin', '#fee2e2', '#991b1b', dendaItems, b.totalDenda);
 
  var rewardItems = [];
  if (b.detailLemburPulang) b.detailLemburPulang.forEach(function(d){ rewardItems.push('Lembur Pulang: '+detailLine(d, true)); });
@@ -4142,34 +4143,7 @@ function loadReviewTelat(force) {
  list.innerHTML = '<div class="empty-state"><div class="empty-icon"></div>Tidak ada review telat</div>';
  return;
  }
- list.innerHTML = data.map(function(r) {
- var id = String(r.id || '');
- var safeId = id.replace(/[^a-zA-Z0-9_-]/g, '');
- var pending = r.statusReview === 'MENUNGGU';
- var suggestedHour = Math.max(1, Math.ceil((parseInt(r.menitTelat || 0, 10) || 0) / 60));
- var searchText = [r.nama, r.userId, r.tanggal, r.bulan, r.statusReview, r.alasan, r.catatan].join(' ').toLowerCase();
- return '<div class="review-telat-card" data-search="'+esc(searchText)+'" style="border:1px solid var(--gray-border);border-radius:8px;padding:12px;margin-bottom:10px;background:#fff">'+
- '<div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start">'+
- '<div><div style="font-size:14px;font-weight:800;color:var(--text-dark)">'+cleanDisplayText(r.nama || '-')+'</div>'+
- '<div style="font-size:11px;color:var(--text-muted);margin-top:2px">'+(r.tanggal || '-')+' &middot; '+labelBulanKey(r.bulan || '')+' &middot; Masuk '+String(r.jamMasuk || '-').substring(0,5)+' dari jadwal '+String(r.jadwalMasuk || '-').substring(0,5)+'</div></div>'+
- '<span style="font-size:10px;border-radius:999px;padding:3px 8px;font-weight:800;background:'+(pending?'#fff7ed':'#e0f2fe')+';color:'+(pending?'#c2410c':'#0e4fa3')+'">'+cleanDisplayText(r.statusReview || 'MENUNGGU').replace(/_/g,' ')+'</span>'+
- '</div>'+
- '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px">'+
- '<div style="background:#f8fafc;border-radius:8px;padding:8px;text-align:center"><b style="font-size:16px;color:#f59e0b">'+(r.menitTelat || 0)+'</b><div style="font-size:10px;color:var(--text-muted)">Menit Telat</div></div>'+
- '<div style="background:#fff7f7;border-radius:8px;padding:8px;text-align:center"><b style="font-size:16px;color:#dc2626">Rp '+parseInt(r.dendaNormal || 0, 10).toLocaleString('id-ID')+'</b><div style="font-size:10px;color:var(--text-muted)">Denda Normal</div></div>'+
- '<div style="background:#f0fdf4;border-radius:8px;padding:8px;text-align:center"><b style="font-size:16px;color:#16a34a">Rp '+parseInt(r.tarifPerJam || 0, 10).toLocaleString('id-ID')+'</b><div style="font-size:10px;color:var(--text-muted)">Tarif per Jam</div></div>'+
- '<div style="background:#eef2ff;border-radius:8px;padding:8px;text-align:center"><b style="font-size:16px;color:#0e4fa3">Rp '+parseInt(r.potonganFinal || 0, 10).toLocaleString('id-ID')+'</b><div style="font-size:10px;color:var(--text-muted)">Potongan Final</div></div>'+
- '</div>'+
- (pending ? '<div style="margin-top:10px">'+
- '<div class="form-group" style="margin-bottom:8px"><label class="form-label">Keputusan</label><select class="form-input" id="izin-telat-jenis-'+safeId+'"><option value="NORMAL">Telat Normal</option><option value="IZIN_KHUSUS">Izin Telat Khusus</option><option value="BEBAS">Bebas Potongan</option></select></div>'+
- '<div class="form-group" style="margin-bottom:8px"><label class="form-label">Sifat Telat</label><select class="form-input" id="izin-telat-sifat-'+safeId+'"><option value="Disiplin normal">Disiplin normal</option><option value="Kecelakaan / musibah perjalanan">Kecelakaan / musibah perjalanan</option><option value="Kendala perjalanan">Kendala perjalanan</option><option value="Kesehatan mendadak">Kesehatan mendadak</option><option value="Urusan keluarga darurat">Urusan keluarga darurat</option><option value="Lainnya">Lainnya</option></select></div>'+
- '<div class="form-group" style="margin-bottom:8px"><label class="form-label">Durasi Izin Khusus (jam)</label><input class="form-input" type="number" min="0" step="0.5" id="izin-telat-durasi-'+safeId+'" value="'+suggestedHour+'"></div>'+
- '<div class="form-group" style="margin-bottom:8px"><label class="form-label">Alasan</label><input class="form-input" id="izin-telat-alasan-'+safeId+'" placeholder="Contoh: kecelakaan motor"></div>'+
- '<div class="form-group" style="margin-bottom:8px"><label class="form-label">Catatan Finance/Owner</label><textarea class="form-input" rows="2" id="izin-telat-catatan-'+safeId+'" placeholder="Catatan keputusan..."></textarea></div>'+
- '<button class="btn btn-primary" style="width:100%" onclick="submitReviewTelat(\''+id+'\',\''+safeId+'\')">Simpan Keputusan</button>'+
- '</div>' : '<div style="font-size:11px;color:var(--text-muted);margin-top:8px">'+cleanDisplayText(r.alasan || '')+(r.catatan ? ' &middot; '+cleanDisplayText(r.catatan) : '')+'</div>')+
- '</div>';
- }).join('');
+ list.innerHTML = renderLateLeaveReviews(data);
  filterReviewTelatList();
  }, function() {
  list.innerHTML = '<div class="empty-state">Gagal memuat review telat</div>';
@@ -5677,6 +5651,7 @@ function attendanceTimeToMinutes(value) {
 }
 
 function attendanceDayIsLate(item, dateObj) {
+ if (item && item.izinTelat) return false;
  if (!item) return false;
  if (item.telat === true || String(item.telat).toLowerCase() === 'true') return true;
  if (!item.masuk || (dateObj && dateObj.getDay() === 0)) return false;
@@ -5709,6 +5684,7 @@ function renderAttendanceMatrix(res) {
  var leadingBlank = (firstDay + 6) % 7; // Monday-first calendar
  var dayNames = ['Sen','Sel','Rab','Kam','Jum','Sab','Min'];
  function attendanceDayStatus(item, masuk, pulang, dateObj) {
+ if (item.izinTelat) return {cls:" filled leave-approved",symbol:"I",title:"Izin datang terlambat"};
  var hasTap = !!(masuk || pulang);
  if (item.anomali && !hasTap) return { cls:' anomaly', symbol:'!', title:'Tap anomali' };
  if (item.rejected && !hasTap) return { cls:' rejected', symbol:'&times;', title:'Ditolak' };
@@ -5816,7 +5792,7 @@ function renderAttendanceUserRecap(u, res) {
  '<div class="att-recap-metric att-recap-red"><b>'+absen+'</b><span>Absen</span></div>'+
  '<div class="att-recap-metric att-recap-purple"><b>'+lembur+'</b><span>Lembur</span></div>'+
  '</div>'+
- '<div class="att-recap-row att-recap-denda"><span>Estimasi Denda</span><b>- Rp '+denda.toLocaleString('id-ID')+'</b></div>'+
+ '<div class="att-recap-row att-recap-denda"><span>Denda & Potongan Izin</span><b>- Rp '+denda.toLocaleString('id-ID')+'</b></div>'+
  '<div class="att-recap-row att-recap-reward"><span>Estimasi Penghargaan</span><b>+ Rp '+reward.toLocaleString('id-ID')+'</b></div>'+
  '<button id="'+btnId+'" class="btn btn-sm btn-primary att-recap-btn" onclick="toggleOwnerRekapDetail(\''+esc(userId)+'\',\''+esc(bulanKey)+'\',\''+detailId+'\',\''+btnId+'\')">Lihat Detail</button>'+
  '<div id="'+detailId+'" class="att-recap-detail" style="display:none"></div>'+
@@ -5898,6 +5874,7 @@ function renderAttendanceLiveDetailHtml(u, res, scopeId) {
  if (item.anomali && !hasTap) return ['Tap anomali', '#f59e0b'];
  if (item.rejected && !hasTap) return ['Ditolak', '#64748b'];
  if (item.absen && !hasTap) return ['Absen', '#ef4444'];
+ if (item.izinTelat) return ['Izin datang terlambat', '#1d4ed8'];
  if (attendanceDayIsLate(item, dateObj)) return [item.lembur ? 'Telat dan lembur' : 'Telat', '#be123c'];
  if (item.lembur) return ['Lembur', '#7c3aed'];
  if (masuk && pulang) return ['Hadir lengkap', '#16a34a'];
@@ -6002,6 +5979,7 @@ function openAttendanceEdit(userId, nama, bulanKey, day, masuk, pulang) {
  '<div class="att-modal">'+
  '<h3>Edit Kehadiran</h3>'+
  '<p>'+nama+' · '+tanggal+'</p>'+
+ '<button class="btn btn-secondary" onclick="openLateLeaveForDay(&quot;'+userId+'&quot;,&quot;'+tanggal+'&quot;,this)">Atur Izin Kedatangan</button>'+
  '<label>Jam Masuk</label><input class="form-input" id="att-edit-masuk" type="time" value="'+(masuk ? masuk.substring(0,5) : '')+'">'+
  '<label>Jam Pulang</label><input class="form-input" id="att-edit-pulang" type="time" value="'+(pulang ? pulang.substring(0,5) : '')+'">'+
  '<label>Catatan</label><input class="form-input" id="att-edit-note" placeholder="Contoh: koreksi manual Finance">'+

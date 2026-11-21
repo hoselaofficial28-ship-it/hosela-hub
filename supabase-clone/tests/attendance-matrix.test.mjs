@@ -69,6 +69,13 @@ assert.equal(matrix.users[0].days[6].lembur, true);
 assert.equal(matrix.totalMasuk, 1);
 assert.equal(matrix.totalPulang, 1);
 
+fixtures.attendance_details[0].tipe = 'IZIN_TELAT';
+const approvedLeave = await window.realBackend('getAbsensiMatrix', ['2026-10']);
+assert.equal(approvedLeave.users[0].days[6].izinTelat, true);
+assert.equal(approvedLeave.users[0].days[6].telat, false, 'izin must not be reclassified by comparing raw clock time');
+assert.equal(approvedLeave.users[0].days[6].masuk, '08:12:00', 'raw time preserved');
+fixtures.attendance_details[0].tipe = 'TELAT';
+
 const personal = await window.realBackend('getAbsensiRekap', ['u-1']);
 assert.equal(personal.bulanIni, '2026-10');
 assert.equal(rpcCalls.at(-1).name, 'get_absensi_rekap');
