@@ -931,8 +931,8 @@ textarea.form-input{line-height:1.45}
 .att-day.sunday{background:#fff7ed;border-color:#fed7aa}
 .att-day.sunday span{color:#b54708}
 .att-day.sunday.filled{background:#fff7ed;border-color:#fdba74}
-.att-modal-backdrop{position:fixed;inset:0;background:rgba(15,23,42,.54);z-index:10000;display:flex;align-items:flex-end;justify-content:center;padding:14px}
-.att-modal{width:100%;max-width:430px;background:#fff;border-radius:18px 18px 12px 12px;padding:18px;box-shadow:0 -18px 46px rgba(16,24,40,.22)}
+.att-modal-backdrop{position:fixed;inset:0;background:rgba(15,23,42,.54);z-index:10000;display:flex;align-items:center;justify-content:center;padding:16px}
+.att-modal{width:100%;max-width:430px;max-height:calc(100vh - 32px);overflow-y:auto;background:#fff;border-radius:16px;padding:18px;box-shadow:0 18px 46px rgba(16,24,40,.28)}
 .att-modal h3{font-size:18px;color:#101828;margin-bottom:3px}
 .att-modal p{font-size:12px;color:var(--text-muted);margin-bottom:14px}
 .att-modal label{display:block;font-size:12px;font-weight:850;color:#344054;margin:10px 0 6px}
