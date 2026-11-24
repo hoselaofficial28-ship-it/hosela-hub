@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbw6q_5ZaIGrekeBwZ5TKh6X1GpWkFHsa5i6whdwacQkTEa-vvNezHlxFMEQFKZkmm5ffQ/exec';
-var APP_VERSION = '20261124a';
+var APP_VERSION = '20261124b';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -4166,7 +4166,7 @@ function renderOvertimeRequests(rows) {
    '<div class="leave-review-heading"><div><h3>' + htmlEscape(row.nama || '-') + '</h3>' +
    '<p>' + htmlEscape(row.tanggal || '-') + ' &middot; ' + htmlEscape(row.bagian || '') + '</p></div>' +
    '<b>Rp ' + Math.round(Number(row.reward) || 0).toLocaleString('id-ID') + '</b></div>' +
-   '<p>Lembur ' + (Number(row.menitLembur) || 0) + ' menit' + (row.keterangan ? ' &middot; ' + htmlEscape(row.keterangan) : '') + '</p>' +
+   '<p>Lembur ' + (Number(row.menitLembur) || 0) + ' menit' + (row.keterangan ? ' &middot; ' + htmlEscape(String(row.keterangan).replace(/lembur\s+[\d.,]+\s*jam/i, '').replace(/\s*,\s*$/,'').trim()) : '') + '</p>' +
    (row.terkunci
      ? '<p class="leave-review-help">Slip bulan ini sudah terbit. Batalkan penerbitannya untuk mengubah keputusan.</p>'
      : '<div style="display:flex;gap:8px;margin-top:8px">' +
