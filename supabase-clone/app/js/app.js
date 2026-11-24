@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbw6q_5ZaIGrekeBwZ5TKh6X1GpWkFHsa5i6whdwacQkTEa-vvNezHlxFMEQFKZkmm5ffQ/exec';
-var APP_VERSION = '20261124d';
+var APP_VERSION = '20261124e';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -1542,7 +1542,6 @@ menus.push({id:'s-slip-gaji', icon:'receipt', bg:'#e0f2fe', label:'Slip Gaji', s
  menus.push({id:'s-sanksi-manual', icon:'scale', bg:'#fce7f3', label:'Penghargaan & Denda', sub:'Denda dan penghargaan manual'});
  menus.push({id:'s-review-telat', icon:'check', bg:'#fff7ed', label:'Review Telat', sub:'Toleransi izin telat'});
  menus.push({id:'s-payroll', icon:'card', bg:'#ede9fe', label:'Penggajian', sub:'Pratinjau dan terbitkan slip'});
- menus.push({id:'s-setting-gaji', icon:'card', bg:'#e0f2fe', label:'Pengaturan Gaji', sub:'Gaji pokok & uang kerajinan'});
  }
  if (u.bagian === 'Owner') {
  menus.push({id:'s-shift-settings', icon:'clock', bg:'#e0f2fe', label:'Pengaturan Shift', sub:'Atur jam kerja tim'});
@@ -1554,7 +1553,6 @@ menus.push({id:'s-slip-gaji', icon:'receipt', bg:'#e0f2fe', label:'Slip Gaji', s
  menus.push({id:'s-sanksi-manual', icon:'scale', bg:'#fce7f3', label:'Penghargaan & Denda', sub:'Denda dan penghargaan manual'});
  menus.push({id:'s-review-telat', icon:'check', bg:'#fff7ed', label:'Review Telat', sub:'Toleransi izin telat'});
  menus.push({id:'s-payroll', icon:'card', bg:'#ede9fe', label:'Penggajian', sub:'Tinjau gaji tim'});
- menus.push({id:'s-setting-gaji', icon:'card', bg:'#e0f2fe', label:'Pengaturan Gaji', sub:'Gaji pokok & uang kerajinan'});
  }
  menus.push({id:'s-ganti-pin', icon:'lock', bg:'#f1f5f9', label:'Ganti Sandi', sub:'Ubah PIN login kamu'});
  var prevBtn = document.querySelector('.preview-btn');
