@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbw6q_5ZaIGrekeBwZ5TKh6X1GpWkFHsa5i6whdwacQkTEa-vvNezHlxFMEQFKZkmm5ffQ/exec';
-var APP_VERSION = '20261124b';
+var APP_VERSION = '20261124c';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -1971,6 +1971,8 @@ function renderAbsensiDetailHtml(res, bulanKey, scopeId) {
  function money(n) { return (parseInt(n, 10) || 0).toLocaleString('id-ID'); }
  function detailLine(item, withMoney) {
  var text = cleanAbsensiText(item.keterangan || '');
+ // Angka desimal panjang dari mesin (mis. lembur 1.00000000000000000000 jam) dirapikan.
+ text = text.replace(/(\d+)\.0+\s*jam/gi, '$1 jam').replace(/(\d+)\.\d{2,}\s*jam/gi, '$1 jam');
  if (withMoney && item.nilai) text += ' &rarr; Rp ' + money(item.nilai);
  return text;
  }
