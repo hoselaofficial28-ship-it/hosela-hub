@@ -280,7 +280,20 @@ function rapikanDendaRekap(b) {
     },
 
 
-  getAbsensiRekap: async function (args) {
+    // Pengajuan lembur pulang yang menunggu keputusan Owner.
+    getOvertimeRequests: async function (args) {
+      var r = await window.sb.rpc('get_pending_overtime_requests', { p_bulan: args[0] || 'ALL' });
+      if (r.error) return { success: false, msg: r.error.message, data: [] };
+      return { success: true, data: r.data || [] };
+    },
+
+    decideOvertimeRequest: async function (args) {
+      var r = await window.sb.rpc('decide_overtime_request', { p_id: args[0], p_approve: !!args[1] });
+      if (r.error) return { success: false, msg: r.error.message };
+      return r.data;
+    },
+
+    getAbsensiRekap: async function (args) {
       var r = await window.sb.rpc('get_absensi_rekap', { p_user_id: args[0] });
       if (r.error) return { bulanIni: '', liburBulanIni: [], data: [], success: false, msg: r.error.message };
       if (r.data && Array.isArray(r.data.data)) r.data.data = r.data.data.map(rapikanDendaRekap);

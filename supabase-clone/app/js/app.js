@@ -1,5 +1,5 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbw6q_5ZaIGrekeBwZ5TKh6X1GpWkFHsa5i6whdwacQkTEa-vvNezHlxFMEQFKZkmm5ffQ/exec';
-var APP_VERSION = '20261121e';
+var APP_VERSION = '20261124a';
 var currentUser = null;
 var currentBagian = null;
 var pinBuffer = '';
@@ -4135,7 +4135,65 @@ function batalkanSanksi(id) {
 // karyawan + tanggal agar tetap berlaku saat rekap absensi diproses ulang.
 var REVIEW_TELAT_TERSAMBUNG = true;
 
+// ===== Pengajuan lembur pulang (persetujuan Owner) =====
+var _overtimeRows = {};
+
+function loadOvertimeRequests() {
+ var list = document.getElementById('overtime-list');
+ if (!list) return;
+ list.innerHTML = '<div class="field-help">Memuat...</div>';
+ var bulan = (document.getElementById('izin-telat-bulan') || {}).value || 'ALL';
+ gasCall('getOvertimeRequests', [bulan || 'ALL'], function(r) {
+  if (!r || r.success === false) {
+   list.innerHTML = '<div class="field-help">Gagal memuat: ' + htmlEscape((r && r.msg) || 'tidak diketahui') + '</div>';
+   return;
+  }
+  renderOvertimeRequests(r.data || []);
+ }, function() {
+  list.innerHTML = '<div class="field-help">Koneksi gagal memuat pengajuan lembur.</div>';
+ });
+}
+
+function renderOvertimeRequests(rows) {
+ var list = document.getElementById('overtime-list');
+ if (!list) return;
+ _overtimeRows = {};
+ if (!rows.length) { list.innerHTML = '<div class="field-help">Tidak ada pengajuan lembur yang menunggu.</div>'; return; }
+ list.innerHTML = rows.map(function(row) {
+  _overtimeRows[row.id] = row;
+  var id = htmlEscape(row.id);
+  return '<div class="leave-review-card" style="margin-bottom:8px">' +
+   '<div class="leave-review-heading"><div><h3>' + htmlEscape(row.nama || '-') + '</h3>' +
+   '<p>' + htmlEscape(row.tanggal || '-') + ' &middot; ' + htmlEscape(row.bagian || '') + '</p></div>' +
+   '<b>Rp ' + Math.round(Number(row.reward) || 0).toLocaleString('id-ID') + '</b></div>' +
+   '<p>Lembur ' + (Number(row.menitLembur) || 0) + ' menit' + (row.keterangan ? ' &middot; ' + htmlEscape(row.keterangan) : '') + '</p>' +
+   (row.terkunci
+     ? '<p class="leave-review-help">Slip bulan ini sudah terbit. Batalkan penerbitannya untuk mengubah keputusan.</p>'
+     : '<div style="display:flex;gap:8px;margin-top:8px">' +
+       '<button type="button" class="btn btn-sm btn-primary" onclick="putuskanLembur(\'' + id + '\',true)">Setujui</button>' +
+       '<button type="button" class="btn btn-sm" style="background:#eef2f6;color:#344054" onclick="putuskanLembur(\'' + id + '\',false)">Tolak</button></div>') +
+   '</div>';
+ }).join('');
+}
+
+function putuskanLembur(id, setuju) {
+ var row = _overtimeRows[id];
+ var nama = row ? row.nama : 'karyawan';
+ var pesan = setuju
+  ? ('Setujui lembur ' + nama + ' tanggal ' + (row ? row.tanggal : '') + ' (Rp ' + Math.round(Number(row && row.reward) || 0).toLocaleString('id-ID') + ')?')
+  : ('Tolak pengajuan lembur ' + nama + ' tanggal ' + (row ? row.tanggal : '') + '?');
+ if (!confirm(pesan)) return;
+ gasCall('decideOvertimeRequest', [id, !!setuju], function(r) {
+  if (!r || r.success === false) { showToast((r && r.msg) || 'Gagal memutuskan lembur'); return; }
+  showToast(setuju ? 'Lembur disetujui' : 'Pengajuan lembur ditolak');
+  cacheClearAction('getAbsensiMatrixUser');
+  cacheClearAction('getAbsensiRekap');
+  loadOvertimeRequests();
+ }, function() { showToast('Koneksi gagal memutuskan lembur'); });
+}
+
 function loadReviewTelat(force) {
+ if (typeof loadOvertimeRequests === 'function') loadOvertimeRequests();
  var list = document.getElementById('review-telat-list');
  if (!list) return;
  if (!REVIEW_TELAT_TERSAMBUNG) {
